@@ -229,9 +229,9 @@ body {
 }
 
 .chat-page-minimal {
-  width: min(960px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
-  gap: 20px;
+  gap: 14px;
   grid-template-rows: auto minmax(0, 1fr);
   height: calc(100vh - 96px);
   min-height: 0;
@@ -241,34 +241,42 @@ body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 16px;
-  width: min(780px, 100%);
+  gap: 12px;
+  width: min(1080px, 100%);
   margin: 0 auto;
-  padding: 8px 0 0;
+  padding: 2px 0 0;
 }
 
 .chat-shell-copy {
   min-width: 0;
-  padding-top: 2px;
+  padding-top: 1px;
 }
 
 .chat-shell-header .ghost-link {
   margin-bottom: 0;
   align-self: start;
+  padding: 8px 12px;
+  font-size: 0.95rem;
 }
 
 .chat-shell-copy h1 {
   margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1.12;
   letter-spacing: -0.02em;
 }
 
 .chat-shell-meta {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.86rem;
+}
+
+.chat-shell-copy .eyebrow {
+  margin-bottom: 6px;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
 }
 
 .chat-topbar {
@@ -400,7 +408,7 @@ body {
 .chat-thread-panel-minimal {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 16px;
+  gap: 12px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -422,12 +430,12 @@ body {
 .chat-transcript-minimal {
   display: grid;
   align-content: start;
-  width: min(780px, 100%);
+  width: min(1080px, 100%);
   margin: 0 auto;
   height: 100%;
   min-height: 0;
   max-height: none;
-  padding: 8px 6px 8px 0;
+  padding: 2px 6px 8px 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -451,10 +459,10 @@ body {
 }
 
 .chat-message-body {
-  max-width: min(70ch, 100%);
-  padding: 16px 18px;
+  max-width: min(84ch, 100%);
+  padding: 14px 16px;
   border-radius: 22px;
-  line-height: 1.7;
+  line-height: 1.62;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: rgba(255, 255, 255, 0.92);
@@ -481,7 +489,7 @@ body {
 .chat-message[data-role="user"] .chat-message-body {
   background: rgba(246, 225, 185, 0.7);
   border-top-right-radius: 10px;
-  max-width: min(32ch, 100%);
+  max-width: min(44ch, 100%);
 }
 
 .chat-message[data-role="system"] .chat-message-body {
@@ -490,7 +498,7 @@ body {
 
 .chat-content-column,
 .chat-composer-wrap {
-  width: min(780px, 100%);
+  width: min(1080px, 100%);
   margin: 0 auto;
 }
 
@@ -501,19 +509,19 @@ body {
 
 .chat-composer {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
-  padding-top: 18px;
+  gap: 10px;
+  margin-top: 0;
+  padding-top: 0;
   border-top: 1px solid rgba(74, 58, 40, 0.12);
 }
 
 .chat-composer-minimal {
   position: relative;
   margin-top: 0;
-  padding: 18px 18px 16px;
+  padding: 12px 14px 12px;
   border: 1px solid rgba(74, 58, 40, 0.12);
-  border-radius: 24px;
-  box-shadow: 0 18px 40px rgba(49, 37, 22, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 16px 32px rgba(49, 37, 22, 0.07);
   background:
     linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(248, 243, 234, 0.98));
 }
@@ -523,8 +531,8 @@ body {
 }
 
 .chat-input-shell textarea {
-  min-height: 112px;
-  border-radius: 24px;
+  min-height: 76px;
+  border-radius: 18px;
   border-color: rgba(74, 58, 40, 0.12);
   background: rgba(255, 255, 255, 0.96);
   color: var(--text);
@@ -554,12 +562,14 @@ body {
 .chat-composer-actions {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 }
 
 .chat-composer-actions .primary-button {
-  min-width: 112px;
+  min-width: 96px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .chat-sidebar {
