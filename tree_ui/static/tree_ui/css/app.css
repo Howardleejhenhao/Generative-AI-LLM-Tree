@@ -470,12 +470,12 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-transcript-minimal {
   display: grid;
   align-content: start;
-  width: min(1320px, calc(100vw - 56px));
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   height: 100%;
   min-height: 0;
   max-height: none;
-  padding: 72px 0 198px;
+  padding: 72px max(18px, calc((100vw - 1320px) / 2)) 198px;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -1212,7 +1212,7 @@ body:has(.chat-page-immersive) .page-shell {
     height: 100%;
     min-height: 0;
     overflow: auto;
-    padding: 64px 0 170px;
+    padding: 64px 12px 170px;
   }
 
   .chat-composer-wrap {
