@@ -9,6 +9,14 @@ const promptInput = document.getElementById("chat-prompt-input");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
 const csrfToken = document.getElementById("chat-csrf-token").value;
+const PROMPT_MAX_HEIGHT = 176;
+
+function resizePromptInput() {
+  promptInput.style.height = "auto";
+  const nextHeight = Math.min(promptInput.scrollHeight, PROMPT_MAX_HEIGHT);
+  promptInput.style.height = `${nextHeight}px`;
+  promptInput.style.overflowY = promptInput.scrollHeight > PROMPT_MAX_HEIGHT ? "auto" : "hidden";
+}
 
 function renderTranscript(extraMessages = []) {
   renderChatTranscript(transcript, [...payload.messages, ...extraMessages]);
@@ -61,6 +69,7 @@ async function handleSubmit(event) {
         node(data) {
           payload.messages = data.node.messages;
           promptInput.value = "";
+          resizePromptInput();
           feedback.textContent = "Reply added to this node.";
           renderTranscript();
         },
@@ -77,5 +86,7 @@ async function handleSubmit(event) {
   }
 }
 
+promptInput.addEventListener("input", resizePromptInput);
 form.addEventListener("submit", handleSubmit);
+resizePromptInput();
 renderTranscript();
