@@ -498,3 +498,54 @@
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
 - The current edit UI works on the node detail panel; the dedicated node-focused chat view is still future work.
+
+## Session 2026-03-19 19:17
+
+### Session Goal
+- Add explicit multi-workspace support so users can create and switch between separate conversation graphs.
+- Move beyond the single implicit default workspace flow.
+
+### Planned Tasks
+- inspect the current workspace loading path and identify the changes needed for workspace-specific routes
+- add backend support for listing, creating, and resolving workspaces by slug
+- update the page UI so users can switch workspaces and create a new workspace from the app
+- verify the new workspace behavior with tests and local Django checks
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Confirmed the current implementation still hardcodes a single default workspace in the view layer.
+- Added workspace-specific routes so each graph can be opened by its own slug.
+- Added backend support for listing workspaces, creating new workspaces, and generating unique workspace slugs.
+- Updated the page UI with a workspace switcher and a create-workspace form.
+- Kept node creation, editing, and streaming bound to the currently selected workspace slug.
+- Added tests for homepage workspace redirect, workspace creation, and workspace-specific graph rendering.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/workspace_service.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/edit-node-rebranch`
+- New branch created/switched: `feature/multi-workspace-support`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- Users can now create separate workspaces and switch between them explicitly.
+- Each workspace has its own graph route and isolated node operations.
+
+### Next Recommended Step
+- Evolve the selected node into the future node-focused chat view described in `AGENTS.md`.
+- After that, add manual node dragging with persisted positions and graph zoom.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
