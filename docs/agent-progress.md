@@ -11,6 +11,44 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:48
+
+### Session Goal
+- Move the immersive chat transcript scrollbar to the outer page edge instead of keeping it inset with the centered content column.
+- Preserve centered readable message width while changing only where the scroll container sits.
+
+### Planned Tasks
+- widen the transcript scroll container to full width
+- keep the actual conversation content centered with responsive horizontal padding
+- verify the CSS change with checks/tests and merge it back into `feature/manual-node-positioning`
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Expanded the immersive transcript scroll container to full width so the scrollbar sits at the outer edge of the page.
+- Kept message content centered by replacing the fixed transcript width with responsive horizontal padding.
+- Verified the scrollbar placement adjustment with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/move-chat-scrollbar-edge`
+- Commits made:
+  - feature, docs, and merge-back commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+
+### Current Status
+- The immersive chat scrollbar now sits at the outer page edge, pending commit and merge-back.
+
+### Next Recommended Step
+- Finish the scrollbar edge alignment and merge it back into `feature/manual-node-positioning`.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:40
 
 ### Session Goal
