@@ -1,0 +1,182 @@
+{% extends "tree_ui/base.html" %}
+{% load static %}
+
+{% block title %}LLM-Tree Workspace{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Conversation DAG</p>
+      <h1>Branch your chat history like a working graph.</h1>
+      <p class="hero-copy">
+        This bootstrap slice ships the Django shell, graph-ready models, and a node-editor
+        interface prepared for provider and streaming integration.
+      </p>
+    </div>
+    <div class="hero-meta">
+      <div>
+        <span class="meta-label">Providers</span>
+        <strong>OpenAI + Gemini</strong>
+      </div>
+      <div>
+        <span class="meta-label">Context Rule</span>
+        <strong>Root to selected node only</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace-toolbar">
+    <div class="workspace-switcher">
+      <div class="workspace-toolbar-heading">
+        <p class="eyebrow">Workspaces</p>
+        <h2>Pick the canvas you want to work in.</h2>
+        <p class="workspace-toolbar-copy">
+          Each workspace keeps its own conversation graph, branches, and model experiments.
+        </p>
+      </div>
+      <div class="workspace-list">
+        {% for workspace in workspace_list %}
+          <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
+            {{ workspace.name }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
+      {% csrf_token %}
+      <p class="workspace-create-kicker">Create Workspace</p>
+      <h2>Start a separate graph.</h2>
+      <p class="workspace-create-copy">
+        Spin up another workspace for a new project, client, or branch-heavy experiment.
+      </p>
+      <div class="workspace-create-row">
+        <label class="form-field workspace-create-field">
+          <span>Name</span>
+          <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
+        </label>
+        <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
+      </div>
+      <p class="form-feedback workspace-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="workspace-shell">
+    <div class="canvas-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-kicker">Graph View</p>
+          <h2 id="workspace-name">Workspace</h2>
+        </div>
+        <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
+      </div>
+      <div class="graph-stage" id="graph-stage">
+        <div class="graph-canvas" id="graph-canvas">
+          <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
+            No nodes yet. Create the root node to start the conversation tree.
+          </div>
+          <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
+          <div class="graph-nodes" id="graph-nodes"></div>
+        </div>
+        <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
+        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan.</p>
+      </div>
+    </div>
+
+    <aside class="detail-panel" id="detail-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-kicker">Node Detail</p>
+          <h2 id="node-title">Select a node</h2>
+        </div>
+        <div class="detail-panel-actions">
+          <a
+            class="detail-link-button"
+            id="open-chat-link"
+            href="#"
+            data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}"
+            hidden
+          >
+            Open chat view
+          </a>
+          <span class="status-chip" id="node-provider">Waiting</span>
+        </div>
+      </div>
+
+      <dl class="node-metadata">
+        <div>
+          <dt>Model</dt>
+          <dd id="node-model">-</dd>
+        </div>
+        <div>
+          <dt>Branch Source</dt>
+          <dd id="node-parent">-</dd>
+        </div>
+        <div>
+          <dt>Summary</dt>
+          <dd id="node-summary">Select a node on the canvas to inspect its contents.</dd>
+        </div>
+      </dl>
+
+      <section class="action-box action-box-preview">
+        <h3>Recent Activity</h3>
+        <p class="edit-note">The full transcript now lives inside the node chat view. This panel only shows the latest messages.</p>
+        <div class="message-list" id="message-list"></div>
+      </section>
+      <section class="action-box">
+        <h3>Create Conversation Node</h3>
+        <p id="streaming-status">
+          This page now only creates conversation containers. Open a node after creation to start chatting inside it.
+        </p>
+        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
+          {% csrf_token %}
+          <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+          <p class="form-target" id="form-target">New node target: root</p>
+          <label class="form-toggle" for="root-mode-toggle">
+            <input id="root-mode-toggle" type="checkbox">
+            <span>Create as a separate root conversation</span>
+          </label>
+          <label class="form-field">
+            <span>Title</span>
+            <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Optional node title">
+          </label>
+          <label class="form-field">
+            <span>Provider</span>
+            <select id="node-provider-input" name="provider">
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>Model</span>
+            <select id="node-model-input" name="model_name"></select>
+          </label>
+          <button class="primary-button" id="node-submit-button" type="submit">Create conversation node</button>
+          <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
+        </form>
+        <div class="legend">
+          <span class="legend-pill legend-pill-openai">OpenAI branch</span>
+          <span class="legend-pill legend-pill-gemini">Gemini branch</span>
+        </div>
+      </section>
+
+      <section class="action-box" id="edit-box">
+        <h3>Edit Into New Variant</h3>
+        <p class="edit-note">
+          This creates a new version-safe node and keeps the original history unchanged.
+        </p>
+        <form class="composer-form" id="edit-form" data-node-edit-url-template="{% url 'create_edited_node_variant' graph_payload.workspace.slug 999999 %}">
+          <label class="form-field">
+            <span>Variant Title</span>
+            <input id="edit-title-input" name="title" type="text" maxlength="160" placeholder="Edited node title">
+          </label>
+          <div class="editor-list" id="edit-message-list"></div>
+          <button class="secondary-button" id="edit-submit-button" type="submit">Create edited variant</button>
+          <p class="form-feedback" id="edit-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </aside>
+  </section>
+
+  {{ graph_payload|json_script:"graph-payload" }}
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}"></script>
+{% endblock %}
