@@ -4,136 +4,39 @@
 {% block title %}{{ node_payload.title }} | LLM-Tree{% endblock %}
 
 {% block content %}
-  <section class="chat-page">
-    <header class="chat-topbar">
-      <div class="chat-topbar-copy">
-        <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+  <section class="chat-page chat-page-minimal">
+    <header class="chat-shell-header">
+      <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+      <div class="chat-shell-copy">
         <p class="eyebrow">Node Conversation</p>
-        <h1>{{ node_payload.title }}</h1>
-        <p class="hero-copy">
-          This view is the actual conversation space for the selected node. Each new reply is
-          appended to this node's transcript instead of creating another graph node.
-        </p>
-      </div>
-      <div class="chat-meta-card">
-        <div>
-          <span class="meta-label">Workspace</span>
-          <strong>{{ workspace.name }}</strong>
-        </div>
-        <div>
-          <span class="meta-label">Provider</span>
-          <strong>{{ node_payload.provider|title }}</strong>
-        </div>
-        <div>
-          <span class="meta-label">Model</span>
-          <strong>{{ node_payload.model_name }}</strong>
-        </div>
+        <h1 id="chat-node-title">{{ node_payload.title }}</h1>
+        <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
       </div>
     </header>
 
-    <section class="workspace-switcher chat-workspace-switcher">
-      <div class="workspace-toolbar-heading">
-        <p class="eyebrow">Workspaces</p>
-        <h2>Stay in this node or jump to another canvas.</h2>
-      </div>
-      <div class="workspace-list">
-        {% for workspace_item in workspace_list %}
-          <a class="workspace-pill{% if workspace_item.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace_item.slug %}">
-            {{ workspace_item.name }}
-          </a>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="lineage-card">
-      <div class="lineage-card-header">
-        <div>
-          <p class="eyebrow">Lineage</p>
-          <h2>Current branch path</h2>
+    <section class="chat-thread-panel chat-thread-panel-minimal">
+      <div class="chat-transcript chat-transcript-minimal" id="chat-transcript"></div>
+      <form
+        class="chat-composer chat-composer-minimal"
+        id="chat-form"
+        data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
+      >
+        {% csrf_token %}
+        <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
+        <label class="form-field chat-input-shell">
+          <span>Reply</span>
+          <textarea
+            id="chat-prompt-input"
+            name="prompt"
+            rows="5"
+            placeholder="Message this conversation"
+          ></textarea>
+        </label>
+        <div class="chat-composer-actions">
+          <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
+          <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
         </div>
-        <p class="lineage-note">Context stays on this path only.</p>
-      </div>
-      <div class="lineage-trail">
-        {% for item in lineage_items %}
-          <a class="lineage-chip{% if item.is_current %} lineage-chip-current{% endif %}" href="{{ item.url }}">
-            {{ item.title }}
-          </a>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="chat-layout">
-      <div class="chat-thread-panel">
-        <div class="chat-panel-header">
-          <div>
-            <p class="panel-kicker">Transcript</p>
-            <h2 id="chat-node-title">{{ node_payload.title }}</h2>
-          </div>
-          <span class="status-chip" id="chat-node-provider" data-provider="{{ node_payload.provider }}">{{ node_payload.provider }}</span>
-        </div>
-        <div class="chat-transcript" id="chat-transcript"></div>
-        <form
-          class="chat-composer"
-          id="chat-form"
-          data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
-        >
-          {% csrf_token %}
-          <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-          <label class="form-field">
-            <span>Reply In This Node</span>
-            <textarea
-              id="chat-prompt-input"
-              name="prompt"
-              rows="5"
-              placeholder="Reply here to continue this node conversation."
-            ></textarea>
-          </label>
-          <div class="chat-composer-actions">
-            <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
-            <button class="primary-button" id="chat-submit-button" type="submit">Send reply</button>
-          </div>
-        </form>
-      </div>
-
-      <aside class="chat-sidebar">
-        <section class="chat-sidebar-card">
-          <p class="panel-kicker">Node Summary</p>
-          <h2>What this node contains</h2>
-          <dl class="node-metadata chat-node-metadata">
-            <div>
-              <dt>Messages</dt>
-              <dd>{{ node_payload.messages|length }}</dd>
-            </div>
-            <div>
-              <dt>Parent</dt>
-              <dd>{% if node_payload.parent_id %}Node {{ node_payload.parent_id }}{% else %}Root{% endif %}</dd>
-            </div>
-            <div>
-              <dt>Summary</dt>
-              <dd>{{ node_payload.summary|default:"No summary yet." }}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section class="chat-sidebar-card">
-          <p class="panel-kicker">Existing Branches</p>
-          <h2>Children from this node</h2>
-          <p class="chat-empty-copy">Use the graph view when you want to create a new child conversation node from this point.</p>
-          {% if child_nodes %}
-            <div class="chat-branch-list">
-              {% for child in child_nodes %}
-                <a class="chat-branch-card" href="{{ child.url }}">
-                  <strong>{{ child.title }}</strong>
-                  <span>{{ child.provider|title }} / {{ child.model_name }}</span>
-                  <p>{{ child.summary|default:"Open this child branch in the chat view." }}</p>
-                </a>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="chat-empty-copy">No child branches yet. Your next reply here will create the first one.</p>
-          {% endif %}
-        </section>
-      </aside>
+      </form>
     </section>
   </section>
 

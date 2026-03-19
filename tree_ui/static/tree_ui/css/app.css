@@ -228,6 +228,42 @@ body {
   gap: 24px;
 }
 
+.chat-page-minimal {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  gap: 0;
+}
+
+.chat-shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 4px 0 18px;
+}
+
+.chat-shell-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-shell-header .ghost-link {
+  margin-bottom: 0;
+}
+
+.chat-shell-copy h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.chat-shell-meta {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .chat-topbar {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -354,6 +390,15 @@ body {
   padding: 24px;
 }
 
+.chat-thread-panel-minimal {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  background: transparent;
+}
+
 .chat-transcript {
   display: grid;
   gap: 16px;
@@ -362,9 +407,20 @@ body {
   padding: 24px 0 8px;
 }
 
+.chat-transcript-minimal {
+  max-height: none;
+  min-height: calc(100vh - 290px);
+  padding: 10px 0 24px;
+  overflow: visible;
+}
+
 .chat-message {
   display: grid;
   gap: 8px;
+}
+
+.chat-page-minimal .chat-message-role {
+  display: none;
 }
 
 .chat-message-role {
@@ -415,6 +471,28 @@ body {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid rgba(74, 58, 40, 0.12);
+}
+
+.chat-composer-minimal {
+  position: sticky;
+  bottom: 0;
+  margin-top: 0;
+  padding: 18px 0 8px;
+  background:
+    linear-gradient(180deg, rgba(244, 239, 230, 0), rgba(244, 239, 230, 0.94) 24%, rgba(244, 239, 230, 0.98));
+}
+
+.chat-input-shell span {
+  display: none;
+}
+
+.chat-input-shell textarea {
+  min-height: 120px;
+  border-radius: 24px;
+  border-color: rgba(74, 58, 40, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  box-shadow: 0 16px 34px rgba(49, 37, 22, 0.08);
 }
 
 .chat-composer-row {
@@ -948,7 +1026,8 @@ body {
   .detail-panel-actions,
   .lineage-card-header,
   .chat-panel-header,
-  .chat-composer-actions {
+  .chat-composer-actions,
+  .chat-shell-header {
     align-items: stretch;
     flex-direction: column;
   }

@@ -59,8 +59,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Node Conversation")
         self.assertContains(response, "Back to graph")
-        self.assertContains(response, "Current branch path")
-        self.assertContains(response, "Send reply")
+        self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
 
     def test_can_create_workspace_via_api(self):
