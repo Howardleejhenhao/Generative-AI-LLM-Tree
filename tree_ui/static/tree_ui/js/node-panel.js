@@ -15,3 +15,18 @@ export function renderNodeDetails(container, messages) {
     container.appendChild(article);
   }
 }
+
+export function renderStreamingPreview(container, prompt, assistantText) {
+  renderNodeDetails(container, [
+    {
+      role: "user",
+      content: prompt,
+      order_index: 0,
+    },
+    {
+      role: "assistant",
+      content: assistantText || "Generating...",
+      order_index: 1,
+    },
+  ]);
+}

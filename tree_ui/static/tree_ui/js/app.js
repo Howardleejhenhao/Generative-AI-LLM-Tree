@@ -1,7 +1,6 @@
-import { postJSON } from "./api.js";
 import { renderCanvas } from "./canvas.js";
-import { renderNodeDetails } from "./node-panel.js";
-import { getStreamingLabel } from "./streaming.js";
+import { renderNodeDetails, renderStreamingPreview } from "./node-panel.js";
+import { getStreamingLabel, streamJSON } from "./streaming.js";
 import { createViewportController } from "./viewport.js";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
@@ -64,6 +63,17 @@ function updateFormState() {
   submitButton.textContent = selectedNode ? "Create child node" : "Create root node";
 }
 
+function renderStreamingState(preview, assistantText) {
+  nodeTitle.textContent = preview.title || "Streaming draft";
+  nodeProvider.textContent = preview.provider;
+  nodeProvider.dataset.provider = preview.provider;
+  nodeModel.textContent = preview.model_name;
+  nodeParent.textContent = preview.parent_id ? `Node ${preview.parent_id}` : "Root";
+  nodeSummary.textContent = preview.summary || "Streaming response in progress.";
+  streamingStatus.textContent = `Streaming response for ${preview.provider} / ${preview.model_name}...`;
+  renderStreamingPreview(messageList, preview.prompt, assistantText);
+}
+
 function showEmptyNodeState() {
   nodeTitle.textContent = "No node selected";
   nodeProvider.textContent = "Waiting";
@@ -103,10 +113,12 @@ async function handleNodeSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
   submitButton.disabled = true;
+  let previewState = null;
+  let assistantText = "";
 
   try {
-    const result = await postJSON(
-      nodeForm.dataset.nodeCreateUrl,
+    await streamJSON(
+      nodeForm.dataset.nodeStreamUrl,
       {
         parent_id: getSelectedNode()?.id ?? null,
         title: nodeTitleInput.value,
@@ -115,13 +127,32 @@ async function handleNodeSubmit(event) {
         prompt: promptInput.value,
       },
       csrfToken,
+      {
+        preview(data) {
+          previewState = data;
+          assistantText = "";
+          renderStreamingState(previewState, assistantText);
+          feedback.textContent = "Streaming response...";
+        },
+        delta(data) {
+          assistantText += data.delta;
+          if (previewState) {
+            renderStreamingState(previewState, assistantText);
+          }
+        },
+        node(data) {
+          payload.nodes.push(data.node);
+          nodesById.set(String(data.node.id), data.node);
+          nodeTitleInput.value = "";
+          promptInput.value = "";
+          feedback.textContent = `Node "${data.node.title}" created.`;
+          updateSelection(data.node.id);
+        },
+        error(data) {
+          throw new Error(data.message || "Streaming request failed.");
+        },
+      },
     );
-    payload.nodes.push(result.node);
-    nodesById.set(String(result.node.id), result.node);
-    nodeTitleInput.value = "";
-    promptInput.value = "";
-    feedback.textContent = `Node "${result.node.title}" created.`;
-    updateSelection(result.node.id);
   } catch (error) {
     feedback.textContent = error.message;
   } finally {

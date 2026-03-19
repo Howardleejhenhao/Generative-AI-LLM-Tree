@@ -78,7 +78,7 @@
           New nodes now pass through provider-specific generation services and fall back safely
           when API keys are not configured.
         </p>
-        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
+        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}" data-node-stream-url="{% url 'stream_workspace_node' graph_payload.workspace.slug %}">
           {% csrf_token %}
           <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
           <p class="form-target" id="form-target">New node target: root</p>

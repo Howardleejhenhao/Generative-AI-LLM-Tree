@@ -84,5 +84,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 LLM_REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_REQUEST_TIMEOUT_SECONDS", "30"))
+LLM_STREAM_CHUNK_DELAY_SECONDS = float(
+    os.getenv("LLM_STREAM_CHUNK_DELAY_SECONDS", "0.02")
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

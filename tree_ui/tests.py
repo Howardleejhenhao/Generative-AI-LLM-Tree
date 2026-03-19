@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch
 
+from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -75,6 +76,31 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    def test_can_stream_node_creation_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        response = self.client.post(
+            reverse("stream_workspace_node", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "title": "Streaming root",
+                    "prompt": "Stream the first branch.",
+                    "provider": "openai",
+                    "model_name": "gpt-4.1-mini",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        streamed = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn("event: preview", streamed)
+        self.assertIn("event: delta", streamed)
+        self.assertIn("event: node", streamed)
+        self.assertEqual(ConversationNode.objects.count(), 1)
 
     def test_branch_local_context_uses_selected_lineage_only(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
