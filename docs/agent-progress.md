@@ -37,12 +37,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/maximize-node-chat-surface`
 - Commits made:
-  - feature, docs, and merge-back commits pending at time of this log edit
+  - `1f1c4cd` - `feat: maximize node chat surface`
+  - `7107c02` - `docs: update agent progress log`
+  - `43b4f18` - `merge: bring back node chat surface maximization`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- Node chat now gives substantially more room to the transcript while keeping the composer compact, pending commit and merge-back.
+- Node chat now gives substantially more room to the transcript while keeping the composer compact.
 
 ### Next Recommended Step
 - Finish the layout tuning and merge it back into `feature/manual-node-positioning`.
