@@ -11,6 +11,48 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 20:55
+
+### Session Goal
+- Clean up the node chat page so message alignment, spacing, and composer layout feel more polished.
+- Make long assistant fallback/error content wrap safely instead of breaking the visual rhythm.
+
+### Planned Tasks
+- review the current node chat template and styling against the existing UI
+- tighten the chat header and transcript column layout
+- refine message bubble sizing/alignment and composer spacing
+- verify the page with Django checks/tests and update the progress log
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Reworked the node chat page into a cleaner centered content column with more consistent spacing.
+- Tightened the header alignment so back navigation, title, and metadata line up on a shared width.
+- Refined message bubble sizing and styling so user/assistant turns read more clearly and long error text wraps cleanly.
+- Moved the composer into its own cleaner input panel with better spacing and button alignment.
+- Verified the UI cleanup with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/node-chat-layout-polish`
+- Commits made:
+  - feature and docs commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning` after commit
+
+### Current Status
+- The node chat page layout is cleaner and more consistent, pending commit and merge-back.
+
+### Next Recommended Step
+- After merge-back, continue with graph workspace zoom controls and summary refinement.
+
+### Known Issues / Blockers / Tech Debt
+- Provider fallback errors still render as raw text in the transcript; the layout now handles them more safely, but content formatting is still future polish.
+
 ## Session 2026-03-19 20:35
 
 ### Session Goal
