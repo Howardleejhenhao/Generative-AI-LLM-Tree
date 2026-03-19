@@ -284,9 +284,9 @@
 - Current branch at session start: `feature/canvas-pan-drag`
 - New branch created/switched: `feature/canvas-pan-drag`
 - Commits made:
-  - none yet in this session
+  - `938a7e3` - `fix: hide graph empty state when nodes exist`
 - Push status:
-  - not pushed yet in this session
+  - pushed to `origin/feature/canvas-pan-drag`
 
 ### Current Status
 - The empty-state banner no longer persists over real graph content.
@@ -296,3 +296,58 @@
 
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` remains untracked and outside feature commits.
+
+## Session 2026-03-19 18:48
+
+### Session Goal
+- Add streaming transport for node generation on top of the current provider abstraction.
+- Keep the app usable without billing or configured API keys by streaming fallback output.
+
+### Planned Tasks
+- inspect the current synchronous node creation path and identify streaming integration points
+- add a streaming backend endpoint for incremental node generation
+- update the front-end to read streamed events and show live assistant output in the detail panel
+- verify the streaming path with local Django checks and tests
+
+### Work Completed
+- Session started; current branch, recent commits, and repository state were reviewed.
+- Created a new feature branch for streaming node generation.
+- Added environment settings for stream chunk timing.
+- Refactored node creation so validated inputs can be reused by both synchronous creation and streaming creation.
+- Added a streaming node-generation endpoint using `StreamingHttpResponse` and SSE-style events.
+- Added front-end stream parsing and a live preview state in the detail panel for preview, delta, node, and error events.
+- Kept the existing synchronous creation endpoint available while switching the UI to the new streaming endpoint.
+- Added streaming API test coverage and verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `.env.example`
+- `llm_tree_project/settings.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/streaming.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/canvas-pan-drag`
+- New branch created/switched: `feature/streaming-node-generation`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- New node generation now streams preview text into the UI before the node is committed to the graph.
+- The fallback path also streams incrementally, so the interaction can be tested without active billing.
+
+### Next Recommended Step
+- Replace local chunked provider output with true upstream streaming from OpenAI and Gemini when keys are available.
+- Add cancellation and streaming status persistence if interrupted generations need to survive refreshes.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+- Current provider calls still fetch the full reply before chunking it locally; upstream provider-native streaming is the next refinement.
