@@ -11,6 +11,60 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 20:12
+
+### Session Goal
+- Rework the node model flow so graph pages create conversation containers while actual chatting happens only inside each node view.
+- Stop treating graph-level node creation as a single prompt/answer exchange.
+
+### Planned Tasks
+- split backend behavior between node container creation and message appending inside an existing node
+- remove the graph-page prompt composer and replace it with node creation metadata only
+- update the node chat page so sending a message appends to the current node instead of creating a child node
+- verify the new flow with Django checks and tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Reworked node creation so the graph page now creates empty conversation containers instead of generating a prompt/answer pair immediately.
+- Added a node-message streaming endpoint that appends user and assistant messages to the currently opened node.
+- Updated the node chat page so sending a reply now extends the same node transcript instead of creating a child node on every turn.
+- Removed the graph-page prompt composer and replaced it with metadata-only node creation controls.
+- Changed the graph detail panel to show recent activity only, keeping the full transcript inside the dedicated node chat view.
+- Updated regression tests to cover the new container-creation flow and in-place message streaming.
+- Verified the refactor with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/node-focused-chat-view`
+- New branch created/switched: `feature/node-conversation-session-model`
+- Commits made:
+  - `d608582` - `feat: treat nodes as conversation sessions`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The graph page now only manages conversation nodes, while real chatting happens inside each node page.
+- A node can hold an ongoing multi-turn transcript without creating extra graph nodes for every reply.
+
+### Next Recommended Step
+- Add manual node dragging with persisted positions so the graph layout matches the new conversation-container model better.
+- After that, add zoom controls and continue shifting the product toward the full-page graph workspace from `AGENTS.md`.
+
+### Known Issues / Blockers / Tech Debt
+- Creating child conversation nodes still happens from the graph page rather than directly inside the node chat view.
+- The graph detail panel only shows recent messages; richer per-node summaries are still future polish.
+
 ## Session 2026-03-19 19:48
 
 ### Session Goal
