@@ -336,9 +336,10 @@
 - Current branch at session start: `feature/canvas-pan-drag`
 - New branch created/switched: `feature/streaming-node-generation`
 - Commits made:
-  - none yet in this session
+  - `d7201a9` - `feat: stream node generation to the UI`
+  - `1beb4ce` - `docs: update agent progress log`
 - Push status:
-  - not pushed yet in this session
+  - pushed to `origin/feature/streaming-node-generation`
 
 ### Current Status
 - New node generation now streams preview text into the UI before the node is committed to the graph.
