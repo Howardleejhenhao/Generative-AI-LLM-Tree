@@ -31,6 +31,7 @@
 - Centered the viewport on newly created nodes so follow-up branches and edited variants remain visible immediately after creation.
 - Refreshed viewport constraints when the inspector width changes so collapse/restore does not leave stale pan bounds.
 - Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Merged `feature/viewport-fit-controls` back into `main` and re-ran `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test` on the merged branch.
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -45,16 +46,19 @@
 - Current branch at session start: `main`
 - New branch created/switched: `feature/viewport-fit-controls`
 - Commits made:
-  - none recorded yet
+  - `0b76b82` - `feat: add viewport fit controls`
+  - `b140ecd` - `docs: update agent progress log`
+  - `f647736` - `merge: bring back viewport fit controls`
 - Push status:
-  - not yet recorded
+  - pushed to `origin/feature/viewport-fit-controls`
+  - merge-back to `main` completed; final `main` push still pending at the time of this log update
 
 ### Current Status
-- Viewport fitting is implemented and validated locally on `feature/viewport-fit-controls`.
+- Viewport fitting is implemented, validated, and merged back into `main`.
 
 ### Next Recommended Step
-- Commit and push `feature/viewport-fit-controls`.
-- Merge it back into `main`, then clean up the temporary branch.
+- Push the updated `main` branch and delete the temporary `feature/viewport-fit-controls` branch.
+- After cleanup, continue with higher-level navigation aids such as minimap-style navigation if still useful.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
