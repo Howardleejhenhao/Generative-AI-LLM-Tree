@@ -1,8 +1,19 @@
-function clampPan(value, min, max) {
+const MIN_ZOOM = 0.55;
+const MAX_ZOOM = 1.75;
+const DEFAULT_ZOOM = 1;
+const ZOOM_STEP = 0.15;
+
+function clampValue(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-export function createViewportController() {
+function roundZoom(value) {
+  return Math.round(value * 100) / 100;
+}
+
+export function createViewportController(options = {}) {
+  const { onChange } = options;
+
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
   const hint = document.getElementById("graph-hint");
@@ -10,6 +21,7 @@ export function createViewportController() {
   const state = {
     panX: 0,
     panY: 0,
+    zoom: DEFAULT_ZOOM,
     canvasWidth: 1600,
     canvasHeight: 1200,
     dragging: false,
@@ -19,28 +31,94 @@ export function createViewportController() {
     pointerStartY: 0,
   };
 
-  function getBounds() {
-    const minX = Math.min(0, stage.clientWidth - state.canvasWidth);
-    const minY = Math.min(0, stage.clientHeight - state.canvasHeight);
-    const maxX = 0;
-    const maxY = 0;
-    return { minX, minY, maxX, maxY };
+  function getScaledCanvasSize() {
+    return {
+      width: state.canvasWidth * state.zoom,
+      height: state.canvasHeight * state.zoom,
+    };
   }
 
-  function applyPan() {
+  function getBounds() {
+    const { width, height } = getScaledCanvasSize();
+    const stageWidth = stage.clientWidth;
+    const stageHeight = stage.clientHeight;
+
+    if (width <= stageWidth) {
+      const centeredX = (stageWidth - width) / 2;
+      if (height <= stageHeight) {
+        const centeredY = (stageHeight - height) / 2;
+        return { minX: centeredX, maxX: centeredX, minY: centeredY, maxY: centeredY };
+      }
+      return {
+        minX: centeredX,
+        maxX: centeredX,
+        minY: stageHeight - height,
+        maxY: 0,
+      };
+    }
+
+    if (height <= stageHeight) {
+      const centeredY = (stageHeight - height) / 2;
+      return {
+        minX: stageWidth - width,
+        maxX: 0,
+        minY: centeredY,
+        maxY: centeredY,
+      };
+    }
+
+    return {
+      minX: stageWidth - width,
+      minY: stageHeight - height,
+      maxX: 0,
+      maxY: 0,
+    };
+  }
+
+  function publishState() {
+    onChange?.({
+      zoom: state.zoom,
+      percent: Math.round(state.zoom * 100),
+      canZoomIn: state.zoom < MAX_ZOOM,
+      canZoomOut: state.zoom > MIN_ZOOM,
+      hasNodes: stage.dataset.hasNodes === "true",
+    });
+  }
+
+  function applyTransform() {
     const { minX, minY, maxX, maxY } = getBounds();
-    state.panX = clampPan(state.panX, minX, maxX);
-    state.panY = clampPan(state.panY, minY, maxY);
-    canvas.style.transform = `translate(${state.panX}px, ${state.panY}px)`;
+    state.panX = clampValue(state.panX, minX, maxX);
+    state.panY = clampValue(state.panY, minY, maxY);
+    canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
     stage.dataset.dragging = String(state.dragging);
+    stage.dataset.zoom = String(Math.round(state.zoom * 100));
     hint.hidden = state.dragging;
+    publishState();
   }
 
   function setCanvasMetrics(metrics, hasNodes) {
     state.canvasWidth = metrics.width;
     state.canvasHeight = metrics.height;
     stage.dataset.hasNodes = String(hasNodes);
-    applyPan();
+    applyTransform();
+  }
+
+  function setZoom(nextZoom, anchor = null) {
+    const resolvedZoom = clampValue(roundZoom(nextZoom), MIN_ZOOM, MAX_ZOOM);
+    if (resolvedZoom === state.zoom) {
+      applyTransform();
+      return;
+    }
+
+    const anchorX = anchor?.x ?? (stage.clientWidth / 2);
+    const anchorY = anchor?.y ?? (stage.clientHeight / 2);
+    const worldX = (anchorX - state.panX) / state.zoom;
+    const worldY = (anchorY - state.panY) / state.zoom;
+
+    state.zoom = resolvedZoom;
+    state.panX = anchorX - (worldX * state.zoom);
+    state.panY = anchorY - (worldY * state.zoom);
+    applyTransform();
   }
 
   function onPointerDown(event) {
@@ -48,6 +126,9 @@ export function createViewportController() {
       return;
     }
     if (event.target.closest(".graph-node")) {
+      return;
+    }
+    if (event.target.closest(".graph-controls")) {
       return;
     }
     if (stage.dataset.hasNodes !== "true") {
@@ -60,7 +141,7 @@ export function createViewportController() {
     state.pointerStartX = event.clientX;
     state.pointerStartY = event.clientY;
     stage.setPointerCapture(event.pointerId);
-    applyPan();
+    applyTransform();
     event.preventDefault();
   }
 
@@ -73,7 +154,7 @@ export function createViewportController() {
     const deltaY = event.clientY - state.pointerStartY;
     state.panX = state.startPanX + deltaX;
     state.panY = state.startPanY + deltaY;
-    applyPan();
+    applyTransform();
   }
 
   function stopDragging(event) {
@@ -82,21 +163,51 @@ export function createViewportController() {
     }
 
     state.dragging = false;
-    if (event) {
+    if (event && stage.hasPointerCapture(event.pointerId)) {
       stage.releasePointerCapture(event.pointerId);
     }
-    applyPan();
+    applyTransform();
+  }
+
+  function onWheel(event) {
+    if (stage.dataset.hasNodes !== "true") {
+      return;
+    }
+    if (!event.ctrlKey && !event.metaKey) {
+      return;
+    }
+
+    const rect = stage.getBoundingClientRect();
+    const direction = event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+    setZoom(state.zoom + direction, {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+    event.preventDefault();
   }
 
   stage.addEventListener("pointerdown", onPointerDown);
   stage.addEventListener("pointermove", onPointerMove);
   stage.addEventListener("pointerup", stopDragging);
   stage.addEventListener("pointercancel", stopDragging);
-  window.addEventListener("resize", applyPan);
+  stage.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("resize", applyTransform);
 
-  applyPan();
+  applyTransform();
 
   return {
+    getScale() {
+      return state.zoom;
+    },
+    resetZoom() {
+      setZoom(DEFAULT_ZOOM);
+    },
     setCanvasMetrics,
+    zoomIn() {
+      setZoom(state.zoom + ZOOM_STEP);
+    },
+    zoomOut() {
+      setZoom(state.zoom - ZOOM_STEP);
+    },
   };
 }

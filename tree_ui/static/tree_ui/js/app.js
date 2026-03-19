@@ -8,6 +8,10 @@ const payload = JSON.parse(document.getElementById("graph-payload").textContent)
 
 const workspaceName = document.getElementById("workspace-name");
 const graphStatus = document.getElementById("graph-status");
+const zoomOutButton = document.getElementById("graph-zoom-out");
+const zoomInButton = document.getElementById("graph-zoom-in");
+const zoomResetButton = document.getElementById("graph-zoom-reset");
+const zoomLevel = document.getElementById("graph-zoom-level");
 const nodeTitle = document.getElementById("node-title");
 const nodeProvider = document.getElementById("node-provider");
 const openChatLink = document.getElementById("open-chat-link");
@@ -35,7 +39,14 @@ const editSubmitButton = document.getElementById("edit-submit-button");
 const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
 
-const viewport = createViewportController();
+function handleViewportChange(viewportState) {
+  zoomLevel.textContent = `${viewportState.percent}%`;
+  zoomOutButton.disabled = !viewportState.hasNodes || !viewportState.canZoomOut;
+  zoomInButton.disabled = !viewportState.hasNodes || !viewportState.canZoomIn;
+  zoomResetButton.disabled = !viewportState.hasNodes || viewportState.percent === 100;
+}
+
+const viewport = createViewportController({ onChange: handleViewportChange });
 
 workspaceName.textContent = payload.workspace.name;
 
@@ -110,6 +121,7 @@ function renderGraphCanvas() {
     onSelect: updateSelection,
     onPositionCommit: handleNodePositionCommit,
     onMetricsChange: handleCanvasMetricsChange,
+    getViewportScale: () => viewport.getScale(),
   });
 }
 
@@ -278,6 +290,9 @@ rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
+zoomOutButton.addEventListener("click", () => viewport.zoomOut());
+zoomInButton.addEventListener("click", () => viewport.zoomIn());
+zoomResetButton.addEventListener("click", () => viewport.resetZoom());
 syncModelOptions(providerInput, modelInput);
 renderGraphCanvas();
 updateSelection(selectedNodeId);
