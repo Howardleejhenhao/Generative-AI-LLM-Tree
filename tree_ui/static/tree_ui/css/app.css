@@ -1041,7 +1041,9 @@ body:has(.chat-page-immersive) .page-shell {
   position: absolute;
   inset: 24px;
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 18px;
   padding: 24px;
   border: 1px dashed rgba(74, 58, 40, 0.22);
   border-radius: 18px;
@@ -1052,6 +1054,76 @@ body:has(.chat-page-immersive) .page-shell {
 
 .graph-empty[hidden] {
   display: none;
+}
+
+.graph-empty-copy-block {
+  display: grid;
+  gap: 8px;
+  max-width: 38rem;
+}
+
+.graph-empty-copy-block strong {
+  font-size: 1.22rem;
+  color: var(--text);
+}
+
+.graph-empty-copy-block p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.graph-empty-presets,
+.quick-start-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-empty-presets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(960px, 100%);
+}
+
+.quick-start-button {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 242, 232, 0.88));
+  box-shadow: 0 14px 28px rgba(49, 37, 22, 0.08);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.quick-start-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(49, 37, 22, 0.12);
+  border-color: rgba(74, 58, 40, 0.2);
+}
+
+.quick-start-button-compact {
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.quick-start-label {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.quick-start-meta,
+.quick-start-copy {
+  color: var(--muted);
+}
+
+.quick-start-copy {
+  line-height: 1.5;
 }
 
 .graph-hint {
@@ -1941,6 +2013,10 @@ kbd {
 
   .hero-meta-compact {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .graph-empty-presets {
+    grid-template-columns: 1fr;
   }
 
   .workspace-help-grid {

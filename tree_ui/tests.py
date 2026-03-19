@@ -43,6 +43,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Pick the graph you want to work in.")
         self.assertContains(response, "Live canvas summary")
         self.assertContains(response, "Selected focus")
+        self.assertContains(response, "Quick Start")
+        self.assertContains(response, "Research lane")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

@@ -159,7 +159,48 @@
         </section>
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
-            No nodes yet. Create the root node to start the conversation tree.
+            <div class="graph-empty-copy-block">
+              <strong>No nodes yet. Start with a conversation lane.</strong>
+              <p>Create the first root node manually, or use a quick-start preset to prefill the form.</p>
+            </div>
+            <div class="graph-empty-presets">
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Research lane"
+                data-provider="openai"
+                data-model-name="gpt-4.1-mini"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Research lane</span>
+                <span class="quick-start-meta">OpenAI / gpt-4.1-mini</span>
+                <span class="quick-start-copy">Start a general-purpose exploration branch.</span>
+              </button>
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Model comparison"
+                data-provider="gemini"
+                data-model-name="gemini-2.0-flash"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Model comparison</span>
+                <span class="quick-start-meta">Gemini / gemini-2.0-flash</span>
+                <span class="quick-start-copy">Spin up a separate branch for side-by-side output comparison.</span>
+              </button>
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Branch review"
+                data-provider="openai"
+                data-model-name="gpt-4.1"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Branch review</span>
+                <span class="quick-start-meta">OpenAI / gpt-4.1</span>
+                <span class="quick-start-copy">Create a root conversation intended for critique and iteration.</span>
+              </button>
+            </div>
           </div>
           <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
           <div class="graph-nodes" id="graph-nodes"></div>
@@ -226,6 +267,45 @@
         <h3>Recent Activity</h3>
         <p class="edit-note">The full transcript now lives inside the node chat view. This panel only shows the latest messages.</p>
         <div class="message-list" id="message-list"></div>
+      </section>
+      <section class="action-box action-box-quickstart">
+        <h3>Quick Start</h3>
+        <p class="edit-note">Prefill the node form with a clean starting configuration, then create or tweak it.</p>
+        <div class="quick-start-stack">
+          <button
+            class="quick-start-button quick-start-button-compact"
+            type="button"
+            data-title="Research lane"
+            data-provider="openai"
+            data-model-name="gpt-4.1-mini"
+            data-root-mode="true"
+          >
+            <span class="quick-start-label">Research lane</span>
+            <span class="quick-start-meta">OpenAI / gpt-4.1-mini</span>
+          </button>
+          <button
+            class="quick-start-button quick-start-button-compact"
+            type="button"
+            data-title="Model comparison"
+            data-provider="gemini"
+            data-model-name="gemini-2.0-flash"
+            data-root-mode="true"
+          >
+            <span class="quick-start-label">Model comparison</span>
+            <span class="quick-start-meta">Gemini / gemini-2.0-flash</span>
+          </button>
+          <button
+            class="quick-start-button quick-start-button-compact"
+            type="button"
+            data-title="Follow-up branch"
+            data-provider="openai"
+            data-model-name="gpt-4.1-mini"
+            data-root-mode="false"
+          >
+            <span class="quick-start-label">Follow-up branch</span>
+            <span class="quick-start-meta">Uses the current selection as parent</span>
+          </button>
+        </div>
       </section>
       <section class="action-box">
         <h3>Create Conversation Node</h3>

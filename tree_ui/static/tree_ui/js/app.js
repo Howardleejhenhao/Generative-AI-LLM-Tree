@@ -55,6 +55,7 @@ const nodeTitleInput = document.getElementById("node-title-input");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
 const submitButton = document.getElementById("node-submit-button");
+const quickStartButtons = Array.from(document.querySelectorAll(".quick-start-button"));
 const rootModeToggle = document.getElementById("root-mode-toggle");
 const editBox = document.getElementById("edit-box");
 const editForm = document.getElementById("edit-form");
@@ -361,6 +362,23 @@ function toggleDetailPanel() {
   setDetailPanelCollapsed(workspaceShell.dataset.detailPanelCollapsed !== "true");
 }
 
+function applyQuickStart(button) {
+  const { modelName, provider, rootMode, title } = button.dataset;
+  nodeTitleInput.value = title || "";
+  providerInput.value = provider || providerInput.value;
+  syncModelOptions(providerInput, modelInput);
+  if (modelName) {
+    modelInput.value = modelName;
+  }
+  rootModeToggle.checked = rootMode === "true";
+  updateFormState();
+  feedback.textContent = title
+    ? `Preset loaded: ${title}.`
+    : "Preset loaded.";
+  nodeTitleInput.focus();
+  nodeTitleInput.select();
+}
+
 function handleWorkspaceKeydown(event) {
   if (isTypingTarget(event.target)) {
     if (event.key === "Escape" && workspaceHelpDialog.hidden === false) {
@@ -540,6 +558,9 @@ fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());
+for (const button of quickStartButtons) {
+  button.addEventListener("click", () => applyQuickStart(button));
+}
 window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
 setWorkspaceHelpOpen(false);

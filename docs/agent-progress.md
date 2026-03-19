@@ -28,7 +28,10 @@
 - Added keyboard shortcuts for zooming, fit view, reset zoom, inspector toggle, help toggle, and opening the selected node chat.
 - Extended graph selection state so the active node lineage is highlighted directly on the canvas through nodes plus connecting edges.
 - Surfaced active-path metadata in the workspace summary so branch depth and selected node mode are visible without opening the inspector.
+- Added quick-start onboarding presets in both the empty-canvas state and the inspector so a new workspace can be initialized faster.
+- Wired quick-start actions to prefill node title, provider, model, and root/child mode directly into the existing node creation form.
 - Verified the interaction polish with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Re-ran `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test` after the onboarding additions.
 
 ### Files Changed
 - `docs/agent-progress.md`
