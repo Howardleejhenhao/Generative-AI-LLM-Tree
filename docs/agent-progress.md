@@ -11,6 +11,45 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:40
+
+### Session Goal
+- Continue refining the immersive node chat UI by reducing header chrome further.
+- Keep navigation available while making the transcript feel even more like the primary surface.
+
+### Planned Tasks
+- tone down the floating header styling and reduce its visual weight
+- keep the one-line header layout but make it feel closer to a lightweight chat toolbar
+- verify the UI with checks/tests and merge the refinement back into `feature/manual-node-positioning`
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Reduced the immersive node chat header chrome further by making the toolbar lighter, thinner, and less card-like.
+- Added a subtle top fade so the header stays readable without fighting for attention against the transcript.
+- Tightened the header spacing and transcript top padding so more of the screen stays focused on conversation content.
+- Verified the lighter chat header styling with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/reduce-chat-header-chrome`
+- Commits made:
+  - feature, docs, and merge-back commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+
+### Current Status
+- The immersive chat header is lighter and less intrusive, pending commit and merge-back.
+
+### Next Recommended Step
+- Finish the lighter header styling and merge it back into `feature/manual-node-positioning`.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:28
 
 ### Session Goal
