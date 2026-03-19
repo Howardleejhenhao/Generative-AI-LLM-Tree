@@ -47,7 +47,7 @@ function applyNodePosition(card, node) {
 }
 
 export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
-  const { onSelect, onPositionCommit, onMetricsChange } = handlers;
+  const { onSelect, onPositionCommit, onMetricsChange, getViewportScale } = handlers;
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
   const nodeLayer = document.getElementById("graph-nodes");
@@ -162,9 +162,10 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         button.dataset.suppressClick = "true";
       }
 
+      const scale = Math.max(getViewportScale?.() || 1, 0.01);
       setNodePosition(node, {
-        x: dragState.startX + deltaX,
-        y: dragState.startY + deltaY,
+        x: dragState.startX + (deltaX / scale),
+        y: dragState.startY + (deltaY / scale),
       });
     });
 

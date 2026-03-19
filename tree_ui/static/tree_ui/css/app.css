@@ -743,6 +743,74 @@ body:has(.chat-page-immersive) .page-shell {
   cursor: grab;
 }
 
+.graph-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  background: rgba(255, 250, 242, 0.9);
+  box-shadow: 0 12px 28px rgba(49, 37, 22, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.graph-controls-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.graph-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-control-button {
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 12px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.graph-control-button:hover:enabled {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 20px rgba(49, 37, 22, 0.08);
+}
+
+.graph-control-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.graph-control-button-reset {
+  min-width: 68px;
+}
+
+.graph-zoom-level {
+  min-width: 4.4ch;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .graph-stage[data-has-nodes="false"] {
   cursor: default;
 }
@@ -762,7 +830,8 @@ body:has(.chat-page-immersive) .page-shell {
 .graph-canvas {
   position: absolute;
   inset: 0 auto auto 0;
-  transform: translate(0, 0);
+  transform: translate(0, 0) scale(1);
+  transform-origin: top left;
   will-change: transform;
 }
 
@@ -802,7 +871,7 @@ body:has(.chat-page-immersive) .page-shell {
   left: 16px;
   bottom: 16px;
   margin: 0;
-  max-width: min(48ch, calc(100% - 220px));
+  max-width: min(48ch, calc(100% - 320px));
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 250, 242, 0.92);
@@ -1234,6 +1303,24 @@ body:has(.chat-page-immersive) .page-shell {
 
   .graph-stage {
     min-height: 780px;
-    overflow: auto;
+  }
+
+  .graph-controls {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  .graph-controls-row {
+    flex-wrap: wrap;
+  }
+
+  .graph-status {
+    max-width: calc(100% - 32px);
+    bottom: 72px;
+  }
+
+  .graph-hint {
+    max-width: calc(100% - 32px);
   }
 }

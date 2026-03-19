@@ -28,7 +28,11 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
-        self.assertContains(response, "Drag nodes to rearrange the layout. Drag the background to pan.")
+        self.assertContains(
+            response,
+            "Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.",
+        )
+        self.assertContains(response, "Workspace Zoom")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the canvas you want to work in.")
 

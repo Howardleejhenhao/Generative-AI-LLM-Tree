@@ -70,6 +70,15 @@
         <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
       </div>
       <div class="graph-stage" id="graph-stage">
+        <div class="graph-controls" aria-label="Graph zoom controls">
+          <p class="graph-controls-label">Workspace Zoom</p>
+          <div class="graph-controls-row">
+            <button class="graph-control-button" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
+            <span class="graph-zoom-level" id="graph-zoom-level">100%</span>
+            <button class="graph-control-button" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button class="graph-control-button graph-control-button-reset" id="graph-zoom-reset" type="button">Reset</button>
+          </div>
+        </div>
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             No nodes yet. Create the root node to start the conversation tree.
@@ -78,7 +87,7 @@
           <div class="graph-nodes" id="graph-nodes"></div>
         </div>
         <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
-        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan.</p>
+        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.</p>
       </div>
     </div>
 
