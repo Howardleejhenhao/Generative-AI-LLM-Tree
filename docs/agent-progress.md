@@ -84,3 +84,61 @@
 - The UI currently renders demo graph data when the database has no workspace records.
 - Provider integration, branch-local context assembly, live streaming, and edit/re-branch behavior are not implemented yet.
 - `AGENTS.md` remains untracked in the worktree and was intentionally not included in the bootstrap commit.
+
+## Session 2026-03-19 17:03
+
+### Session Goal
+- Replace the demo-only graph with a database-backed workspace flow.
+- Let the UI create and persist root nodes and child branches from the page.
+
+### Planned Tasks
+- inspect the current implementation and preserve any existing uncommitted changes
+- add backend services and API endpoints for default workspace loading and node creation
+- update the template and JavaScript so users can create nodes from the UI
+- verify the flow with tests and local Django checks
+
+### Work Completed
+- Session started; current branch, worktree state, and latest progress log were reviewed.
+- Existing `entrypoint.sh` worktree change was inspected before implementation.
+- Replaced the demo-only homepage flow with a default workspace loaded from the database.
+- Added backend services to serialize graph payloads, provision the default workspace, and create nodes with stubbed assistant replies.
+- Added a POST API endpoint for creating root nodes and child branches in the selected workspace.
+- Updated the Django Template and modular JavaScript so the UI can create nodes, choose provider/model, and refresh the graph without reloading.
+- Added test coverage for homepage workspace provisioning plus root and child node creation.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `entrypoint.sh`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/api.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/workspace_service.py`
+
+### Git Workflow
+- Current branch at session start: `feature/bootstrap-django-docker`
+- New branch created/switched: `feature/node-creation-flow`
+- Commits made:
+  - `25ddeda` - `feat: add workspace-backed node creation flow`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The page now uses a real default workspace instead of the temporary demo payload.
+- Users can create a root node or branch from a selected node directly from the side panel.
+- New nodes are persisted in SQLite and rendered immediately on the graph.
+
+### Next Recommended Step
+- Replace the stubbed assistant reply generator with real OpenAI and Gemini provider abstractions.
+- Add branch-local context assembly for provider requests and prepare the streaming transport.
+
+### Known Issues / Blockers / Tech Debt
+- Assistant replies are still stubbed locally; real provider calls and streaming are not wired yet.
+- Node editing and version-safe re-branching remain unimplemented.
