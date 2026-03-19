@@ -46,15 +46,17 @@
 - New branch created/switched: `feature/workspace-ui-polish`
 - Commits made:
   - `5cd15c5` - `feat: polish workspace and chat ui`
+  - `bad339e` - `docs: finalize workspace ui polish session`
 - Push status:
-  - not pushed yet; final progress-log commit and branch push still pending
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - Workspace and focused chat UI polish are implemented and verified locally.
 - Existing graph controls, minimap, viewport fitting, and node workflows remain intact after the redesign.
+- The feature branch is now backed up remotely and ready either for follow-up work or a merge path back into `main`.
 
 ### Next Recommended Step
-- Finalize session documentation, push `feature/workspace-ui-polish`, and then either merge the branch or continue with higher-level workflow polish.
+- Review the polished branch in the browser, then either merge it back into `main` or continue with another UX pass such as keyboard shortcuts or denser node inspection flows.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
