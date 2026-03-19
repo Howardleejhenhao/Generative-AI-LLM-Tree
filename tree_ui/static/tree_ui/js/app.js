@@ -6,8 +6,13 @@ import { createViewportController } from "./viewport.js";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 
+const DETAIL_PANEL_STORAGE_KEY = "llm-tree-detail-panel-collapsed";
+
+const workspaceShell = document.getElementById("workspace-shell");
 const workspaceName = document.getElementById("workspace-name");
 const graphStatus = document.getElementById("graph-status");
+const detailPanelToggle = document.getElementById("detail-panel-toggle");
+const detailPanelPeek = document.getElementById("detail-panel-peek");
 const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
 const zoomResetButton = document.getElementById("graph-zoom-reset");
@@ -38,6 +43,30 @@ const editMessageList = document.getElementById("edit-message-list");
 const editSubmitButton = document.getElementById("edit-submit-button");
 const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
+
+function readStoredDetailPanelState() {
+  try {
+    return window.localStorage.getItem(DETAIL_PANEL_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeStoredDetailPanelState(isCollapsed) {
+  try {
+    window.localStorage.setItem(DETAIL_PANEL_STORAGE_KEY, String(isCollapsed));
+  } catch {
+    // Ignore storage failures and keep the UI state in-memory only.
+  }
+}
+
+function setDetailPanelCollapsed(isCollapsed) {
+  workspaceShell.dataset.detailPanelCollapsed = String(isCollapsed);
+  detailPanelToggle.textContent = isCollapsed ? "Show inspector" : "Hide inspector";
+  detailPanelToggle.setAttribute("aria-expanded", String(!isCollapsed));
+  detailPanelPeek.hidden = !isCollapsed;
+  writeStoredDetailPanelState(isCollapsed);
+}
 
 function handleViewportChange(viewportState) {
   zoomLevel.textContent = `${viewportState.percent}%`;
@@ -290,9 +319,14 @@ rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
+detailPanelToggle.addEventListener("click", () => {
+  setDetailPanelCollapsed(workspaceShell.dataset.detailPanelCollapsed !== "true");
+});
+detailPanelPeek.addEventListener("click", () => setDetailPanelCollapsed(false));
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());
 syncModelOptions(providerInput, modelInput);
+setDetailPanelCollapsed(readStoredDetailPanelState());
 renderGraphCanvas();
 updateSelection(selectedNodeId);

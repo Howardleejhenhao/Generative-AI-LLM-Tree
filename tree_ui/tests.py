@@ -28,13 +28,15 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
+        self.assertContains(response, "Use the graph as the main workspace, not a side panel.")
         self.assertContains(
             response,
             "Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.",
         )
         self.assertContains(response, "Workspace Zoom")
+        self.assertContains(response, "Hide inspector")
         self.assertContains(response, "Create Workspace")
-        self.assertContains(response, "Pick the canvas you want to work in.")
+        self.assertContains(response, "Pick the graph you want to work in.")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
