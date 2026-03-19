@@ -42,16 +42,16 @@
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
-  - none yet
+  - `5afe16e` - `feat: add graph shortcut and lineage cues`
 - Push status:
-  - branch already exists on `origin`, additional work not pushed yet
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The previous visual redesign is already committed and pushed.
-- This follow-up pass added interaction clarity on top of that redesign and is ready to be committed next.
+- This follow-up pass added interaction clarity on top of that redesign and is now pushed on the same feature branch.
 
 ### Next Recommended Step
-- Commit and push the interaction-polish slice, then continue with any further UX refinements from the same branch or prepare a merge path.
+- Continue with another UX refinement slice from `feature/workspace-ui-polish`, or review the branch in the browser and prepare the eventual merge path back to `main`.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
