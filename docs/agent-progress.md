@@ -36,12 +36,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/move-chat-scrollbar-edge`
 - Commits made:
-  - feature, docs, and merge-back commits pending at time of this log edit
+  - `e165975` - `fix: move chat scrollbar to edge`
+  - `debd2db` - `docs: update agent progress log`
+  - `3df5e94` - `merge: bring back chat scrollbar edge fix`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The immersive chat scrollbar now sits at the outer page edge, pending commit and merge-back.
+- The immersive chat scrollbar now sits at the outer page edge.
 
 ### Next Recommended Step
 - Finish the scrollbar edge alignment and merge it back into `feature/manual-node-positioning`.
