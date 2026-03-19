@@ -442,3 +442,58 @@
 
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` was previously untracked; it should now be tracked because the user explicitly requested updates to it.
+
+## Session 2026-03-19 19:09
+
+### Session Goal
+- Implement version-safe editing of an old node and allow re-branching from the edited result.
+- Preserve original history while making the edited variant selectable like any other node.
+
+### Planned Tasks
+- inspect the current data model and graph payload for edit metadata support
+- add backend services and API endpoints for creating edited node variants
+- update the detail panel UI so a selected node can be edited into a new version
+- verify the edit-and-rebranch flow with tests and local Django checks
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Confirmed that the model already includes `edited_from`, so the next step is wiring the workflow and UI.
+- Added a backend service for creating version-safe edited node variants without overwriting the original node.
+- Added an API endpoint for turning a selected node into an edited variant.
+- Updated the detail panel so a selected node can be edited into a new version from the UI.
+- Preserved original message bundles while letting the edited variant be selected and branched like any other node.
+- Replaced a few user-content rendering paths with safer DOM creation instead of string-based HTML injection.
+- Added regression tests for edited variant creation through both the service layer and API.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_editing.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/multi-root-node-creation`
+- New branch created/switched: `feature/edit-node-rebranch`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- Users can now create an edited node variant from a selected historical node without mutating the original.
+- The edited variant is persisted, selectable on the graph, and can be used as the base for future branches.
+
+### Next Recommended Step
+- Add multi-workspace support so separate graphs can be created and switched explicitly.
+- Consider evolving the edited variant UI into the future node-focused chat view described in `AGENTS.md`.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
+- The current edit UI works on the node detail panel; the dedicated node-focused chat view is still future work.
