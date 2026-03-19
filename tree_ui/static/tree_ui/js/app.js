@@ -1,4 +1,5 @@
 import { renderCanvas } from "./canvas.js";
+import { syncModelOptions } from "./model-options.js";
 import {
   renderMessageEditors,
   renderNodeDetails,
@@ -12,6 +13,7 @@ const payload = JSON.parse(document.getElementById("graph-payload").textContent)
 const workspaceName = document.getElementById("workspace-name");
 const nodeTitle = document.getElementById("node-title");
 const nodeProvider = document.getElementById("node-provider");
+const openChatLink = document.getElementById("open-chat-link");
 const nodeModel = document.getElementById("node-model");
 const nodeParent = document.getElementById("node-parent");
 const nodeSummary = document.getElementById("node-summary");
@@ -38,10 +40,6 @@ const editSubmitButton = document.getElementById("edit-submit-button");
 const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
 
-const MODEL_OPTIONS = {
-  openai: ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"],
-  gemini: ["gemini-2.0-flash", "gemini-2.0-pro-exp", "gemini-1.5-pro"],
-};
 const viewport = createViewportController();
 
 workspaceName.textContent = payload.workspace.name;
@@ -49,25 +47,12 @@ workspaceName.textContent = payload.workspace.name;
 const nodesById = new Map(payload.nodes.map((node) => [String(node.id), node]));
 let selectedNodeId = String(payload.nodes[0]?.id || "");
 
-function syncModelOptions() {
-  const provider = providerInput.value;
-  const options = MODEL_OPTIONS[provider] || [];
-  const previousValue = modelInput.value;
-  modelInput.innerHTML = "";
-
-  for (const option of options) {
-    const element = document.createElement("option");
-    element.value = option;
-    element.textContent = option;
-    if (option === previousValue) {
-      element.selected = true;
-    }
-    modelInput.appendChild(element);
-  }
-}
-
 function getSelectedNode() {
   return nodesById.get(selectedNodeId) || null;
+}
+
+function getNodeChatUrl(nodeId) {
+  return openChatLink.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
 }
 
 function isRootModeEnabled() {
@@ -103,6 +88,7 @@ function showEmptyNodeState() {
   nodeTitle.textContent = "No node selected";
   nodeProvider.textContent = "Waiting";
   delete nodeProvider.dataset.provider;
+  openChatLink.hidden = true;
   nodeModel.textContent = "-";
   nodeParent.textContent = "Root";
   nodeSummary.textContent = "Create a root node to begin the workspace.";
@@ -125,6 +111,8 @@ function updateSelection(nodeId) {
   nodeTitle.textContent = node.title;
   nodeProvider.textContent = node.provider;
   nodeProvider.dataset.provider = node.provider;
+  openChatLink.hidden = false;
+  openChatLink.href = getNodeChatUrl(node.id);
   nodeModel.textContent = node.model_name;
   nodeParent.textContent = node.parent_id ? `Node ${node.parent_id}` : "Root";
   nodeSummary.textContent = node.summary || "No summary yet.";
@@ -270,12 +258,12 @@ async function handleNodeSubmit(event) {
   }
 }
 
-providerInput.addEventListener("change", syncModelOptions);
+providerInput.addEventListener("change", () => syncModelOptions(providerInput, modelInput));
 rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
-syncModelOptions();
+syncModelOptions(providerInput, modelInput);
 const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
 viewport.setCanvasMetrics(initialMetrics, payload.nodes.length > 0);
 updateSelection(selectedNodeId);

@@ -22,6 +22,29 @@ from tree_ui.services.workspace_service import (
 )
 
 
+def _serialize_workspace_list(current_workspace: Workspace) -> list[dict]:
+    return [
+        {
+            "name": item.name,
+            "slug": item.slug,
+            "description": item.description,
+            "is_current": item.pk == current_workspace.pk,
+        }
+        for item in list_workspaces()
+    ]
+
+
+def _build_lineage(node: ConversationNode) -> list[ConversationNode]:
+    lineage = []
+    current = node
+
+    while current is not None:
+        lineage.append(current)
+        current = current.parent
+
+    return list(reversed(lineage))
+
+
 def workspace_home(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     return HttpResponseRedirect(reverse("workspace_graph", args=[workspace.slug]))
@@ -35,14 +58,50 @@ def workspace_graph(request, slug: str):
         "tree_ui/index.html",
         {
             "graph_payload": graph_payload,
-            "workspace_list": [
+            "workspace_list": _serialize_workspace_list(workspace),
+        },
+    )
+
+
+def workspace_node_chat(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(
+        ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
+            "messages",
+            "children",
+        ),
+        pk=node_id,
+        workspace=workspace,
+    )
+    lineage = _build_lineage(node)
+    child_nodes = node.children.order_by("created_at")
+
+    return render(
+        request,
+        "tree_ui/node_chat.html",
+        {
+            "workspace": workspace,
+            "workspace_list": _serialize_workspace_list(workspace),
+            "node_payload": serialize_node(node),
+            "lineage_items": [
                 {
-                    "name": item.name,
-                    "slug": item.slug,
-                    "description": item.description,
-                    "is_current": item.pk == workspace.pk,
+                    "id": item.id,
+                    "title": item.title,
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, item.id]),
+                    "is_current": item.id == node.id,
                 }
-                for item in list_workspaces()
+                for item in lineage
+            ],
+            "child_nodes": [
+                {
+                    "id": child.id,
+                    "title": child.title,
+                    "summary": child.summary,
+                    "provider": child.provider,
+                    "model_name": child.model_name,
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, child.id]),
+                }
+                for child in child_nodes
             ],
         },
     )

@@ -32,6 +32,37 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the canvas you want to work in.")
 
+    def test_workspace_node_chat_page_renders_transcript_and_composer(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="Discuss the launch plan.",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="Plan the product launch.",
+            order_index=0,
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Here is a staged launch outline.",
+            order_index=1,
+        )
+
+        response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Node Conversation")
+        self.assertContains(response, "Back to graph")
+        self.assertContains(response, "Current branch path")
+        self.assertContains(response, "Send reply")
+        self.assertContains(response, "Root node")
+
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
             reverse("create_workspace"),

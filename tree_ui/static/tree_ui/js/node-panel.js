@@ -54,3 +54,24 @@ export function renderMessageEditors(container, messages) {
     container.appendChild(label);
   }
 }
+
+export function renderChatTranscript(container, messages) {
+  container.innerHTML = "";
+
+  for (const message of messages) {
+    const article = document.createElement("article");
+    article.className = "chat-message";
+    article.dataset.role = message.role;
+
+    const label = document.createElement("span");
+    label.className = "chat-message-role";
+    label.textContent = message.role;
+
+    const body = document.createElement("div");
+    body.className = "chat-message-body";
+    body.textContent = message.content;
+
+    article.append(label, body);
+    container.appendChild(article);
+  }
+}
