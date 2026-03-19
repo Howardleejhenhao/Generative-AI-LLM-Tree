@@ -39,6 +39,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Hide inspector")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the graph you want to work in.")
+        self.assertContains(response, "Live canvas summary")
+        self.assertContains(response, "Selected focus")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -69,6 +71,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
+        self.assertContains(response, "Lineage")
+        self.assertContains(response, "Child Branches")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(

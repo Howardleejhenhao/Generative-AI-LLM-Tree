@@ -123,19 +123,45 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     button.dataset.dragging = "false";
     applyNodePosition(button, node);
 
+    const topLine = document.createElement("span");
+    topLine.className = "graph-node-topline";
+
+    const providerBadge = document.createElement("span");
+    providerBadge.className = "graph-node-provider";
+    providerBadge.textContent = node.provider;
+
+    const messageCount = document.createElement("span");
+    messageCount.className = "graph-node-count";
+    messageCount.textContent = `${node.messages.length} ${node.messages.length === 1 ? "msg" : "msgs"}`;
+
     const title = document.createElement("span");
     title.className = "graph-node-title";
     title.textContent = node.title;
 
     const meta = document.createElement("span");
     meta.className = "graph-node-meta";
-    meta.textContent = `${node.provider} / ${node.model_name}`;
+    meta.textContent = node.model_name;
 
     const summary = document.createElement("span");
     summary.className = "graph-node-summary";
     summary.textContent = node.summary || "No summary";
 
-    button.append(title, meta, summary);
+    const footer = document.createElement("span");
+    footer.className = "graph-node-footer";
+
+    const state = document.createElement("span");
+    state.className = "graph-node-state";
+    if (node.edited_from_id) {
+      state.textContent = `Edited from ${node.edited_from_id}`;
+    } else if (node.parent_id) {
+      state.textContent = `Child of ${node.parent_id}`;
+    } else {
+      state.textContent = "Root conversation";
+    }
+
+    topLine.append(providerBadge, messageCount);
+    footer.append(state);
+    button.append(topLine, title, meta, summary, footer);
 
     let dragState = null;
 

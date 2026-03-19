@@ -11,6 +11,43 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 07:39
+
+### Session Goal
+- Push the interface beyond incremental controls work and make the product feel cleaner, more intentional, and more demo-ready.
+- Improve the visual hierarchy of the main graph workspace and the focused node chat without destabilizing the existing graph interactions.
+
+### Planned Tasks
+- create a dedicated feature branch from `main` for UI polish work
+- restructure the workspace page so the graph surface, inspector, and workspace switching area read more clearly
+- refine chat-page presentation and small interaction affordances, then validate with JS checks plus Django checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Created `feature/workspace-ui-polish` from `main`.
+- Audited the current workspace template, chat template, app stylesheet, graph viewport/canvas modules, and tests to define a safe UI polish scope before editing.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; implementation in progress
+
+### Current Status
+- Existing graph controls, minimap, and inspector behaviors are already present.
+- UI polish work is now scoped around layout hierarchy, styling, and lightweight interaction improvements rather than new backend features.
+
+### Next Recommended Step
+- Implement the workspace and node chat visual refinement, then run checks/tests before committing.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 07:25
 
 ### Session Goal

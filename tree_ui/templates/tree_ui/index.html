@@ -5,26 +5,44 @@
 
 {% block content %}
   <section class="hero hero-compact">
-    <div>
+    <div class="hero-copy-block">
       <p class="eyebrow">Conversation DAG</p>
       <h1>Use the graph as the main workspace, not a side panel.</h1>
       <p class="hero-copy">
         Pan, zoom, branch, and compare model paths directly on the canvas, then open any node
         into its own focused chat session when you need to go deeper.
       </p>
+      <div class="hero-actions">
+        <a class="hero-action-link" href="#workspace-shell">Jump to the canvas</a>
+        <p class="hero-footnote">
+          Each new node can pick its own provider and model, while lineage stays local to the selected branch.
+        </p>
+      </div>
     </div>
-    <div class="hero-meta">
-      <div>
+    <div class="hero-meta hero-meta-compact">
+      <div class="hero-metric-card">
         <span class="meta-label">Providers</span>
         <strong>OpenAI + Gemini</strong>
       </div>
-      <div>
+      <div class="hero-metric-card">
         <span class="meta-label">Context Rule</span>
         <strong>Root to selected node only</strong>
       </div>
-      <div>
+      <div class="hero-metric-card">
         <span class="meta-label">Layout</span>
         <strong>Zoomable graph workspace</strong>
+      </div>
+      <div class="hero-metric-card">
+        <span class="meta-label">Current Canvas</span>
+        <strong id="hero-node-count">{{ graph_payload.nodes|length }} nodes</strong>
+      </div>
+      <div class="hero-metric-card">
+        <span class="meta-label">Root Threads</span>
+        <strong id="hero-root-count">-</strong>
+      </div>
+      <div class="hero-metric-card">
+        <span class="meta-label">Stored Messages</span>
+        <strong id="hero-message-count">-</strong>
       </div>
     </div>
   </section>
@@ -83,6 +101,32 @@
           </button>
         </div>
       </div>
+      <div class="workspace-stage-bar">
+        <section class="workspace-stage-summary">
+          <p class="workspace-stage-label">Live canvas summary</p>
+          <div class="workspace-stage-metrics">
+            <div class="workspace-stage-metric">
+              <span>Nodes</span>
+              <strong id="workspace-node-count">{{ graph_payload.nodes|length }}</strong>
+            </div>
+            <div class="workspace-stage-metric">
+              <span>Root threads</span>
+              <strong id="workspace-root-count">-</strong>
+            </div>
+            <div class="workspace-stage-metric">
+              <span>Messages</span>
+              <strong id="workspace-message-count">-</strong>
+            </div>
+          </div>
+        </section>
+        <section class="workspace-stage-focus">
+          <p class="workspace-stage-label">Selected focus</p>
+          <strong id="workspace-selection-title">No node selected</strong>
+          <p id="workspace-selection-summary">
+            Choose a node to inspect details, open chat, or branch from that exact point in the tree.
+          </p>
+        </section>
+      </div>
       <div class="graph-stage" id="graph-stage">
         <button class="detail-peek-button" id="detail-panel-peek" type="button" hidden>
           Show inspector
@@ -135,6 +179,24 @@
           <span class="status-chip" id="node-provider">Waiting</span>
         </div>
       </div>
+
+      <section class="detail-focus-card">
+        <div class="detail-focus-copy">
+          <p class="panel-kicker">Conversation Snapshot</p>
+          <h3 id="node-mode-label">Waiting for selection</h3>
+          <p id="node-focus-copy">Pick a node to inspect its recent messages and branch from it safely.</p>
+        </div>
+        <div class="detail-focus-metrics">
+          <div>
+            <span>Messages</span>
+            <strong id="node-message-count">0</strong>
+          </div>
+          <div>
+            <span>Last role</span>
+            <strong id="node-last-role">Empty</strong>
+          </div>
+        </div>
+      </section>
 
       <dl class="node-metadata">
         <div>

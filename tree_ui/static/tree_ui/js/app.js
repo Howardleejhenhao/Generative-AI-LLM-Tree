@@ -11,6 +11,14 @@ const DETAIL_PANEL_STORAGE_KEY = "llm-tree-detail-panel-collapsed";
 
 const workspaceShell = document.getElementById("workspace-shell");
 const workspaceName = document.getElementById("workspace-name");
+const heroNodeCount = document.getElementById("hero-node-count");
+const heroRootCount = document.getElementById("hero-root-count");
+const heroMessageCount = document.getElementById("hero-message-count");
+const workspaceNodeCount = document.getElementById("workspace-node-count");
+const workspaceRootCount = document.getElementById("workspace-root-count");
+const workspaceMessageCount = document.getElementById("workspace-message-count");
+const workspaceSelectionTitle = document.getElementById("workspace-selection-title");
+const workspaceSelectionSummary = document.getElementById("workspace-selection-summary");
 const graphStatus = document.getElementById("graph-status");
 const detailPanelToggle = document.getElementById("detail-panel-toggle");
 const detailPanelPeek = document.getElementById("detail-panel-peek");
@@ -25,6 +33,10 @@ const openChatLink = document.getElementById("open-chat-link");
 const nodeModel = document.getElementById("node-model");
 const nodeParent = document.getElementById("node-parent");
 const nodeSummary = document.getElementById("node-summary");
+const nodeModeLabel = document.getElementById("node-mode-label");
+const nodeFocusCopy = document.getElementById("node-focus-copy");
+const nodeMessageCount = document.getElementById("node-message-count");
+const nodeLastRole = document.getElementById("node-last-role");
 const messageList = document.getElementById("message-list");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
@@ -106,6 +118,67 @@ let selectedNodeId = String(payload.nodes[0]?.id || "");
 
 function getSelectedNode() {
   return nodesById.get(selectedNodeId) || null;
+}
+
+function getRootNodeCount() {
+  return payload.nodes.filter((node) => node.parent_id === null || node.parent_id === undefined).length;
+}
+
+function getTotalMessageCount() {
+  return payload.nodes.reduce((total, node) => total + node.messages.length, 0);
+}
+
+function getLastMessage(node) {
+  if (!node || !node.messages.length) {
+    return null;
+  }
+
+  return node.messages[node.messages.length - 1];
+}
+
+function getNodeMode(node) {
+  if (!node) {
+    return "Waiting for selection";
+  }
+
+  if (node.edited_from_id) {
+    return "Edited variant";
+  }
+
+  if (node.parent_id) {
+    return "Branch conversation";
+  }
+
+  return "Root conversation";
+}
+
+function getSelectionSummaryText(node) {
+  if (!node) {
+    return "Choose a node to inspect details, open chat, or branch from that exact point in the tree.";
+  }
+
+  const messageCount = node.messages.length;
+  const messageText = `${messageCount} ${messageCount === 1 ? "message" : "messages"} in this container.`;
+  const lineageText = node.parent_id ? ` Branched from node ${node.parent_id}.` : " Top-level conversation.";
+  const editText = node.edited_from_id ? ` Variant derived from node ${node.edited_from_id}.` : "";
+
+  return `${messageText}${lineageText}${editText}`;
+}
+
+function updateWorkspaceSummary() {
+  const nodeCount = payload.nodes.length;
+  const rootCount = getRootNodeCount();
+  const messageCount = getTotalMessageCount();
+  const selectedNode = getSelectedNode();
+
+  heroNodeCount.textContent = `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`;
+  heroRootCount.textContent = `${rootCount} ${rootCount === 1 ? "thread" : "threads"}`;
+  heroMessageCount.textContent = `${messageCount} ${messageCount === 1 ? "message" : "messages"}`;
+  workspaceNodeCount.textContent = String(nodeCount);
+  workspaceRootCount.textContent = String(rootCount);
+  workspaceMessageCount.textContent = String(messageCount);
+  workspaceSelectionTitle.textContent = selectedNode ? selectedNode.title : "No node selected";
+  workspaceSelectionSummary.textContent = getSelectionSummaryText(selectedNode);
 }
 
 function getNodeChatUrl(nodeId) {
@@ -199,8 +272,13 @@ function showEmptyNodeState() {
   nodeModel.textContent = "-";
   nodeParent.textContent = "Root";
   nodeSummary.textContent = "Create a root conversation node to begin the workspace.";
+  nodeModeLabel.textContent = "Waiting for selection";
+  nodeFocusCopy.textContent = "Pick a node to inspect its recent messages and branch from it safely.";
+  nodeMessageCount.textContent = "0";
+  nodeLastRole.textContent = "Empty";
   messageList.innerHTML = "";
   editBox.hidden = true;
+  updateWorkspaceSummary();
 }
 
 function updateSelection(nodeId) {
@@ -222,12 +300,17 @@ function updateSelection(nodeId) {
   nodeModel.textContent = node.model_name;
   nodeParent.textContent = node.parent_id ? `Node ${node.parent_id}` : "Root";
   nodeSummary.textContent = node.summary || "Open this node to continue the conversation.";
+  nodeModeLabel.textContent = getNodeMode(node);
+  nodeFocusCopy.textContent = getSelectionSummaryText(node);
+  nodeMessageCount.textContent = String(node.messages.length);
+  nodeLastRole.textContent = getLastMessage(node)?.role || "Empty";
   renderNodeDetails(messageList, node.messages.slice(-2));
   editBox.hidden = false;
   editTitleInput.value = `${node.title} (Edited)`;
   editFeedback.textContent = "";
   renderMessageEditors(editMessageList, node.messages);
   updateFormState();
+  updateWorkspaceSummary();
   renderGraphCanvas();
 }
 
@@ -356,3 +439,4 @@ syncModelOptions(providerInput, modelInput);
 setDetailPanelCollapsed(readStoredDetailPanelState());
 renderGraphCanvas();
 updateSelection(selectedNodeId);
+updateWorkspaceSummary();
