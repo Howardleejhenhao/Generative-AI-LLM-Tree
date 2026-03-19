@@ -4,7 +4,7 @@
 {% block title %}{{ node_payload.title }} | LLM-Tree{% endblock %}
 
 {% block content %}
-  <section class="chat-page chat-page-minimal">
+  <section class="chat-page chat-page-minimal chat-page-immersive">
     <header class="chat-shell-header">
       <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
       <div class="chat-shell-copy chat-shell-copy-inline">
@@ -30,7 +30,7 @@
             <textarea
               id="chat-prompt-input"
               name="prompt"
-              rows="4"
+              rows="1"
               placeholder="Message this conversation"
             ></textarea>
           </label>
