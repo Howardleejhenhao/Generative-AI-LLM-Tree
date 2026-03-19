@@ -32,51 +32,6 @@ body {
   padding: 32px 0 48px;
 }
 
-.workspace-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 18px;
-  margin-bottom: 18px;
-}
-
-.workspace-switcher,
-.workspace-create-form {
-  border: 1px solid rgba(55, 43, 31, 0.1);
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  background: rgba(255, 250, 242, 0.72);
-  padding: 18px 20px;
-}
-
-.workspace-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.workspace-pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 9px 14px;
-  border: 1px solid rgba(74, 58, 40, 0.12);
-  text-decoration: none;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.workspace-pill-current {
-  background: linear-gradient(135deg, #f7c873, #f4a261);
-  border-color: transparent;
-  color: #1a1510;
-}
-
-.workspace-create-form {
-  display: grid;
-  gap: 10px;
-}
-
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
@@ -133,6 +88,139 @@ body {
 .hero-meta strong {
   display: block;
   font-size: 1.05rem;
+}
+
+.workspace-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.workspace-switcher,
+.workspace-create-form {
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.workspace-switcher {
+  border: 1px solid rgba(55, 43, 31, 0.1);
+  background: rgba(255, 250, 242, 0.74);
+  padding: 24px;
+}
+
+.workspace-toolbar-heading h2,
+.workspace-create-form h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.05;
+}
+
+.workspace-toolbar-copy,
+.workspace-create-copy {
+  margin: 12px 0 0;
+  line-height: 1.6;
+}
+
+.workspace-toolbar-copy {
+  max-width: 56ch;
+  color: var(--muted);
+}
+
+.workspace-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.workspace-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 10px 15px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.88);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.workspace-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(49, 37, 22, 0.1);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.workspace-pill-current {
+  background: linear-gradient(135deg, #1d6b56, #2f8f70);
+  border-color: transparent;
+  box-shadow: 0 12px 30px rgba(29, 107, 86, 0.22);
+  color: #f6f2ec;
+}
+
+.workspace-create-form {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid rgba(32, 22, 16, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(247, 200, 115, 0.22), transparent 32%),
+    linear-gradient(135deg, #24322d, #18211d 58%, #3f291c);
+  color: #f8f1e8;
+}
+
+.workspace-create-kicker {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #f0cb8a;
+}
+
+.workspace-create-copy {
+  color: rgba(248, 241, 232, 0.78);
+}
+
+.workspace-create-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.workspace-create-field span {
+  color: rgba(248, 241, 232, 0.72);
+}
+
+.workspace-create-form .form-field input {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 248, 240, 0.92);
+  color: #1f1b17;
+}
+
+.workspace-create-form .form-field input::placeholder {
+  color: rgba(47, 36, 27, 0.48);
+}
+
+.workspace-create-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #1a1510;
+  background: linear-gradient(135deg, #f7c873, #f2b36f);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.workspace-feedback {
+  min-height: 1.4em;
+  color: rgba(248, 241, 232, 0.82);
 }
 
 .workspace-shell {
@@ -540,6 +628,15 @@ body {
   .page-shell {
     width: min(100vw - 20px, 1400px);
     padding-top: 20px;
+  }
+
+  .workspace-switcher,
+  .workspace-create-form {
+    padding: 20px;
+  }
+
+  .workspace-create-row {
+    grid-template-columns: 1fr;
   }
 
   .panel-header {

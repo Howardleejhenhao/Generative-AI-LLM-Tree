@@ -4,28 +4,6 @@
 {% block title %}LLM-Tree Workspace{% endblock %}
 
 {% block content %}
-  <section class="workspace-toolbar">
-    <div class="workspace-switcher">
-      <p class="eyebrow">Workspaces</p>
-      <div class="workspace-list">
-        {% for workspace in workspace_list %}
-          <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
-            {{ workspace.name }}
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
-      {% csrf_token %}
-      <label class="form-field">
-        <span>New Workspace</span>
-        <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
-      </label>
-      <button class="secondary-button" id="workspace-create-button" type="submit">Create workspace</button>
-      <p class="form-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
-    </form>
-  </section>
-
   <section class="hero">
     <div>
       <p class="eyebrow">Conversation DAG</p>
@@ -45,6 +23,41 @@
         <strong>Root to selected node only</strong>
       </div>
     </div>
+  </section>
+
+  <section class="workspace-toolbar">
+    <div class="workspace-switcher">
+      <div class="workspace-toolbar-heading">
+        <p class="eyebrow">Workspaces</p>
+        <h2>Pick the canvas you want to work in.</h2>
+        <p class="workspace-toolbar-copy">
+          Each workspace keeps its own conversation graph, branches, and model experiments.
+        </p>
+      </div>
+      <div class="workspace-list">
+        {% for workspace in workspace_list %}
+          <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
+            {{ workspace.name }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
+      {% csrf_token %}
+      <p class="workspace-create-kicker">Create Workspace</p>
+      <h2>Start a separate graph.</h2>
+      <p class="workspace-create-copy">
+        Spin up another workspace for a new project, client, or branch-heavy experiment.
+      </p>
+      <div class="workspace-create-row">
+        <label class="form-field workspace-create-field">
+          <span>Name</span>
+          <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
+        </label>
+        <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
+      </div>
+      <p class="form-feedback workspace-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
+    </form>
   </section>
 
   <section class="workspace-shell">

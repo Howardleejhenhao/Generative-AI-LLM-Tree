@@ -29,7 +29,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
         self.assertContains(response, "Drag the canvas to pan in any direction.")
-        self.assertContains(response, "New Workspace")
+        self.assertContains(response, "Create Workspace")
+        self.assertContains(response, "Pick the canvas you want to work in.")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
