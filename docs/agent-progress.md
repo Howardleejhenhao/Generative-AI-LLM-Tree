@@ -11,6 +11,53 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:55
+
+### Session Goal
+- Add zoom controls to the graph workspace so larger conversation trees are easier to inspect.
+- Keep the existing drag-to-pan and manual node positioning behavior stable while zooming is introduced.
+
+### Planned Tasks
+- add a dedicated feature branch for graph zoom work from `main`
+- implement viewport zoom state, controls, and scaled pan boundaries in the graph UI
+- verify that node dragging still commits correct persisted positions after zooming and run project checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Created `feature/graph-zoom-controls` from `main`.
+- Added graph zoom controls to the workspace canvas with zoom-in, zoom-out, and reset actions.
+- Extended the viewport controller to track zoom state, clamp scaled pan boundaries, and keep zooming centered around the current viewport anchor.
+- Updated canvas node dragging so persisted positions still move correctly when the workspace is zoomed.
+- Refined the graph UI copy and layout to expose the zoom controls without covering the existing status and hint overlays.
+- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/graph-zoom-controls`
+- Commits made:
+  - none recorded yet
+- Push status:
+  - not yet recorded
+
+### Current Status
+- Graph workspace zoom controls are implemented and validated locally.
+
+### Next Recommended Step
+- Commit and push `feature/graph-zoom-controls`.
+- After merge-back, continue improving the graph workspace toward the full-page zoomable experience in `AGENTS.md`.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:50
 
 ### Session Goal
