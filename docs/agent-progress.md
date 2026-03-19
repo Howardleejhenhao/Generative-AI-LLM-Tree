@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:20
+
+### Session Goal
+- Collapse the node chat header into a single line so it takes minimal vertical space.
+- Keep the conversation area maximized while preserving back navigation and node metadata.
+
+### Planned Tasks
+- reduce the node chat template header structure to one row
+- tighten the matching header CSS so title and meta share a single line
+- verify the UI with Django checks/tests and merge the change back into `feature/manual-node-positioning`
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Collapsed the node chat header into a single line containing back navigation, node title, and compact workspace/model metadata.
+- Tightened the matching header CSS so it uses less vertical space while preserving readability.
+- Updated the node chat page regression test to match the new single-line header copy.
+- Verified the one-line header change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/one-line-node-header`
+- Commits made:
+  - feature, docs, and merge-back commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+
+### Current Status
+- The node chat header is now compressed to one line, pending commit and merge-back.
+
+### Next Recommended Step
+- Finish the header compression and merge it back into `feature/manual-node-positioning`.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:14
 
 ### Session Goal
