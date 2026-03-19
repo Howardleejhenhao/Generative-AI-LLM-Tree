@@ -30,6 +30,7 @@
 - Extended the viewport controller to publish visible bounds and support center-point navigation for minimap jumps.
 - Prevented minimap clicks from leaking into background pan gestures inside the main graph stage.
 - Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Merged `feature/graph-minimap-navigation` back into `main` and re-ran `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, and `python3 manage.py check` plus `python3 manage.py test` on the merged branch.
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -44,16 +45,19 @@
 - Current branch at session start: `main`
 - New branch created/switched: `feature/graph-minimap-navigation`
 - Commits made:
-  - none recorded yet
+  - `8475cb1` - `feat: add graph minimap navigation`
+  - `bb15360` - `docs: update agent progress log`
+  - `751319a` - `merge: bring back graph minimap navigation`
 - Push status:
-  - not yet recorded
+  - pushed to `origin/feature/graph-minimap-navigation`
+  - merge-back to `main` completed; final `main` push still pending at the time of this log update
 
 ### Current Status
-- Minimap navigation is implemented and validated locally on `feature/graph-minimap-navigation`.
+- Minimap navigation is implemented, validated, and merged back into `main`.
 
 ### Next Recommended Step
-- Commit and push `feature/graph-minimap-navigation`.
-- Merge it back into `main`, then clean up the temporary branch.
+- Push the updated `main` branch and delete the temporary `feature/graph-minimap-navigation` branch.
+- After cleanup, continue refining graph ergonomics, likely with keyboard shortcuts or stronger node inspection flow.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
