@@ -11,6 +11,50 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 20:28
+
+### Session Goal
+- Simplify the node chat page so it feels closer to ChatGPT/Gemini: minimal header, full transcript, and a clean input area.
+- Remove extra informational panels that make the node page feel too busy.
+
+### Planned Tasks
+- strip down the node chat template to the essential chat surface only
+- replace the heavier node-chat layout styles with a minimal conversation layout
+- update any route/page tests that depend on removed copy
+- verify the simplified UI with Django checks and tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Replaced the heavier node chat layout with a minimal single-column chat shell closer to ChatGPT/Gemini.
+- Removed the node-page workspace rail, lineage cards, and sidebar metadata so the transcript stays dominant.
+- Simplified the node-page header down to back navigation, node title, and a small workspace/provider/model line.
+- Kept the existing transcript streaming and composer flow intact while slimming the visual chrome around it.
+- Updated the node chat page regression test for the simplified button copy.
+- Verified the UI simplification with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/node-conversation-session-model`
+- New branch created/switched: `feature/node-chat-minimal-ui`
+- Commits made:
+  - `2ed58a8` - `feat: simplify node chat interface`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The node chat page now behaves like a focused chat surface with minimal surrounding UI.
+
+### Next Recommended Step
+- Bring the graph page closer to the same level of clarity by refining node summaries and, after that, continue with manual node dragging + persisted positions.
+
+### Known Issues / Blockers / Tech Debt
+- The node page is intentionally minimal now, so branching shortcuts from inside the chat view are still omitted.
+
 ## Session 2026-03-19 20:12
 
 ### Session Goal
