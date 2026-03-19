@@ -34,8 +34,10 @@ function drawEdge(svg, fromNode, toNode) {
 export function renderCanvas(nodes, selectedNodeId, onSelect) {
   const nodeLayer = document.getElementById("graph-nodes");
   const edgeLayer = document.getElementById("graph-edges");
+  const emptyState = document.getElementById("graph-empty");
   nodeLayer.innerHTML = "";
   edgeLayer.innerHTML = "";
+  emptyState.hidden = nodes.length > 0;
 
   const nodesById = new Map(nodes.map((node) => [String(node.id), node]));
   for (const node of nodes) {

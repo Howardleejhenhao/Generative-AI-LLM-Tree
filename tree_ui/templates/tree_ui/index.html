@@ -35,6 +35,9 @@
         <p class="panel-note">Select a node to inspect its branch-local message bundle.</p>
       </div>
       <div class="graph-stage" id="graph-stage">
+        <div class="graph-empty" id="graph-empty">
+          No nodes yet. Create the root node to start the conversation tree.
+        </div>
         <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
         <div class="graph-nodes" id="graph-nodes"></div>
       </div>
@@ -67,10 +70,37 @@
       <div class="message-list" id="message-list"></div>
 
       <section class="action-box">
-        <h3>Next slice</h3>
+        <h3>Create Branch</h3>
         <p id="streaming-status">
-          Streaming transport and live node creation endpoints are the next backend milestone.
+          New nodes currently receive a stubbed assistant reply so the graph can be persisted
+          before provider streaming is wired.
         </p>
+        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
+          {% csrf_token %}
+          <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+          <p class="form-target" id="form-target">New node target: root</p>
+          <label class="form-field">
+            <span>Title</span>
+            <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Optional node title">
+          </label>
+          <label class="form-field">
+            <span>Provider</span>
+            <select id="node-provider-input" name="provider">
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>Model</span>
+            <select id="node-model-input" name="model_name"></select>
+          </label>
+          <label class="form-field">
+            <span>Prompt</span>
+            <textarea id="node-prompt-input" name="prompt" rows="4" placeholder="Continue the branch from the selected node"></textarea>
+          </label>
+          <button class="primary-button" id="node-submit-button" type="submit">Create node</button>
+          <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
+        </form>
         <div class="legend">
           <span class="legend-pill legend-pill-openai">OpenAI branch</span>
           <span class="legend-pill legend-pill-gemini">Gemini branch</span>

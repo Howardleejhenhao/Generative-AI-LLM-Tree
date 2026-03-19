@@ -9,7 +9,8 @@ export async function postJSON(url, payload, csrfToken) {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    const message = await response.text();
+    throw new Error(message || `Request failed with status ${response.status}`);
   }
 
   return response.json();

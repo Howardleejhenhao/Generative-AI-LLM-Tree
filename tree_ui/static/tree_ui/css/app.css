@@ -143,6 +143,19 @@ body {
   background-size: 40px 40px;
 }
 
+.graph-empty {
+  position: absolute;
+  inset: 24px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 1px dashed rgba(74, 58, 40, 0.22);
+  border-radius: 18px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 1rem;
+}
+
 .graph-edges,
 .graph-nodes {
   position: absolute;
@@ -312,6 +325,63 @@ body {
 
 .action-box h3 {
   margin: 0 0 12px;
+}
+
+.composer-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.form-target,
+.form-feedback {
+  margin: 0;
+  color: #ddcfbe;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.form-field span {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ddcfbe;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(12, 12, 12, 0.22);
+  color: #f8f1e8;
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.primary-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #1a1510;
+  background: linear-gradient(135deg, #f7c873, #f4a261);
+  cursor: pointer;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.75;
 }
 
 .legend {
