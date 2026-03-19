@@ -352,3 +352,50 @@
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` remains untracked and outside feature commits.
 - Current provider calls still fetch the full reply before chunking it locally; upstream provider-native streaming is the next refinement.
+
+## Session 2026-03-19 18:56
+
+### Session Goal
+- Allow multiple root conversations to be created inside the same workspace.
+- Remove the UI limitation that forces every new node under the currently selected node.
+
+### Planned Tasks
+- inspect the current node creation form state and confirm the root-node limitation is frontend-only
+- add an explicit root-conversation creation mode in the form
+- verify the backend already supports repeated root creation and add a regression test
+- update the progress log with the completed behavior and next recommended step
+
+### Work Completed
+- Session started; current branch, worktree state, and progress log were reviewed.
+- Confirmed the current limitation comes from the front-end always submitting the selected node as parent.
+- Added an explicit root-conversation toggle to the node creation form.
+- Updated the form state and submit logic so a selected node no longer blocks creating a separate top-level conversation.
+- Adjusted composer copy so the UI reflects that the panel can create both child branches and new root conversations.
+- Added a regression test proving the same workspace can persist multiple root nodes.
+- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/streaming-node-generation`
+- New branch created/switched: `feature/multi-root-node-creation`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The same workspace can now contain multiple root conversations, each representing a separate top-level dialog.
+- Child branching still works from the selected node when root mode is off.
+
+### Next Recommended Step
+- Add edit-and-rebranch support so older nodes can fork revised conversation paths without destructive overwrite.
+- Consider workspace-level filters or grouping if the number of root conversations grows large.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
