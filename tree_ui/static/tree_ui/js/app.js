@@ -20,6 +20,10 @@ const streamingStatus = document.getElementById("streaming-status");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
+const workspaceCreateForm = document.getElementById("workspace-create-form");
+const workspaceNameInput = document.getElementById("workspace-name-input");
+const workspaceCreateButton = document.getElementById("workspace-create-button");
+const workspaceCreateFeedback = document.getElementById("workspace-create-feedback");
 const nodeTitleInput = document.getElementById("node-title-input");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
@@ -185,6 +189,36 @@ async function handleEditSubmit(event) {
   }
 }
 
+async function handleWorkspaceCreateSubmit(event) {
+  event.preventDefault();
+  workspaceCreateFeedback.textContent = "";
+  workspaceCreateButton.disabled = true;
+
+  try {
+    const response = await fetch(workspaceCreateForm.dataset.createWorkspaceUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({
+        name: workspaceNameInput.value,
+      }),
+    });
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `Request failed with status ${response.status}`);
+    }
+    const result = await response.json();
+    workspaceCreateFeedback.textContent = `Workspace "${result.workspace.name}" created.`;
+    window.location.href = result.redirect_url;
+  } catch (error) {
+    workspaceCreateFeedback.textContent = error.message;
+  } finally {
+    workspaceCreateButton.disabled = false;
+  }
+}
+
 async function handleNodeSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
@@ -240,6 +274,7 @@ providerInput.addEventListener("change", syncModelOptions);
 rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
+workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
 syncModelOptions();
 const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
 viewport.setCanvasMetrics(initialMetrics, payload.nodes.length > 0);

@@ -4,6 +4,28 @@
 {% block title %}LLM-Tree Workspace{% endblock %}
 
 {% block content %}
+  <section class="workspace-toolbar">
+    <div class="workspace-switcher">
+      <p class="eyebrow">Workspaces</p>
+      <div class="workspace-list">
+        {% for workspace in workspace_list %}
+          <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
+            {{ workspace.name }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
+      {% csrf_token %}
+      <label class="form-field">
+        <span>New Workspace</span>
+        <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
+      </label>
+      <button class="secondary-button" id="workspace-create-button" type="submit">Create workspace</button>
+      <p class="form-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
   <section class="hero">
     <div>
       <p class="eyebrow">Conversation DAG</p>

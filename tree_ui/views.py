@@ -1,7 +1,8 @@
 import json
 
-from django.http import HttpResponseBadRequest, JsonResponse, StreamingHttpResponse
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from tree_ui.models import ConversationNode, Workspace
@@ -14,17 +15,35 @@ from tree_ui.services.node_creation import (
     iter_text_chunks,
     resolve_node_creation_inputs,
 )
-from tree_ui.services.workspace_service import get_or_create_default_workspace
+from tree_ui.services.workspace_service import (
+    create_workspace,
+    get_or_create_default_workspace,
+    list_workspaces,
+)
 
 
-def workspace_graph(request):
-    workspace = get_or_create_default_workspace()
+def workspace_home(request):
+    workspace = list_workspaces().first() or get_or_create_default_workspace()
+    return HttpResponseRedirect(reverse("workspace_graph", args=[workspace.slug]))
+
+
+def workspace_graph(request, slug: str):
+    workspace = get_object_or_404(Workspace, slug=slug)
     graph_payload = serialize_workspace(workspace)
     return render(
         request,
         "tree_ui/index.html",
         {
             "graph_payload": graph_payload,
+            "workspace_list": [
+                {
+                    "name": item.name,
+                    "slug": item.slug,
+                    "description": item.description,
+                    "is_current": item.pk == workspace.pk,
+                }
+                for item in list_workspaces()
+            ],
         },
     )
 
@@ -49,6 +68,35 @@ def _parse_node_request(request, slug: str) -> tuple[Workspace, ConversationNode
 
 def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+@require_POST
+def create_workspace_view(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON payload.")
+
+    try:
+        workspace = create_workspace(
+            name=payload.get("name", ""),
+            description=payload.get("description", ""),
+        )
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    return JsonResponse(
+        {
+            "workspace": {
+                "id": workspace.id,
+                "name": workspace.name,
+                "slug": workspace.slug,
+                "description": workspace.description,
+            },
+            "redirect_url": reverse("workspace_graph", args=[workspace.slug]),
+        },
+        status=201,
+    )
 
 
 @require_POST

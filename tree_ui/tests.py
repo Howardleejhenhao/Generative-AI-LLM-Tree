@@ -13,14 +13,37 @@ from tree_ui.services.providers.base import GenerationResult
 
 
 class WorkspaceGraphViewTests(TestCase):
-    def test_homepage_renders_graph_shell(self):
-        response = self.client.get(reverse("workspace_graph"))
+    def test_homepage_redirects_to_a_workspace(self):
+        response = self.client.get(reverse("workspace_home"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Workspace.objects.count(), 1)
+        workspace = Workspace.objects.get()
+        self.assertEqual(response.url, reverse("workspace_graph", args=[workspace.slug]))
+
+    def test_workspace_page_renders_graph_shell(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
         self.assertContains(response, "Drag the canvas to pan in any direction.")
+        self.assertContains(response, "New Workspace")
+
+    def test_can_create_workspace_via_api(self):
+        response = self.client.post(
+            reverse("create_workspace"),
+            data=json.dumps({"name": "Research Space"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(Workspace.objects.count(), 1)
+        workspace = Workspace.objects.get()
+        self.assertEqual(workspace.name, "Research Space")
+        self.assertEqual(workspace.slug, "research-space")
+        self.assertIn(reverse("workspace_graph", args=[workspace.slug]), response.json()["redirect_url"])
 
     def test_can_create_root_node_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

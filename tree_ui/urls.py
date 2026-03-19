@@ -3,7 +3,9 @@ from django.urls import path
 from tree_ui import views
 
 urlpatterns = [
-    path("", views.workspace_graph, name="workspace_graph"),
+    path("", views.workspace_home, name="workspace_home"),
+    path("workspaces/<slug:slug>/", views.workspace_graph, name="workspace_graph"),
+    path("api/workspaces/", views.create_workspace_view, name="create_workspace"),
     path(
         "api/workspaces/<slug:slug>/nodes/",
         views.create_workspace_node,
