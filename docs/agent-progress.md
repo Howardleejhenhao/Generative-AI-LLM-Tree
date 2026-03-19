@@ -142,3 +142,63 @@
 ### Known Issues / Blockers / Tech Debt
 - Assistant replies are still stubbed locally; real provider calls and streaming are not wired yet.
 - Node editing and version-safe re-branching remain unimplemented.
+
+## Session 2026-03-19 17:13
+
+### Session Goal
+- Introduce provider abstraction and branch-local context building behind the node creation flow.
+- Keep the app runnable even when provider API keys are not configured.
+
+### Planned Tasks
+- inspect the current node creation implementation and provider-related settings gaps
+- add branch-local context builder and provider abstraction modules
+- update node creation to use provider services with safe fallback behavior
+- verify the new behavior with tests and local Django checks
+
+### Work Completed
+- Session started; repository state, active branch, and progress log were reviewed.
+- Planned the next slice around provider abstraction and lineage-scoped context assembly.
+- Added environment-driven provider settings for OpenAI, Gemini, and request timeout handling.
+- Added a branch-local context builder that assembles only the selected lineage plus the new prompt.
+- Introduced provider abstraction modules for OpenAI and Gemini behind a registry-based service interface.
+- Updated node creation to call the provider layer and fall back safely when API keys are missing or requests fail.
+- Updated the UI copy to reflect provider-backed generation with safe fallback behavior.
+- Added tests for lineage-scoped context assembly and provider-result usage inside node creation.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `.env.example`
+- `README.md`
+- `llm_tree_project/settings.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/__init__.py`
+- `tree_ui/services/providers/base.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/node-creation-flow`
+- New branch created/switched: `feature/provider-context-abstraction`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- Node creation now builds a lineage-scoped message context before generation.
+- OpenAI and Gemini generation are routed through separate service modules with a shared interface.
+- The app still works without API keys because generation falls back to a local explanatory assistant message.
+
+### Next Recommended Step
+- Add a streaming transport layer on top of the provider abstraction so partial tokens can reach the UI.
+- Persist provider metadata or generation status on nodes if streaming state needs to survive refreshes.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` is still untracked and should remain outside the feature commits unless explicitly requested.
+- Provider calls are currently synchronous and non-streaming.
+- OpenAI and Gemini integrations are intentionally wrapped with fallback behavior, so missing keys do not hard-fail the UI.
