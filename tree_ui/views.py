@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 
 from tree_ui.models import ConversationNode, Workspace
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
+from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     create_node,
     create_node_with_reply,
@@ -61,6 +62,31 @@ def create_workspace_node(request, slug: str):
             prompt=payload.get("prompt", ""),
             provider=payload.get("provider", ConversationNode.Provider.OPENAI),
             model_name=payload.get("model_name", ""),
+        )
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    return JsonResponse({"node": serialize_node(node)}, status=201)
+
+
+@require_POST
+def create_edited_node_variant(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    original_node = get_object_or_404(
+        ConversationNode.objects.prefetch_related("messages"),
+        pk=node_id,
+        workspace=workspace,
+    )
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON payload.")
+
+    try:
+        node = create_edited_variant(
+            original_node=original_node,
+            title=payload.get("title", ""),
+            messages=payload.get("messages", []),
         )
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))

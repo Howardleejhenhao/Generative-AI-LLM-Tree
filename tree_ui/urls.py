@@ -14,4 +14,9 @@ urlpatterns = [
         views.stream_workspace_node,
         name="stream_workspace_node",
     ),
+    path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/edit-variant/",
+        views.create_edited_node_variant,
+        name="create_edited_node_variant",
+    ),
 ]

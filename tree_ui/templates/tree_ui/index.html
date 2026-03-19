@@ -113,6 +113,22 @@
           <span class="legend-pill legend-pill-gemini">Gemini branch</span>
         </div>
       </section>
+
+      <section class="action-box" id="edit-box">
+        <h3>Edit Into New Variant</h3>
+        <p class="edit-note">
+          This creates a new version-safe node and keeps the original history unchanged.
+        </p>
+        <form class="composer-form" id="edit-form" data-node-edit-url-template="{% url 'create_edited_node_variant' graph_payload.workspace.slug 999999 %}">
+          <label class="form-field">
+            <span>Variant Title</span>
+            <input id="edit-title-input" name="title" type="text" maxlength="160" placeholder="Edited node title">
+          </label>
+          <div class="editor-list" id="edit-message-list"></div>
+          <button class="secondary-button" id="edit-submit-button" type="submit">Create edited variant</button>
+          <p class="form-feedback" id="edit-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </section>
     </aside>
   </section>
 

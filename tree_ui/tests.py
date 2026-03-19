@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from tree_ui.models import ConversationNode, NodeMessage, Workspace
+from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.node_creation import create_node
 from tree_ui.services.providers.base import GenerationResult
@@ -111,6 +112,51 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    def test_can_create_edited_variant_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        original = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Original node",
+            summary="Original",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+            position_x=120,
+            position_y=200,
+        )
+        NodeMessage.objects.create(
+            node=original,
+            role=NodeMessage.Role.USER,
+            content="Original prompt",
+            order_index=0,
+        )
+        NodeMessage.objects.create(
+            node=original,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Original answer",
+            order_index=1,
+        )
+
+        response = self.client.post(
+            reverse("create_edited_node_variant", args=[workspace.slug, original.id]),
+            data=json.dumps(
+                {
+                    "title": "Original node (Edited)",
+                    "messages": [
+                        {"role": "user", "content": "Edited prompt", "order_index": 0},
+                        {"role": "assistant", "content": "Edited answer", "order_index": 1},
+                    ],
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        edited = ConversationNode.objects.exclude(pk=original.pk).get()
+        self.assertEqual(edited.edited_from, original)
+        self.assertEqual(edited.parent, original.parent)
+        self.assertEqual(edited.messages.first().content, "Edited prompt")
+        self.assertEqual(original.messages.first().content, "Original prompt")
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     def test_can_stream_node_creation_via_api(self):
@@ -225,3 +271,35 @@ class WorkspaceGraphViewTests(TestCase):
             "Real provider output",
         )
         mock_generate_text.assert_called_once()
+
+    def test_create_edited_variant_preserves_original_node(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        original = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Original",
+            summary="Original",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=original,
+            role=NodeMessage.Role.USER,
+            content="Original prompt",
+            order_index=0,
+        )
+
+        edited = create_edited_variant(
+            original_node=original,
+            title="Original (Edited)",
+            messages=[
+                {
+                    "role": NodeMessage.Role.USER,
+                    "content": "Edited prompt",
+                    "order_index": 0,
+                }
+            ],
+        )
+
+        self.assertEqual(edited.edited_from, original)
+        self.assertEqual(original.messages.get().content, "Original prompt")
+        self.assertEqual(edited.messages.get().content, "Edited prompt")

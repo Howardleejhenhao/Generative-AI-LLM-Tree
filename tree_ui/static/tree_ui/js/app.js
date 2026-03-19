@@ -1,5 +1,9 @@
 import { renderCanvas } from "./canvas.js";
-import { renderNodeDetails, renderStreamingPreview } from "./node-panel.js";
+import {
+  renderMessageEditors,
+  renderNodeDetails,
+  renderStreamingPreview,
+} from "./node-panel.js";
 import { getStreamingLabel, streamJSON } from "./streaming.js";
 import { createViewportController } from "./viewport.js";
 
@@ -22,6 +26,12 @@ const modelInput = document.getElementById("node-model-input");
 const promptInput = document.getElementById("node-prompt-input");
 const submitButton = document.getElementById("node-submit-button");
 const rootModeToggle = document.getElementById("root-mode-toggle");
+const editBox = document.getElementById("edit-box");
+const editForm = document.getElementById("edit-form");
+const editTitleInput = document.getElementById("edit-title-input");
+const editMessageList = document.getElementById("edit-message-list");
+const editSubmitButton = document.getElementById("edit-submit-button");
+const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
 
 const MODEL_OPTIONS = {
@@ -93,6 +103,7 @@ function showEmptyNodeState() {
   nodeParent.textContent = "Root";
   nodeSummary.textContent = "Create a root node to begin the workspace.";
   messageList.innerHTML = "";
+  editBox.hidden = true;
 }
 
 function updateSelection(nodeId) {
@@ -115,9 +126,63 @@ function updateSelection(nodeId) {
   nodeSummary.textContent = node.summary || "No summary yet.";
   streamingStatus.textContent = getStreamingLabel(node);
   renderNodeDetails(messageList, node.messages);
+  editBox.hidden = false;
+  editTitleInput.value = `${node.title} (Edited)`;
+  editFeedback.textContent = "";
+  renderMessageEditors(editMessageList, node.messages);
   updateFormState();
   const metrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
   viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
+}
+
+function getEditUrl(nodeId) {
+  return editForm.dataset.nodeEditUrlTemplate.replace("999999", String(nodeId));
+}
+
+async function handleEditSubmit(event) {
+  event.preventDefault();
+  const selectedNode = getSelectedNode();
+  if (!selectedNode) {
+    editFeedback.textContent = "Select a node before creating an edited variant.";
+    return;
+  }
+
+  editFeedback.textContent = "";
+  editSubmitButton.disabled = true;
+
+  try {
+    const messages = Array.from(editMessageList.querySelectorAll("textarea")).map(
+      (textarea, index) => ({
+        role: textarea.dataset.role,
+        content: textarea.value,
+        order_index: index,
+      }),
+    );
+    const response = await fetch(getEditUrl(selectedNode.id), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({
+        title: editTitleInput.value,
+        messages,
+      }),
+    });
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `Request failed with status ${response.status}`);
+    }
+    const result = await response.json();
+    payload.nodes.push(result.node);
+    nodesById.set(String(result.node.id), result.node);
+    editFeedback.textContent = `Edited variant "${result.node.title}" created.`;
+    updateSelection(result.node.id);
+  } catch (error) {
+    editFeedback.textContent = error.message;
+  } finally {
+    editSubmitButton.disabled = false;
+  }
 }
 
 async function handleNodeSubmit(event) {
@@ -174,6 +239,7 @@ async function handleNodeSubmit(event) {
 providerInput.addEventListener("change", syncModelOptions);
 rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
+editForm.addEventListener("submit", handleEditSubmit);
 syncModelOptions();
 const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
 viewport.setCanvasMetrics(initialMetrics, payload.nodes.length > 0);

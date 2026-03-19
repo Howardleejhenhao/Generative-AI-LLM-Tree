@@ -6,11 +6,16 @@ function createNodeCard(node, isSelected, onSelect) {
   button.dataset.selected = String(isSelected);
   button.style.left = `${node.position.x}px`;
   button.style.top = `${node.position.y}px`;
-  button.innerHTML = `
-    <span class="graph-node-title">${node.title}</span>
-    <span class="graph-node-meta">${node.provider} / ${node.model_name}</span>
-    <span class="graph-node-summary">${node.summary || "No summary"}</span>
-  `;
+  const title = document.createElement("span");
+  title.className = "graph-node-title";
+  title.textContent = node.title;
+  const meta = document.createElement("span");
+  meta.className = "graph-node-meta";
+  meta.textContent = `${node.provider} / ${node.model_name}`;
+  const summary = document.createElement("span");
+  summary.className = "graph-node-summary";
+  summary.textContent = node.summary || "No summary";
+  button.append(title, meta, summary);
   button.addEventListener("click", () => onSelect(node.id));
   return button;
 }
