@@ -96,9 +96,14 @@
         </div>
         <div class="canvas-panel-actions">
           <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
-          <button class="detail-toggle-button" id="detail-panel-toggle" type="button" aria-expanded="true" aria-controls="detail-panel">
-            Hide inspector
-          </button>
+          <div class="canvas-panel-action-row">
+            <button class="detail-toggle-button" id="detail-panel-toggle" type="button" aria-expanded="true" aria-controls="detail-panel">
+              Hide inspector
+            </button>
+            <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-help-toggle" type="button" aria-expanded="false" aria-controls="workspace-help-dialog">
+              Shortcuts
+            </button>
+          </div>
         </div>
       </div>
       <div class="workspace-stage-bar">
@@ -125,6 +130,10 @@
           <p id="workspace-selection-summary">
             Choose a node to inspect details, open chat, or branch from that exact point in the tree.
           </p>
+          <div class="workspace-selection-flags">
+            <span class="workspace-summary-pill" id="workspace-selection-type">No active path</span>
+            <span class="workspace-summary-pill" id="workspace-selection-depth">Lineage depth 0</span>
+          </div>
         </section>
       </div>
       <div class="graph-stage" id="graph-stage">
@@ -156,7 +165,7 @@
           <div class="graph-nodes" id="graph-nodes"></div>
         </div>
         <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
-        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.</p>
+        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan. Press <kbd>?</kbd> for shortcuts and highlight the active branch path.</p>
       </div>
     </div>
 
@@ -271,6 +280,48 @@
         </form>
       </section>
     </aside>
+  </section>
+
+  <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
+    <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
+    <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">
+      <div class="workspace-help-header">
+        <div>
+          <p class="panel-kicker">Workspace Shortcuts</p>
+          <h2 id="workspace-help-title">Keyboard navigation for the graph</h2>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-help-close" type="button">
+          Close
+        </button>
+      </div>
+      <div class="workspace-help-grid">
+        <article class="workspace-help-section">
+          <h3>Viewport</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>+</kbd> / <kbd>=</kbd></dt><dd>Zoom in</dd></div>
+            <div><dt><kbd>-</kbd></dt><dd>Zoom out</dd></div>
+            <div><dt><kbd>0</kbd></dt><dd>Reset zoom</dd></div>
+            <div><dt><kbd>F</kbd></dt><dd>Fit graph to view</dd></div>
+          </dl>
+        </article>
+        <article class="workspace-help-section">
+          <h3>Panels</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>I</kbd></dt><dd>Toggle inspector</dd></div>
+            <div><dt><kbd>?</kbd></dt><dd>Open or close this help panel</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>Close the help panel</dd></div>
+          </dl>
+        </article>
+        <article class="workspace-help-section">
+          <h3>Selection</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>C</kbd></dt><dd>Open selected node chat</dd></div>
+            <div><dt><kbd>Click</kbd></dt><dd>Select a node and highlight its lineage</dd></div>
+            <div><dt><kbd>Drag</kbd></dt><dd>Move a node and persist its layout</dd></div>
+          </dl>
+        </article>
+      </div>
+    </div>
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}

@@ -11,6 +11,51 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 07:48
+
+### Session Goal
+- Strengthen graph ergonomics after the main UI polish pass so the workspace is easier to navigate, not just nicer to look at.
+- Make node selection state and common graph actions more obvious through lineage highlighting and keyboard-accessible controls.
+
+### Planned Tasks
+- keep working on `feature/workspace-ui-polish` and extend it with interaction-focused refinements
+- add clearer selection/lineage emphasis inside the graph canvas
+- add a lightweight keyboard shortcuts/help surface and validate the result with checks/tests
+
+### Work Completed
+- Session started; current branch status and latest progress log entries were reviewed before continuing work.
+- Added a workspace shortcuts/help overlay so graph controls have an explicit, keyboard-accessible reference surface.
+- Added keyboard shortcuts for zooming, fit view, reset zoom, inspector toggle, help toggle, and opening the selected node chat.
+- Extended graph selection state so the active node lineage is highlighted directly on the canvas through nodes plus connecting edges.
+- Surfaced active-path metadata in the workspace summary so branch depth and selected node mode are visible without opening the inspector.
+- Verified the interaction polish with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - branch already exists on `origin`, additional work not pushed yet
+
+### Current Status
+- The previous visual redesign is already committed and pushed.
+- This follow-up pass added interaction clarity on top of that redesign and is ready to be committed next.
+
+### Next Recommended Step
+- Commit and push the interaction-polish slice, then continue with any further UX refinements from the same branch or prepare a merge path.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 07:39
 
 ### Session Goal

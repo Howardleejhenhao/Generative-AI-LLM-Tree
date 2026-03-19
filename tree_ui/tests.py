@@ -31,12 +31,14 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Use the graph as the main workspace, not a side panel.")
         self.assertContains(
             response,
-            "Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.",
+            "Drag nodes to rearrange the layout. Drag the background to pan. Press",
         )
         self.assertContains(response, "Workspace Zoom")
         self.assertContains(response, "Fit view")
         self.assertContains(response, "Minimap")
         self.assertContains(response, "Hide inspector")
+        self.assertContains(response, "Shortcuts")
+        self.assertContains(response, "Workspace Shortcuts")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the graph you want to work in.")
         self.assertContains(response, "Live canvas summary")

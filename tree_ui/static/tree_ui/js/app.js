@@ -19,9 +19,15 @@ const workspaceRootCount = document.getElementById("workspace-root-count");
 const workspaceMessageCount = document.getElementById("workspace-message-count");
 const workspaceSelectionTitle = document.getElementById("workspace-selection-title");
 const workspaceSelectionSummary = document.getElementById("workspace-selection-summary");
+const workspaceSelectionType = document.getElementById("workspace-selection-type");
+const workspaceSelectionDepth = document.getElementById("workspace-selection-depth");
 const graphStatus = document.getElementById("graph-status");
 const detailPanelToggle = document.getElementById("detail-panel-toggle");
 const detailPanelPeek = document.getElementById("detail-panel-peek");
+const workspaceHelpToggle = document.getElementById("workspace-help-toggle");
+const workspaceHelpDialog = document.getElementById("workspace-help-dialog");
+const workspaceHelpBackdrop = document.getElementById("workspace-help-backdrop");
+const workspaceHelpClose = document.getElementById("workspace-help-close");
 const fitViewButton = document.getElementById("graph-fit-view");
 const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
@@ -59,6 +65,7 @@ const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let minimap = null;
+let activeLineageIds = new Set();
 
 function readStoredDetailPanelState() {
   try {
@@ -120,6 +127,21 @@ function getSelectedNode() {
   return nodesById.get(selectedNodeId) || null;
 }
 
+function getLineageIds(node) {
+  const ids = [];
+  let currentNode = node;
+
+  while (currentNode) {
+    ids.push(String(currentNode.id));
+    if (!currentNode.parent_id) {
+      break;
+    }
+    currentNode = nodesById.get(String(currentNode.parent_id)) || null;
+  }
+
+  return ids.reverse();
+}
+
 function getRootNodeCount() {
   return payload.nodes.filter((node) => node.parent_id === null || node.parent_id === undefined).length;
 }
@@ -165,11 +187,27 @@ function getSelectionSummaryText(node) {
   return `${messageText}${lineageText}${editText}`;
 }
 
+function isTypingTarget(element) {
+  if (!element) {
+    return false;
+  }
+
+  const tagName = element.tagName?.toLowerCase();
+  return tagName === "input" || tagName === "textarea" || tagName === "select" || element.isContentEditable;
+}
+
+function setWorkspaceHelpOpen(isOpen) {
+  workspaceHelpDialog.hidden = !isOpen;
+  workspaceHelpDialog.setAttribute("aria-hidden", String(!isOpen));
+  workspaceHelpToggle.setAttribute("aria-expanded", String(isOpen));
+}
+
 function updateWorkspaceSummary() {
   const nodeCount = payload.nodes.length;
   const rootCount = getRootNodeCount();
   const messageCount = getTotalMessageCount();
   const selectedNode = getSelectedNode();
+  const lineageIds = getLineageIds(selectedNode);
 
   heroNodeCount.textContent = `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`;
   heroRootCount.textContent = `${rootCount} ${rootCount === 1 ? "thread" : "threads"}`;
@@ -179,6 +217,8 @@ function updateWorkspaceSummary() {
   workspaceMessageCount.textContent = String(messageCount);
   workspaceSelectionTitle.textContent = selectedNode ? selectedNode.title : "No node selected";
   workspaceSelectionSummary.textContent = getSelectionSummaryText(selectedNode);
+  workspaceSelectionType.textContent = selectedNode ? getNodeMode(selectedNode) : "No active path";
+  workspaceSelectionDepth.textContent = `Lineage depth ${lineageIds.length}`;
 }
 
 function getNodeChatUrl(nodeId) {
@@ -243,6 +283,7 @@ async function handleNodePositionCommit(nodeId, position) {
 
 function renderGraphCanvas() {
   return renderCanvas(payload.nodes, selectedNodeId, {
+    activeLineageIds,
     onSelect: updateSelection,
     onPositionCommit: handleNodePositionCommit,
     onMetricsChange: handleCanvasMetricsChange,
@@ -265,6 +306,7 @@ function updateFormState() {
 }
 
 function showEmptyNodeState() {
+  activeLineageIds = new Set();
   nodeTitle.textContent = "No node selected";
   nodeProvider.textContent = "Waiting";
   delete nodeProvider.dataset.provider;
@@ -292,6 +334,7 @@ function updateSelection(nodeId) {
     return;
   }
 
+  activeLineageIds = new Set(getLineageIds(node));
   nodeTitle.textContent = node.title;
   nodeProvider.textContent = node.provider;
   nodeProvider.dataset.provider = node.provider;
@@ -312,6 +355,67 @@ function updateSelection(nodeId) {
   updateFormState();
   updateWorkspaceSummary();
   renderGraphCanvas();
+}
+
+function toggleDetailPanel() {
+  setDetailPanelCollapsed(workspaceShell.dataset.detailPanelCollapsed !== "true");
+}
+
+function handleWorkspaceKeydown(event) {
+  if (isTypingTarget(event.target)) {
+    if (event.key === "Escape" && workspaceHelpDialog.hidden === false) {
+      setWorkspaceHelpOpen(false);
+      event.preventDefault();
+    }
+    return;
+  }
+
+  if (event.key === "Escape" && workspaceHelpDialog.hidden === false) {
+    setWorkspaceHelpOpen(false);
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "?") {
+    setWorkspaceHelpOpen(workspaceHelpDialog.hidden);
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "i" || event.key === "I") {
+    toggleDetailPanel();
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "f" || event.key === "F") {
+    viewport.fitToGraph();
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "0") {
+    viewport.resetZoom();
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "+" || event.key === "=") {
+    viewport.zoomIn();
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "-") {
+    viewport.zoomOut();
+    event.preventDefault();
+    return;
+  }
+
+  if ((event.key === "c" || event.key === "C") && !openChatLink.hidden && openChatLink.href) {
+    window.location.href = openChatLink.href;
+    event.preventDefault();
+  }
 }
 
 function getEditUrl(nodeId) {
@@ -427,15 +531,18 @@ rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
-detailPanelToggle.addEventListener("click", () => {
-  setDetailPanelCollapsed(workspaceShell.dataset.detailPanelCollapsed !== "true");
-});
+detailPanelToggle.addEventListener("click", toggleDetailPanel);
 detailPanelPeek.addEventListener("click", () => setDetailPanelCollapsed(false));
+workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspaceHelpDialog.hidden));
+workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
+workspaceHelpBackdrop.addEventListener("click", () => setWorkspaceHelpOpen(false));
 fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());
+window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
+setWorkspaceHelpOpen(false);
 setDetailPanelCollapsed(readStoredDetailPanelState());
 renderGraphCanvas();
 updateSelection(selectedNodeId);

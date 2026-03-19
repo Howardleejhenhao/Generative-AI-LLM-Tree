@@ -13,7 +13,7 @@ export function getNodeBounds(node) {
   };
 }
 
-function drawEdge(svg, fromNode, toNode) {
+function drawEdge(svg, fromNode, toNode, isActive = false) {
   const startX = fromNode.position.x + NODE_WIDTH;
   const startY = fromNode.position.y + NODE_MIDPOINT_Y;
   const endX = toNode.position.x;
@@ -26,6 +26,7 @@ function drawEdge(svg, fromNode, toNode) {
     `M ${startX} ${startY} C ${startX + curveOffset} ${startY}, ${endX - curveOffset} ${endY}, ${endX} ${endY}`,
   );
   path.setAttribute("class", "graph-edge");
+  path.dataset.active = String(isActive);
   svg.appendChild(path);
 }
 
@@ -68,7 +69,7 @@ function applyNodePosition(card, node) {
 }
 
 export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
-  const { onSelect, onPositionCommit, onMetricsChange, getViewportScale } = handlers;
+  const { activeLineageIds = new Set(), onSelect, onPositionCommit, onMetricsChange, getViewportScale } = handlers;
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
   const nodeLayer = document.getElementById("graph-nodes");
@@ -95,7 +96,12 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
       const parentNode = nodesById.get(String(node.parent_id));
       if (parentNode) {
-        drawEdge(edgeLayer, parentNode, node);
+        drawEdge(
+          edgeLayer,
+          parentNode,
+          node,
+          activeLineageIds.has(String(parentNode.id)) && activeLineageIds.has(String(node.id)),
+        );
       }
     }
   }
@@ -119,6 +125,7 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     button.className = "graph-node";
     button.dataset.provider = node.provider;
     button.dataset.selected = String(String(node.id) === String(selectedNodeId));
+    button.dataset.lineage = String(activeLineageIds.has(String(node.id)));
     button.dataset.suppressClick = "false";
     button.dataset.dragging = "false";
     applyNodePosition(button, node);
