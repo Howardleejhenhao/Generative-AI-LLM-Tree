@@ -11,6 +11,54 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 23:06
+
+### Session Goal
+- Add viewport fitting so the graph can frame existing trees more intelligently than a fixed reset zoom.
+- Improve graph navigation after node creation and after inspector width changes.
+
+### Planned Tasks
+- create a fresh feature branch from `main` for viewport fitting work
+- implement graph-bounds fitting and expose it as an explicit graph control
+- auto-fit on first graph render, keep layout stable afterward, and validate the result with checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, and progress log were reviewed.
+- Created `feature/viewport-fit-controls` from `main`.
+- Added graph-content bounds tracking so viewport behavior can target the actual node extents instead of only the raw canvas size.
+- Added a `Fit view` control that frames the visible conversation tree inside the workspace with dynamic zoom and centering.
+- Enabled automatic first-render fitting for populated graphs while keeping subsequent pan/zoom state stable unless the user explicitly refits.
+- Centered the viewport on newly created nodes so follow-up branches and edited variants remain visible immediately after creation.
+- Refreshed viewport constraints when the inspector width changes so collapse/restore does not leave stale pan bounds.
+- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/viewport-fit-controls`
+- Commits made:
+  - none recorded yet
+- Push status:
+  - not yet recorded
+
+### Current Status
+- Viewport fitting is implemented and validated locally on `feature/viewport-fit-controls`.
+
+### Next Recommended Step
+- Commit and push `feature/viewport-fit-controls`.
+- Merge it back into `main`, then clean up the temporary branch.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 22:21
 
 ### Session Goal

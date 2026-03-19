@@ -2,6 +2,8 @@ const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 1.75;
 const DEFAULT_ZOOM = 1;
 const ZOOM_STEP = 0.15;
+const FIT_PADDING_X = 88;
+const FIT_PADDING_Y = 112;
 
 function clampValue(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -9,6 +11,19 @@ function clampValue(value, min, max) {
 
 function roundZoom(value) {
   return Math.round(value * 100) / 100;
+}
+
+function normalizeBounds(bounds) {
+  if (!bounds) {
+    return null;
+  }
+
+  return {
+    minX: bounds.minX,
+    minY: bounds.minY,
+    maxX: Math.max(bounds.maxX, bounds.minX + 1),
+    maxY: Math.max(bounds.maxY, bounds.minY + 1),
+  };
 }
 
 export function createViewportController(options = {}) {
@@ -24,7 +39,9 @@ export function createViewportController(options = {}) {
     zoom: DEFAULT_ZOOM,
     canvasWidth: 1600,
     canvasHeight: 1200,
+    contentBounds: null,
     dragging: false,
+    hasAutoFit: false,
     startPanX: 0,
     startPanY: 0,
     pointerStartX: 0,
@@ -81,6 +98,7 @@ export function createViewportController(options = {}) {
       percent: Math.round(state.zoom * 100),
       canZoomIn: state.zoom < MAX_ZOOM,
       canZoomOut: state.zoom > MIN_ZOOM,
+      canFit: Boolean(state.contentBounds),
       hasNodes: stage.dataset.hasNodes === "true",
     });
   }
@@ -96,10 +114,64 @@ export function createViewportController(options = {}) {
     publishState();
   }
 
+  function centerBoundsAtZoom(bounds, zoom) {
+    const stageWidth = stage.clientWidth;
+    const stageHeight = stage.clientHeight;
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+
+    state.zoom = clampValue(roundZoom(zoom), MIN_ZOOM, MAX_ZOOM);
+    state.panX = ((stageWidth - (width * state.zoom)) / 2) - (bounds.minX * state.zoom);
+    state.panY = ((stageHeight - (height * state.zoom)) / 2) - (bounds.minY * state.zoom);
+    applyTransform();
+  }
+
+  function fitToBounds(bounds) {
+    const resolvedBounds = normalizeBounds(bounds);
+    if (!resolvedBounds) {
+      applyTransform();
+      return;
+    }
+
+    const stageWidth = stage.clientWidth;
+    const stageHeight = stage.clientHeight;
+    const width = resolvedBounds.maxX - resolvedBounds.minX;
+    const height = resolvedBounds.maxY - resolvedBounds.minY;
+    const availableWidth = Math.max(stageWidth - (FIT_PADDING_X * 2), 120);
+    const availableHeight = Math.max(stageHeight - (FIT_PADDING_Y * 2), 120);
+    const nextZoom = Math.min(availableWidth / width, availableHeight / height, MAX_ZOOM);
+
+    centerBoundsAtZoom(resolvedBounds, Math.max(nextZoom, MIN_ZOOM));
+  }
+
+  function centerOnBounds(bounds) {
+    const resolvedBounds = normalizeBounds(bounds);
+    if (!resolvedBounds) {
+      applyTransform();
+      return;
+    }
+
+    centerBoundsAtZoom(resolvedBounds, state.zoom);
+  }
+
   function setCanvasMetrics(metrics, hasNodes) {
     state.canvasWidth = metrics.width;
     state.canvasHeight = metrics.height;
+    state.contentBounds = normalizeBounds(metrics.contentBounds);
     stage.dataset.hasNodes = String(hasNodes);
+
+    if (!hasNodes) {
+      state.hasAutoFit = false;
+      applyTransform();
+      return;
+    }
+
+    if (!state.hasAutoFit && state.contentBounds) {
+      state.hasAutoFit = true;
+      fitToBounds(state.contentBounds);
+      return;
+    }
+
     applyTransform();
   }
 
@@ -196,8 +268,15 @@ export function createViewportController(options = {}) {
   applyTransform();
 
   return {
+    centerOnBounds,
+    fitToGraph() {
+      fitToBounds(state.contentBounds);
+    },
     getScale() {
       return state.zoom;
+    },
+    refreshLayout() {
+      applyTransform();
     },
     resetZoom() {
       setZoom(DEFAULT_ZOOM);

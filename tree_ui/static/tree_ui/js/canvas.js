@@ -4,6 +4,15 @@ const NODE_FOOTPRINT_HEIGHT = 180;
 const NODE_MIDPOINT_Y = 70;
 const DRAG_THRESHOLD = 6;
 
+export function getNodeBounds(node) {
+  return {
+    minX: node.position.x,
+    minY: node.position.y,
+    maxX: node.position.x + NODE_FOOTPRINT_WIDTH,
+    maxY: node.position.y + NODE_FOOTPRINT_HEIGHT,
+  };
+}
+
 function drawEdge(svg, fromNode, toNode) {
   const startX = fromNode.position.x + NODE_WIDTH;
   const startY = fromNode.position.y + NODE_MIDPOINT_Y;
@@ -23,19 +32,31 @@ function drawEdge(svg, fromNode, toNode) {
 function buildCanvasMetrics(nodes) {
   if (nodes.length === 0) {
     return {
+      contentBounds: null,
       width: 1600,
       height: 1200,
     };
   }
 
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
   let maxX = 0;
   let maxY = 0;
   for (const node of nodes) {
-    maxX = Math.max(maxX, node.position.x + NODE_FOOTPRINT_WIDTH);
-    maxY = Math.max(maxY, node.position.y + NODE_FOOTPRINT_HEIGHT);
+    const bounds = getNodeBounds(node);
+    minX = Math.min(minX, bounds.minX);
+    minY = Math.min(minY, bounds.minY);
+    maxX = Math.max(maxX, bounds.maxX);
+    maxY = Math.max(maxY, bounds.maxY);
   }
 
   return {
+    contentBounds: {
+      minX,
+      minY,
+      maxX,
+      maxY,
+    },
     width: Math.max(1600, maxX + 220),
     height: Math.max(1200, maxY + 220),
   };
