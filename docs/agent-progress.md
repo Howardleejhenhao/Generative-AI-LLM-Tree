@@ -11,6 +11,60 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 19:48
+
+### Session Goal
+- Start the first node-focused chat view so a selected node can open into its own conversation page.
+- Reuse the existing streaming generation path while making the graph and chat experiences work together.
+
+### Planned Tasks
+- inspect the current graph payload, node detail flow, and streaming endpoint reuse opportunities
+- add a dedicated route and Django Template for a node-focused chat page
+- connect the graph UI to the node chat view and wire the chat composer to create child branches
+- verify the new flow with local Django checks and tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Added a dedicated node-focused chat route so a node can open as its own conversation page.
+- Built a new Django Template for the node chat view with lineage breadcrumbs, transcript area, workspace switching, and a child-branch sidebar.
+- Reused the existing streaming node creation endpoint so the chat composer can continue from the current node and then redirect into the newly created child branch.
+- Added an `Open chat view` action to the graph detail panel so the graph and node chat experiences are directly connected.
+- Extracted shared provider/model option logic into a reusable frontend module.
+- Added regression coverage for the new node chat page route and verified the feature with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/model-options.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-header-polish`
+- New branch created/switched: `feature/node-focused-chat-view`
+- Commits made:
+  - `bb32102` - `feat: add node-focused chat view`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The graph page can now hand off into a dedicated node chat view, and continuing from that page creates the next child branch with streaming feedback.
+- The graph remains the main canvas, but nodes now also have a chat-style continuation surface.
+
+### Next Recommended Step
+- Add manual node dragging with persisted positions so the graph layout becomes user-controlled.
+- After that, add zoom controls and continue moving the main experience toward the full-page graph workspace requested in `AGENTS.md`.
+
+### Known Issues / Blockers / Tech Debt
+- The node chat transcript currently displays the selected node's own messages, not the full historical lineage transcript.
+- Graph-side navigation into chat is implemented from the detail panel; direct node-card double-click or other shortcuts are still future polish.
+
 ## Session 2026-03-19 16:50
 
 ### Session Goal
