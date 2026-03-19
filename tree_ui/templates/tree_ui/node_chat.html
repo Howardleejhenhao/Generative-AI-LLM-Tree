@@ -11,8 +11,8 @@
         <p class="eyebrow">Node Conversation</p>
         <h1>{{ node_payload.title }}</h1>
         <p class="hero-copy">
-          This view treats the selected node like its own chat session. Continue from here and each
-          reply will create the next branch-local child node.
+          This view is the actual conversation space for the selected node. Each new reply is
+          appended to this node's transcript instead of creating another graph node.
         </p>
       </div>
       <div class="chat-meta-card">
@@ -75,35 +75,17 @@
         <form
           class="chat-composer"
           id="chat-form"
-          data-node-stream-url="{% url 'stream_workspace_node' workspace.slug %}"
-          data-node-chat-url-template="{% url 'workspace_node_chat' workspace.slug 999999 %}"
+          data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
         >
           {% csrf_token %}
           <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-          <div class="chat-composer-row">
-            <label class="form-field">
-              <span>Branch Title</span>
-              <input id="chat-title-input" name="title" type="text" maxlength="160" placeholder="Optional child node title">
-            </label>
-            <label class="form-field">
-              <span>Provider</span>
-              <select id="chat-provider-input" name="provider">
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </label>
-            <label class="form-field">
-              <span>Model</span>
-              <select id="chat-model-input" name="model_name"></select>
-            </label>
-          </div>
           <label class="form-field">
-            <span>Continue Conversation</span>
+            <span>Reply In This Node</span>
             <textarea
               id="chat-prompt-input"
               name="prompt"
               rows="5"
-              placeholder="Reply here to continue from this node and create the next branch."
+              placeholder="Reply here to continue this node conversation."
             ></textarea>
           </label>
           <div class="chat-composer-actions">
@@ -136,6 +118,7 @@
         <section class="chat-sidebar-card">
           <p class="panel-kicker">Existing Branches</p>
           <h2>Children from this node</h2>
+          <p class="chat-empty-copy">Use the graph view when you want to create a new child conversation node from this point.</p>
           {% if child_nodes %}
             <div class="chat-branch-list">
               {% for child in child_nodes %}

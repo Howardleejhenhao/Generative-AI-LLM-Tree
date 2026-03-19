@@ -26,15 +26,11 @@ def _build_summary(prompt: str) -> str:
     return f"{prompt[:89]}..."
 
 
-def _build_title(title: str, prompt: str) -> str:
+def _build_node_title(title: str) -> str:
     clean_title = title.strip()
     if clean_title:
         return clean_title
-
-    compact_prompt = " ".join(prompt.split())
-    if len(compact_prompt) <= 42:
-        return compact_prompt or "Untitled node"
-    return f"{compact_prompt[:39]}..."
+    return "Untitled conversation"
 
 
 def _build_fallback_assistant_message(
@@ -99,14 +95,9 @@ def resolve_node_creation_inputs(
     workspace: Workspace,
     parent: ConversationNode | None,
     title: str,
-    prompt: str,
     provider: str,
     model_name: str,
 ) -> dict:
-    normalized_prompt = prompt.strip()
-    if not normalized_prompt:
-        raise ValueError("Prompt is required.")
-
     if provider not in ConversationNode.Provider.values:
         raise ValueError("Unsupported provider.")
 
@@ -114,13 +105,23 @@ def resolve_node_creation_inputs(
     position_x, position_y = _calculate_position(workspace=workspace, parent=parent)
 
     return {
-        "prompt": normalized_prompt,
         "provider": provider,
         "model_name": resolved_model,
-        "title": _build_title(title, normalized_prompt),
-        "summary": _build_summary(normalized_prompt),
+        "title": _build_node_title(title),
+        "summary": "Open this node to start the conversation.",
         "position_x": position_x,
         "position_y": position_y,
+    }
+
+
+def resolve_message_append_inputs(*, prompt: str) -> dict:
+    normalized_prompt = prompt.strip()
+    if not normalized_prompt:
+        raise ValueError("Prompt is required.")
+
+    return {
+        "prompt": normalized_prompt,
+        "summary": _build_summary(normalized_prompt),
     }
 
 
@@ -131,49 +132,11 @@ def iter_text_chunks(text: str, chunk_size: int = 24):
             time.sleep(settings.LLM_STREAM_CHUNK_DELAY_SECONDS)
 
 
-def create_node_with_reply(
-    *,
-    workspace: Workspace,
-    parent: ConversationNode | None,
-    resolved_inputs: dict,
-    assistant_reply: str,
-) -> ConversationNode:
-    with transaction.atomic():
-        node = ConversationNode.objects.create(
-            workspace=workspace,
-            parent=parent,
-            title=resolved_inputs["title"],
-            summary=resolved_inputs["summary"],
-            provider=resolved_inputs["provider"],
-            model_name=resolved_inputs["model_name"],
-            position_x=resolved_inputs["position_x"],
-            position_y=resolved_inputs["position_y"],
-        )
-        NodeMessage.objects.bulk_create(
-            [
-                NodeMessage(
-                    node=node,
-                    role=NodeMessage.Role.USER,
-                    content=resolved_inputs["prompt"],
-                    order_index=0,
-                ),
-                NodeMessage(
-                    node=node,
-                    role=NodeMessage.Role.ASSISTANT,
-                    content=assistant_reply,
-                    order_index=1,
-                ),
-            ]
-        )
-    return ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
-
-
 def create_node(
     *,
     workspace: Workspace,
     parent: ConversationNode | None,
     title: str,
-    prompt: str,
     provider: str,
     model_name: str,
 ) -> ConversationNode:
@@ -181,19 +144,67 @@ def create_node(
         workspace=workspace,
         parent=parent,
         title=title,
-        prompt=prompt,
         provider=provider,
         model_name=model_name,
     )
-    assistant_reply = generate_assistant_reply(
-        parent=parent,
-        provider=resolved_inputs["provider"],
-        model_name=resolved_inputs["model_name"],
-        prompt=resolved_inputs["prompt"],
-    )
-    return create_node_with_reply(
+    return ConversationNode.objects.create(
         workspace=workspace,
         parent=parent,
-        resolved_inputs=resolved_inputs,
+        title=resolved_inputs["title"],
+        summary=resolved_inputs["summary"],
+        provider=resolved_inputs["provider"],
+        model_name=resolved_inputs["model_name"],
+        position_x=resolved_inputs["position_x"],
+        position_y=resolved_inputs["position_y"],
+    )
+
+
+def append_messages_to_node_with_reply(
+    *,
+    node: ConversationNode,
+    prompt: str,
+    assistant_reply: str,
+) -> ConversationNode:
+    resolved_inputs = resolve_message_append_inputs(prompt=prompt)
+    starting_order = node.messages.count()
+
+    with transaction.atomic():
+        NodeMessage.objects.bulk_create(
+            [
+                NodeMessage(
+                    node=node,
+                    role=NodeMessage.Role.USER,
+                    content=resolved_inputs["prompt"],
+                    order_index=starting_order,
+                ),
+                NodeMessage(
+                    node=node,
+                    role=NodeMessage.Role.ASSISTANT,
+                    content=assistant_reply,
+                    order_index=starting_order + 1,
+                ),
+            ]
+        )
+        node.summary = resolved_inputs["summary"]
+        node.save(update_fields=["summary", "updated_at"])
+
+    return ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
+
+
+def append_messages_to_node(
+    *,
+    node: ConversationNode,
+    prompt: str,
+) -> ConversationNode:
+    resolved_inputs = resolve_message_append_inputs(prompt=prompt)
+    assistant_reply = generate_assistant_reply(
+        parent=node,
+        provider=node.provider,
+        model_name=node.model_name,
+        prompt=resolved_inputs["prompt"],
+    )
+    return append_messages_to_node_with_reply(
+        node=node,
+        prompt=resolved_inputs["prompt"],
         assistant_reply=assistant_reply,
     )

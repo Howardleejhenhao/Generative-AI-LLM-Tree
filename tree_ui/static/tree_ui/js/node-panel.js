@@ -1,6 +1,14 @@
 export function renderNodeDetails(container, messages) {
   container.innerHTML = "";
 
+  if (!messages.length) {
+    const empty = document.createElement("p");
+    empty.className = "chat-empty-copy";
+    empty.textContent = "No messages in this node yet. Open the chat view to start the conversation.";
+    container.appendChild(empty);
+    return;
+  }
+
   for (const message of messages) {
     const article = document.createElement("article");
     article.className = "message-card";
@@ -57,6 +65,14 @@ export function renderMessageEditors(container, messages) {
 
 export function renderChatTranscript(container, messages) {
   container.innerHTML = "";
+
+  if (!messages.length) {
+    const empty = document.createElement("p");
+    empty.className = "chat-empty-copy";
+    empty.textContent = "This conversation has not started yet. Send the first message below.";
+    container.appendChild(empty);
+    return;
+  }
 
   for (const message of messages) {
     const article = document.createElement("article");

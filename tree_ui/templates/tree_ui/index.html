@@ -67,7 +67,7 @@
           <p class="panel-kicker">Graph View</p>
           <h2 id="workspace-name">Workspace</h2>
         </div>
-        <p class="panel-note">Select a node to inspect its branch-local message bundle.</p>
+        <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
       </div>
       <div class="graph-stage" id="graph-stage">
         <div class="graph-canvas" id="graph-canvas">
@@ -116,15 +116,17 @@
         </div>
       </dl>
 
-      <div class="message-list" id="message-list"></div>
-
+      <section class="action-box action-box-preview">
+        <h3>Recent Activity</h3>
+        <p class="edit-note">The full transcript now lives inside the node chat view. This panel only shows the latest messages.</p>
+        <div class="message-list" id="message-list"></div>
+      </section>
       <section class="action-box">
-        <h3>Create Conversation</h3>
+        <h3>Create Conversation Node</h3>
         <p id="streaming-status">
-          New nodes now pass through provider-specific generation services and fall back safely
-          when API keys are not configured.
+          This page now only creates conversation containers. Open a node after creation to start chatting inside it.
         </p>
-        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}" data-node-stream-url="{% url 'stream_workspace_node' graph_payload.workspace.slug %}">
+        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
           {% csrf_token %}
           <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
           <p class="form-target" id="form-target">New node target: root</p>
@@ -147,11 +149,7 @@
             <span>Model</span>
             <select id="node-model-input" name="model_name"></select>
           </label>
-          <label class="form-field">
-            <span>Prompt</span>
-            <textarea id="node-prompt-input" name="prompt" rows="4" placeholder="Continue the selected branch or start a separate root conversation"></textarea>
-          </label>
-          <button class="primary-button" id="node-submit-button" type="submit">Create node</button>
+          <button class="primary-button" id="node-submit-button" type="submit">Create conversation node</button>
           <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
         </form>
         <div class="legend">

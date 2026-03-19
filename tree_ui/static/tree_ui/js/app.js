@@ -1,11 +1,7 @@
+import { postJSON } from "./api.js";
 import { renderCanvas } from "./canvas.js";
 import { syncModelOptions } from "./model-options.js";
-import {
-  renderMessageEditors,
-  renderNodeDetails,
-  renderStreamingPreview,
-} from "./node-panel.js";
-import { getStreamingLabel, streamJSON } from "./streaming.js";
+import { renderMessageEditors, renderNodeDetails } from "./node-panel.js";
 import { createViewportController } from "./viewport.js";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
@@ -18,7 +14,6 @@ const nodeModel = document.getElementById("node-model");
 const nodeParent = document.getElementById("node-parent");
 const nodeSummary = document.getElementById("node-summary");
 const messageList = document.getElementById("message-list");
-const streamingStatus = document.getElementById("streaming-status");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
@@ -29,7 +24,6 @@ const workspaceCreateFeedback = document.getElementById("workspace-create-feedba
 const nodeTitleInput = document.getElementById("node-title-input");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
-const promptInput = document.getElementById("node-prompt-input");
 const submitButton = document.getElementById("node-submit-button");
 const rootModeToggle = document.getElementById("root-mode-toggle");
 const editBox = document.getElementById("edit-box");
@@ -65,23 +59,12 @@ function updateFormState() {
     formTarget.textContent = selectedNode && isRootModeEnabled()
       ? `New node target: separate root conversation (selection kept on "${selectedNode.title}")`
       : "New node target: root conversation";
-    submitButton.textContent = "Create root conversation";
+    submitButton.textContent = "Create root conversation node";
     return;
   }
 
-  formTarget.textContent = `New node target: child of "${selectedNode.title}"`;
-  submitButton.textContent = "Create child node";
-}
-
-function renderStreamingState(preview, assistantText) {
-  nodeTitle.textContent = preview.title || "Streaming draft";
-  nodeProvider.textContent = preview.provider;
-  nodeProvider.dataset.provider = preview.provider;
-  nodeModel.textContent = preview.model_name;
-  nodeParent.textContent = preview.parent_id ? `Node ${preview.parent_id}` : "Root";
-  nodeSummary.textContent = preview.summary || "Streaming response in progress.";
-  streamingStatus.textContent = `Streaming response for ${preview.provider} / ${preview.model_name}...`;
-  renderStreamingPreview(messageList, preview.prompt, assistantText);
+  formTarget.textContent = `New node target: child conversation of "${selectedNode.title}"`;
+  submitButton.textContent = "Create child conversation node";
 }
 
 function showEmptyNodeState() {
@@ -91,7 +74,7 @@ function showEmptyNodeState() {
   openChatLink.hidden = true;
   nodeModel.textContent = "-";
   nodeParent.textContent = "Root";
-  nodeSummary.textContent = "Create a root node to begin the workspace.";
+  nodeSummary.textContent = "Create a root conversation node to begin the workspace.";
   messageList.innerHTML = "";
   editBox.hidden = true;
 }
@@ -115,9 +98,8 @@ function updateSelection(nodeId) {
   openChatLink.href = getNodeChatUrl(node.id);
   nodeModel.textContent = node.model_name;
   nodeParent.textContent = node.parent_id ? `Node ${node.parent_id}` : "Root";
-  nodeSummary.textContent = node.summary || "No summary yet.";
-  streamingStatus.textContent = getStreamingLabel(node);
-  renderNodeDetails(messageList, node.messages);
+  nodeSummary.textContent = node.summary || "Open this node to continue the conversation.";
+  renderNodeDetails(messageList, node.messages.slice(-2));
   editBox.hidden = false;
   editTitleInput.value = `${node.title} (Edited)`;
   editFeedback.textContent = "";
@@ -211,46 +193,23 @@ async function handleNodeSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
   submitButton.disabled = true;
-  let previewState = null;
-  let assistantText = "";
 
   try {
-    await streamJSON(
-      nodeForm.dataset.nodeStreamUrl,
+    const result = await postJSON(
+      nodeForm.dataset.nodeCreateUrl,
       {
         parent_id: isRootModeEnabled() ? null : getSelectedNode()?.id ?? null,
         title: nodeTitleInput.value,
         provider: providerInput.value,
         model_name: modelInput.value,
-        prompt: promptInput.value,
       },
       csrfToken,
-      {
-        preview(data) {
-          previewState = data;
-          assistantText = "";
-          renderStreamingState(previewState, assistantText);
-          feedback.textContent = "Streaming response...";
-        },
-        delta(data) {
-          assistantText += data.delta;
-          if (previewState) {
-            renderStreamingState(previewState, assistantText);
-          }
-        },
-        node(data) {
-          payload.nodes.push(data.node);
-          nodesById.set(String(data.node.id), data.node);
-          nodeTitleInput.value = "";
-          promptInput.value = "";
-          feedback.textContent = `Node "${data.node.title}" created.`;
-          updateSelection(data.node.id);
-        },
-        error(data) {
-          throw new Error(data.message || "Streaming request failed.");
-        },
-      },
     );
+    payload.nodes.push(result.node);
+    nodesById.set(String(result.node.id), result.node);
+    nodeTitleInput.value = "";
+    feedback.textContent = `Conversation node "${result.node.title}" created. Open it to chat.`;
+    updateSelection(result.node.id);
   } catch (error) {
     feedback.textContent = error.message;
   } finally {

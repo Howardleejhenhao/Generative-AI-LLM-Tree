@@ -22,6 +22,11 @@ urlpatterns = [
         name="stream_workspace_node",
     ),
     path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/messages/stream/",
+        views.stream_node_message,
+        name="stream_node_message",
+    ),
+    path(
         "api/workspaces/<slug:slug>/nodes/<int:node_id>/edit-variant/",
         views.create_edited_node_variant,
         name="create_edited_node_variant",

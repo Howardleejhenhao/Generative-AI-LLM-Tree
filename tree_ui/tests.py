@@ -6,9 +6,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from tree_ui.models import ConversationNode, NodeMessage, Workspace
-from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.context_builder import build_generation_messages
-from tree_ui.services.node_creation import create_node
+from tree_ui.services.node_creation import append_messages_to_node
+from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers.base import GenerationResult
 
 
@@ -85,7 +85,6 @@ class WorkspaceGraphViewTests(TestCase):
             data=json.dumps(
                 {
                     "title": "Root node",
-                    "prompt": "Plan the first branch.",
                     "provider": "openai",
                     "model_name": "gpt-4.1-mini",
                 }
@@ -98,8 +97,8 @@ class WorkspaceGraphViewTests(TestCase):
         node = ConversationNode.objects.get()
         self.assertIsNone(node.parent)
         self.assertEqual(node.provider, ConversationNode.Provider.OPENAI)
-        self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
-        self.assertIn("Fallback openai response", node.messages.get(role="assistant").content)
+        self.assertEqual(NodeMessage.objects.filter(node=node).count(), 0)
+        self.assertEqual(node.summary, "Open this node to start the conversation.")
 
     def test_can_create_multiple_root_nodes_in_one_workspace(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -108,7 +107,6 @@ class WorkspaceGraphViewTests(TestCase):
             data=json.dumps(
                 {
                     "title": "Conversation A",
-                    "prompt": "Start conversation A.",
                     "provider": "openai",
                     "model_name": "gpt-4.1-mini",
                 }
@@ -120,7 +118,6 @@ class WorkspaceGraphViewTests(TestCase):
             data=json.dumps(
                 {
                     "title": "Conversation B",
-                    "prompt": "Start conversation B.",
                     "provider": "gemini",
                     "model_name": "gemini-2.0-flash",
                 }
@@ -153,7 +150,6 @@ class WorkspaceGraphViewTests(TestCase):
             data=json.dumps(
                 {
                     "title": "Branch node",
-                    "prompt": "Continue from the root.",
                     "provider": "gemini",
                     "model_name": "gemini-2.0-flash",
                     "parent_id": parent.id,
@@ -214,17 +210,21 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(original.messages.first().content, "Original prompt")
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
-    def test_can_stream_node_creation_via_api(self):
+    def test_can_stream_node_message_append_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
 
         response = self.client.post(
-            reverse("stream_workspace_node", args=[workspace.slug]),
+            reverse("stream_node_message", args=[workspace.slug, node.id]),
             data=json.dumps(
                 {
-                    "title": "Streaming root",
-                    "prompt": "Stream the first branch.",
-                    "provider": "openai",
-                    "model_name": "gpt-4.1-mini",
+                    "prompt": "Stream the first reply.",
                 }
             ),
             content_type="application/json",
@@ -237,6 +237,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertIn("event: delta", streamed)
         self.assertIn("event: node", streamed)
         self.assertEqual(ConversationNode.objects.count(), 1)
+        self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
 
     def test_branch_local_context_uses_selected_lineage_only(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -304,25 +305,28 @@ class WorkspaceGraphViewTests(TestCase):
         )
 
     @patch("tree_ui.services.node_creation.generate_text")
-    def test_create_node_uses_provider_result_when_available(self, mock_generate_text):
+    def test_append_messages_to_node_uses_provider_result_when_available(self, mock_generate_text):
         workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Main conversation",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
         mock_generate_text.return_value = GenerationResult(
             text="Real provider output",
             provider="openai",
             model_name="gpt-4.1-mini",
         )
 
-        node = create_node(
-            workspace=workspace,
-            parent=None,
-            title="",
+        updated_node = append_messages_to_node(
+            node=node,
             prompt="Summarize the plan",
-            provider=ConversationNode.Provider.OPENAI,
-            model_name="gpt-4.1-mini",
         )
 
         self.assertEqual(
-            node.messages.get(role=NodeMessage.Role.ASSISTANT).content,
+            updated_node.messages.get(role=NodeMessage.Role.ASSISTANT).content,
             "Real provider output",
         )
         mock_generate_text.assert_called_once()
