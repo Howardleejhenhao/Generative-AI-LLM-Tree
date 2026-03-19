@@ -245,15 +245,25 @@ body:has(.chat-page-immersive) .page-shell {
   min-height: 0;
 }
 
+.chat-page-immersive::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 96px;
+  background: linear-gradient(180deg, rgba(244, 239, 230, 0.82), rgba(244, 239, 230, 0));
+  pointer-events: none;
+  z-index: 1;
+}
+
 .chat-shell-header {
   position: absolute;
-  top: 18px;
-  left: 24px;
-  right: 24px;
+  top: 12px;
+  left: 18px;
+  right: 18px;
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: auto;
   margin: 0;
   padding: 0;
@@ -268,29 +278,31 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-shell-copy-inline {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   max-width: min(1100px, calc(100vw - 190px));
-  padding: 8px 14px;
-  border: 1px solid rgba(74, 58, 40, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 252, 247, 0.84);
-  box-shadow: 0 10px 24px rgba(49, 37, 22, 0.08);
-  backdrop-filter: blur(14px);
+  padding: 5px 8px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 252, 247, 0.46);
+  box-shadow: 0 6px 14px rgba(49, 37, 22, 0.04);
+  backdrop-filter: blur(10px);
   pointer-events: auto;
 }
 
 .chat-shell-header .ghost-link {
   margin-bottom: 0;
   align-self: center;
-  padding: 8px 12px;
-  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-color: rgba(74, 58, 40, 0.08);
+  background: rgba(255, 252, 247, 0.54);
+  font-size: 0.82rem;
   pointer-events: auto;
 }
 
 .chat-shell-copy h1 {
   margin: 0;
-  font-size: clamp(1.25rem, 1.9vw, 1.65rem);
+  font-size: clamp(1.08rem, 1.45vw, 1.32rem);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -300,10 +312,11 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-shell-meta {
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  opacity: 0.9;
 }
 
 .chat-topbar {
@@ -462,7 +475,7 @@ body:has(.chat-page-immersive) .page-shell {
   height: 100%;
   min-height: 0;
   max-height: none;
-  padding: 88px 0 198px;
+  padding: 72px 0 198px;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -1164,7 +1177,7 @@ body:has(.chat-page-immersive) .page-shell {
     width: 100%;
     left: 12px;
     right: 12px;
-    top: 12px;
+    top: 10px;
     gap: 8px;
   }
 
@@ -1172,7 +1185,7 @@ body:has(.chat-page-immersive) .page-shell {
     display: grid;
     gap: 2px;
     max-width: none;
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 
   .chat-shell-copy h1,
@@ -1199,7 +1212,7 @@ body:has(.chat-page-immersive) .page-shell {
     height: 100%;
     min-height: 0;
     overflow: auto;
-    padding: 74px 0 170px;
+    padding: 64px 0 170px;
   }
 
   .chat-composer-wrap {
