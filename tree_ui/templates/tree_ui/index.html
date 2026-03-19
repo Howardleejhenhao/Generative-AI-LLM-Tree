@@ -35,11 +35,14 @@
         <p class="panel-note">Select a node to inspect its branch-local message bundle.</p>
       </div>
       <div class="graph-stage" id="graph-stage">
-        <div class="graph-empty" id="graph-empty">
-          No nodes yet. Create the root node to start the conversation tree.
+        <div class="graph-canvas" id="graph-canvas">
+          <div class="graph-empty" id="graph-empty">
+            No nodes yet. Create the root node to start the conversation tree.
+          </div>
+          <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
+          <div class="graph-nodes" id="graph-nodes"></div>
         </div>
-        <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
-        <div class="graph-nodes" id="graph-nodes"></div>
+        <p class="graph-hint" id="graph-hint">Drag the canvas to pan in any direction.</p>
       </div>
     </div>
 

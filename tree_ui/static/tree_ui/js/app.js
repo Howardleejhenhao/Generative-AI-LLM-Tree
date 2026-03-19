@@ -2,6 +2,7 @@ import { postJSON } from "./api.js";
 import { renderCanvas } from "./canvas.js";
 import { renderNodeDetails } from "./node-panel.js";
 import { getStreamingLabel } from "./streaming.js";
+import { createViewportController } from "./viewport.js";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 
@@ -27,6 +28,7 @@ const MODEL_OPTIONS = {
   openai: ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"],
   gemini: ["gemini-2.0-flash", "gemini-2.0-pro-exp", "gemini-1.5-pro"],
 };
+const viewport = createViewportController();
 
 workspaceName.textContent = payload.workspace.name;
 
@@ -79,7 +81,8 @@ function updateSelection(nodeId) {
   if (!node) {
     showEmptyNodeState();
     updateFormState();
-    renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+    const metrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+    viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
     return;
   }
 
@@ -92,7 +95,8 @@ function updateSelection(nodeId) {
   streamingStatus.textContent = getStreamingLabel(node);
   renderNodeDetails(messageList, node.messages);
   updateFormState();
-  renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+  const metrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+  viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
 }
 
 async function handleNodeSubmit(event) {
@@ -128,5 +132,6 @@ async function handleNodeSubmit(event) {
 providerInput.addEventListener("change", syncModelOptions);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 syncModelOptions();
-renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
+viewport.setCanvasMetrics(initialMetrics, payload.nodes.length > 0);
 updateSelection(selectedNodeId);

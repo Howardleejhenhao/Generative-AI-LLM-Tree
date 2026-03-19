@@ -31,13 +31,40 @@ function drawEdge(svg, fromNode, toNode) {
   svg.appendChild(path);
 }
 
+function buildCanvasMetrics(nodes) {
+  if (nodes.length === 0) {
+    return {
+      width: 1600,
+      height: 1200,
+    };
+  }
+
+  let maxX = 0;
+  let maxY = 0;
+  for (const node of nodes) {
+    maxX = Math.max(maxX, node.position.x + 320);
+    maxY = Math.max(maxY, node.position.y + 180);
+  }
+
+  return {
+    width: Math.max(1600, maxX + 220),
+    height: Math.max(1200, maxY + 220),
+  };
+}
+
 export function renderCanvas(nodes, selectedNodeId, onSelect) {
+  const canvas = document.getElementById("graph-canvas");
   const nodeLayer = document.getElementById("graph-nodes");
   const edgeLayer = document.getElementById("graph-edges");
   const emptyState = document.getElementById("graph-empty");
   nodeLayer.innerHTML = "";
   edgeLayer.innerHTML = "";
   emptyState.hidden = nodes.length > 0;
+
+  const metrics = buildCanvasMetrics(nodes);
+  canvas.style.width = `${metrics.width}px`;
+  canvas.style.height = `${metrics.height}px`;
+  edgeLayer.setAttribute("viewBox", `0 0 ${metrics.width} ${metrics.height}`);
 
   const nodesById = new Map(nodes.map((node) => [String(node.id), node]));
   for (const node of nodes) {
@@ -51,4 +78,6 @@ export function renderCanvas(nodes, selectedNodeId, onSelect) {
       }
     }
   }
+
+  return metrics;
 }

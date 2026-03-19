@@ -134,6 +134,7 @@ body {
   position: relative;
   min-height: 620px;
   margin: 24px;
+  overflow: hidden;
   border-radius: 20px;
   border: 1px dashed rgba(74, 58, 40, 0.2);
   background:
@@ -141,6 +142,26 @@ body {
     linear-gradient(90deg, rgba(95, 79, 60, 0.06) 1px, transparent 1px),
     rgba(255, 251, 245, 0.7);
   background-size: 40px 40px;
+  cursor: grab;
+}
+
+.graph-stage[data-has-nodes="false"] {
+  cursor: default;
+}
+
+.graph-stage[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.graph-stage[data-dragging="true"] .graph-node {
+  pointer-events: none;
+}
+
+.graph-canvas {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform: translate(0, 0);
+  will-change: transform;
 }
 
 .graph-empty {
@@ -154,6 +175,20 @@ body {
   color: var(--muted);
   text-align: center;
   font-size: 1rem;
+}
+
+.graph-hint {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.88);
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  color: var(--muted);
+  font-size: 0.82rem;
+  pointer-events: none;
 }
 
 .graph-edges,
@@ -185,6 +220,7 @@ body {
   box-shadow: 0 16px 34px rgba(49, 37, 22, 0.12);
   text-align: left;
   cursor: pointer;
+  touch-action: none;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 

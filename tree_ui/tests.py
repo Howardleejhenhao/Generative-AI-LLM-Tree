@@ -17,6 +17,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
+        self.assertContains(response, "Drag the canvas to pan in any direction.")
         self.assertEqual(Workspace.objects.count(), 1)
 
     def test_can_create_root_node_via_api(self):
