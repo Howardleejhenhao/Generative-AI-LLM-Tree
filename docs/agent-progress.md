@@ -30,6 +30,7 @@
 - Updated canvas node dragging so persisted positions still move correctly when the workspace is zoomed.
 - Refined the graph UI copy and layout to expose the zoom controls without covering the existing status and hint overlays.
 - Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Merged `feature/graph-zoom-controls` back into `main` and re-ran `python3 manage.py check` plus `python3 manage.py test` on the merged branch.
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -44,16 +45,19 @@
 - Current branch at session start: `main`
 - New branch created/switched: `feature/graph-zoom-controls`
 - Commits made:
-  - none recorded yet
+  - `919f619` - `feat: add graph zoom controls`
+  - `a778d39` - `docs: update agent progress log`
+  - `7fd3490` - `merge: bring back graph zoom controls`
 - Push status:
-  - not yet recorded
+  - pushed to `origin/feature/graph-zoom-controls`
+  - merge-back to `main` completed; final `main` push still pending at the time of this log update
 
 ### Current Status
-- Graph workspace zoom controls are implemented and validated locally.
+- Graph workspace zoom controls are implemented, validated, and merged back into `main`.
 
 ### Next Recommended Step
-- Commit and push `feature/graph-zoom-controls`.
-- After merge-back, continue improving the graph workspace toward the full-page zoomable experience in `AGENTS.md`.
+- Push the updated `main` branch and delete the temporary `feature/graph-zoom-controls` branch.
+- After cleanup, continue improving the graph workspace toward the full-page zoomable experience in `AGENTS.md`.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
