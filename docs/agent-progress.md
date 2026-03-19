@@ -497,6 +497,50 @@
 
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
+
+## Session 2026-03-19 19:30
+
+### Session Goal
+- Polish the multi-workspace header so the hero title stays at the top and the workspace creation area looks more intentional.
+- Improve the visual hierarchy of the workspace switcher and create-workspace controls.
+
+### Planned Tasks
+- inspect the current workspace header structure and styling
+- move the page hero above the workspace creation controls
+- redesign the workspace create area with a cleaner palette and stronger layout hierarchy
+- verify the updated page with local Django checks
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Moved the hero section above the workspace controls so the page title is the first visual element on the screen.
+- Reworked the workspace switcher with a clearer heading and better spacing around workspace pills.
+- Redesigned the create-workspace card with a darker accent palette, stronger hierarchy, and a cleaner input/button layout.
+- Updated the workspace page regression test to match the refreshed header copy.
+- Verified the UI polish with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/multi-workspace-support`
+- New branch created/switched: `feature/workspace-header-polish`
+- Commits made:
+  - `f4f86db` - `feat: polish workspace header layout`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The page now keeps the hero at the top and uses a more deliberate workspace header layout.
+- Workspace creation remains functionally unchanged, but its visual treatment is cleaner and more distinct from the workspace switcher.
+
+### Next Recommended Step
+- Push the workspace header polish branch and then resume the next roadmap item, likely the node-focused chat view or manual node positioning.
+
+### Known Issues / Blockers / Tech Debt
+- No functional blockers identified for this UI polish session.
 - The current edit UI works on the node detail panel; the dedicated node-focused chat view is still future work.
 
 ## Session 2026-03-19 19:17
