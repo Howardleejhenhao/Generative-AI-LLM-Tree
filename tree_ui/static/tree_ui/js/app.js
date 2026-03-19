@@ -7,6 +7,7 @@ import { createViewportController } from "./viewport.js";
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 
 const workspaceName = document.getElementById("workspace-name");
+const graphStatus = document.getElementById("graph-status");
 const nodeTitle = document.getElementById("node-title");
 const nodeProvider = document.getElementById("node-provider");
 const openChatLink = document.getElementById("open-chat-link");
@@ -49,8 +50,67 @@ function getNodeChatUrl(nodeId) {
   return openChatLink.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
 }
 
+function getNodePositionUrl(nodeId) {
+  return graphStatus.dataset.nodePositionUrlTemplate.replace("999999", String(nodeId));
+}
+
 function isRootModeEnabled() {
   return rootModeToggle.checked;
+}
+
+function mergeNode(nextNode) {
+  const nodeId = String(nextNode.id);
+  const existingNode = nodesById.get(nodeId);
+
+  if (existingNode) {
+    Object.assign(existingNode, nextNode);
+    existingNode.position = { ...nextNode.position };
+    existingNode.messages = nextNode.messages;
+    return existingNode;
+  }
+
+  payload.nodes.push(nextNode);
+  nodesById.set(nodeId, nextNode);
+  return nextNode;
+}
+
+function handleCanvasMetricsChange(metrics) {
+  viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
+}
+
+async function handleNodePositionCommit(nodeId, position) {
+  const node = nodesById.get(String(nodeId));
+  if (!node) {
+    return;
+  }
+
+  const previousPosition = { ...node.position };
+  graphStatus.textContent = `Saving layout for "${node.title}"...`;
+
+  try {
+    const result = await postJSON(
+      getNodePositionUrl(nodeId),
+      {
+        position_x: position.x,
+        position_y: position.y,
+      },
+      csrfToken,
+    );
+    const updatedNode = mergeNode(result.node);
+    graphStatus.textContent = `Layout saved for "${updatedNode.title}".`;
+  } catch (error) {
+    node.position = previousPosition;
+    graphStatus.textContent = error.message;
+    renderGraphCanvas();
+  }
+}
+
+function renderGraphCanvas() {
+  return renderCanvas(payload.nodes, selectedNodeId, {
+    onSelect: updateSelection,
+    onPositionCommit: handleNodePositionCommit,
+    onMetricsChange: handleCanvasMetricsChange,
+  });
 }
 
 function updateFormState() {
@@ -86,8 +146,7 @@ function updateSelection(nodeId) {
   if (!node) {
     showEmptyNodeState();
     updateFormState();
-    const metrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
-    viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
+    renderGraphCanvas();
     return;
   }
 
@@ -105,8 +164,7 @@ function updateSelection(nodeId) {
   editFeedback.textContent = "";
   renderMessageEditors(editMessageList, node.messages);
   updateFormState();
-  const metrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
-  viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
+  renderGraphCanvas();
 }
 
 function getEditUrl(nodeId) {
@@ -148,8 +206,7 @@ async function handleEditSubmit(event) {
       throw new Error(message || `Request failed with status ${response.status}`);
     }
     const result = await response.json();
-    payload.nodes.push(result.node);
-    nodesById.set(String(result.node.id), result.node);
+    mergeNode(result.node);
     editFeedback.textContent = `Edited variant "${result.node.title}" created.`;
     updateSelection(result.node.id);
   } catch (error) {
@@ -205,8 +262,7 @@ async function handleNodeSubmit(event) {
       },
       csrfToken,
     );
-    payload.nodes.push(result.node);
-    nodesById.set(String(result.node.id), result.node);
+    mergeNode(result.node);
     nodeTitleInput.value = "";
     feedback.textContent = `Conversation node "${result.node.title}" created. Open it to chat.`;
     updateSelection(result.node.id);
@@ -223,6 +279,5 @@ nodeForm.addEventListener("submit", handleNodeSubmit);
 editForm.addEventListener("submit", handleEditSubmit);
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
 syncModelOptions(providerInput, modelInput);
-const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);
-viewport.setCanvasMetrics(initialMetrics, payload.nodes.length > 0);
+renderGraphCanvas();
 updateSelection(selectedNodeId);

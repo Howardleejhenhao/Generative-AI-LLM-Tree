@@ -77,7 +77,8 @@
           <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
           <div class="graph-nodes" id="graph-nodes"></div>
         </div>
-        <p class="graph-hint" id="graph-hint">Drag the canvas to pan in any direction.</p>
+        <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
+        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan.</p>
       </div>
     </div>
 

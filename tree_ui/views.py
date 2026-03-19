@@ -16,6 +16,7 @@ from tree_ui.services.node_creation import (
     resolve_message_append_inputs,
     resolve_node_creation_inputs,
 )
+from tree_ui.services.node_positioning import resolve_node_position_inputs
 from tree_ui.services.workspace_service import (
     create_workspace,
     get_or_create_default_workspace,
@@ -206,6 +207,31 @@ def create_edited_node_variant(request, slug: str, node_id: int):
         return HttpResponseBadRequest(str(exc))
 
     return JsonResponse({"node": serialize_node(node)}, status=201)
+
+
+@require_POST
+def update_node_position(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON payload.")
+
+    try:
+        position_x, position_y = resolve_node_position_inputs(
+            position_x=payload.get("position_x"),
+            position_y=payload.get("position_y"),
+        )
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    node.position_x = position_x
+    node.position_y = position_y
+    node.save(update_fields=["position_x", "position_y", "updated_at"])
+
+    return JsonResponse({"node": serialize_node(node)})
 
 
 @require_POST

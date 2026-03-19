@@ -28,7 +28,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Conversation DAG")
         self.assertContains(response, "graph-payload")
-        self.assertContains(response, "Drag the canvas to pan in any direction.")
+        self.assertContains(response, "Drag nodes to rearrange the layout. Drag the background to pan.")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the canvas you want to work in.")
 
@@ -207,6 +207,35 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(edited.parent, original.parent)
         self.assertEqual(edited.messages.first().content, "Edited prompt")
         self.assertEqual(original.messages.first().content, "Original prompt")
+
+    def test_can_update_node_position_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Draggable node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+            position_x=80,
+            position_y=120,
+        )
+
+        response = self.client.post(
+            reverse("update_node_position", args=[workspace.slug, node.id]),
+            data=json.dumps(
+                {
+                    "position_x": 420,
+                    "position_y": 260,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        node.refresh_from_db()
+        self.assertEqual(node.position_x, 420)
+        self.assertEqual(node.position_y, 260)
+        self.assertEqual(response.json()["node"]["position"], {"x": 420, "y": 260})
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     def test_can_stream_node_message_append_via_api(self):

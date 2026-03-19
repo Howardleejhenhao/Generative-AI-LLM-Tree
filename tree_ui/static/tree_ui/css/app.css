@@ -647,6 +647,10 @@ body {
   pointer-events: none;
 }
 
+.graph-stage[data-node-dragging="true"] {
+  cursor: default;
+}
+
 .graph-canvas {
   position: absolute;
   inset: 0 auto auto 0;
@@ -685,6 +689,23 @@ body {
   pointer-events: none;
 }
 
+.graph-status {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  margin: 0;
+  max-width: min(48ch, calc(100% - 220px));
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.92);
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  color: var(--muted);
+  font-size: 0.82rem;
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+}
+
 .graph-edges,
 .graph-nodes {
   position: absolute;
@@ -715,6 +736,7 @@ body {
   text-align: left;
   cursor: pointer;
   touch-action: none;
+  user-select: none;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
@@ -730,6 +752,13 @@ body {
 
 .graph-node[data-provider="gemini"][data-selected="true"] {
   border-color: rgba(147, 95, 16, 0.44);
+}
+
+.graph-node[data-dragging="true"] {
+  z-index: 2;
+  cursor: grabbing;
+  transform: none;
+  box-shadow: 0 24px 46px rgba(49, 37, 22, 0.22);
 }
 
 .graph-node span {
