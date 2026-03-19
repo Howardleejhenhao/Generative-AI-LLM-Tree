@@ -39,12 +39,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/immersive-node-chat-overlay`
 - Commits made:
-  - feature, docs, and merge-back commits pending at time of this log edit
+  - `56bb23f` - `feat: make node chat immersive`
+  - `df29553` - `docs: update agent progress log`
+  - `0b20823` - `merge: bring back immersive node chat overlay`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The node chat page now behaves more like an immersive chat app, pending commit and merge-back.
+- The node chat page now behaves more like an immersive chat app.
 
 ### Next Recommended Step
 - Finish the floating composer layout and merge it back into `feature/manual-node-positioning`.
