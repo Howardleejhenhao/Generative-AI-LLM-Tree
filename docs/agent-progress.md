@@ -203,3 +203,54 @@
 - `AGENTS.md` is still untracked and should remain outside the feature commits unless explicitly requested.
 - Provider calls are currently synchronous and non-streaming.
 - OpenAI and Gemini integrations are intentionally wrapped with fallback behavior, so missing keys do not hard-fail the UI.
+
+## Session 2026-03-19 18:36
+
+### Session Goal
+- Fix the graph viewport so users can drag the canvas to inspect off-screen nodes.
+- Preserve existing node selection and creation behavior while adding panning.
+
+### Planned Tasks
+- inspect the current canvas DOM/CSS/JS layout and identify the cleanest pan architecture
+- add a draggable graph viewport with horizontal and vertical movement
+- keep node click selection working after the pan behavior is added
+- verify the change locally and update the progress log
+
+### Work Completed
+- Session started; repository state, active branch, and progress log were reviewed.
+- Confirmed the current issue: graph content can extend past the visible area with no way to pan.
+- Reworked the graph stage into a fixed viewport plus a movable canvas surface.
+- Added drag-to-pan behavior so the workspace can be moved horizontally and vertically with the mouse.
+- Kept node selection intact while preventing accidental clicks during drag gestures.
+- Added a small on-canvas hint so the drag interaction is discoverable.
+- Added a minimal homepage assertion for the new pan hint text.
+- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/provider-context-abstraction`
+- New branch created/switched: `feature/canvas-pan-drag`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The graph viewport now supports drag-to-pan in all directions when nodes exist.
+- Existing node selection and branch creation behavior remain intact.
+
+### Next Recommended Step
+- Add streaming transport on top of the existing provider abstraction.
+- Consider adding zoom controls or a mini-map after streaming if the graph grows large.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+- The current graph viewport supports panning but not zooming yet.
