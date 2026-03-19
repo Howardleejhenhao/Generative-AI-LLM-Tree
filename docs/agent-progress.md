@@ -30,6 +30,7 @@
 - Increased the graph panel footprint and introduced a collapsible inspector so the canvas can temporarily expand to full width.
 - Added JavaScript state handling for inspector collapse/restore, including lightweight persistence in `localStorage`.
 - Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Merged `feature/full-page-graph-workspace` back into `main` and re-ran `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test` on the merged branch.
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -42,16 +43,19 @@
 - Current branch at session start: `main`
 - New branch created/switched: `feature/full-page-graph-workspace`
 - Commits made:
-  - none recorded yet
+  - `a6305a7` - `feat: refine full-page graph workspace`
+  - `0155223` - `docs: update agent progress log`
+  - `daa33a7` - `merge: bring back full-page graph workspace refinement`
 - Push status:
-  - not yet recorded
+  - pushed to `origin/feature/full-page-graph-workspace`
+  - merge-back to `main` completed; final `main` push still pending at the time of this log update
 
 ### Current Status
-- Full-page graph workspace refinement is implemented and validated locally.
+- Full-page graph workspace refinement is implemented, validated, and merged back into `main`.
 
 ### Next Recommended Step
-- Commit and push `feature/full-page-graph-workspace`.
-- Merge the refinement back into `main` and clean up the temporary branch.
+- Push the updated `main` branch and delete the temporary `feature/full-page-graph-workspace` branch.
+- After cleanup, continue tightening the graph workspace interactions, likely around viewport fitting or minimap-style navigation.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
