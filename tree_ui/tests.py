@@ -45,6 +45,41 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
         self.assertIn("Fallback openai response", node.messages.get(role="assistant").content)
 
+    def test_can_create_multiple_root_nodes_in_one_workspace(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        first = self.client.post(
+            reverse("create_workspace_node", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "title": "Conversation A",
+                    "prompt": "Start conversation A.",
+                    "provider": "openai",
+                    "model_name": "gpt-4.1-mini",
+                }
+            ),
+            content_type="application/json",
+        )
+        second = self.client.post(
+            reverse("create_workspace_node", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "title": "Conversation B",
+                    "prompt": "Start conversation B.",
+                    "provider": "gemini",
+                    "model_name": "gemini-2.0-flash",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201)
+        self.assertEqual(ConversationNode.objects.filter(workspace=workspace).count(), 2)
+        self.assertEqual(
+            ConversationNode.objects.filter(workspace=workspace, parent__isnull=True).count(),
+            2,
+        )
+
     def test_can_create_child_node_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
         parent = ConversationNode.objects.create(

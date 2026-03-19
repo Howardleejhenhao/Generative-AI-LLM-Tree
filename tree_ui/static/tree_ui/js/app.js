@@ -21,6 +21,7 @@ const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
 const promptInput = document.getElementById("node-prompt-input");
 const submitButton = document.getElementById("node-submit-button");
+const rootModeToggle = document.getElementById("root-mode-toggle");
 const csrfToken = document.getElementById("csrf-token").value;
 
 const MODEL_OPTIONS = {
@@ -55,12 +56,22 @@ function getSelectedNode() {
   return nodesById.get(selectedNodeId) || null;
 }
 
+function isRootModeEnabled() {
+  return rootModeToggle.checked;
+}
+
 function updateFormState() {
   const selectedNode = getSelectedNode();
-  formTarget.textContent = selectedNode
-    ? `New node target: child of "${selectedNode.title}"`
-    : "New node target: root";
-  submitButton.textContent = selectedNode ? "Create child node" : "Create root node";
+  if (isRootModeEnabled() || !selectedNode) {
+    formTarget.textContent = selectedNode && isRootModeEnabled()
+      ? `New node target: separate root conversation (selection kept on "${selectedNode.title}")`
+      : "New node target: root conversation";
+    submitButton.textContent = "Create root conversation";
+    return;
+  }
+
+  formTarget.textContent = `New node target: child of "${selectedNode.title}"`;
+  submitButton.textContent = "Create child node";
 }
 
 function renderStreamingState(preview, assistantText) {
@@ -120,7 +131,7 @@ async function handleNodeSubmit(event) {
     await streamJSON(
       nodeForm.dataset.nodeStreamUrl,
       {
-        parent_id: getSelectedNode()?.id ?? null,
+        parent_id: isRootModeEnabled() ? null : getSelectedNode()?.id ?? null,
         title: nodeTitleInput.value,
         provider: providerInput.value,
         model_name: modelInput.value,
@@ -161,6 +172,7 @@ async function handleNodeSubmit(event) {
 }
 
 providerInput.addEventListener("change", syncModelOptions);
+rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
 syncModelOptions();
 const initialMetrics = renderCanvas(payload.nodes, selectedNodeId, updateSelection);

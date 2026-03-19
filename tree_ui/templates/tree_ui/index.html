@@ -73,7 +73,7 @@
       <div class="message-list" id="message-list"></div>
 
       <section class="action-box">
-        <h3>Create Branch</h3>
+        <h3>Create Conversation</h3>
         <p id="streaming-status">
           New nodes now pass through provider-specific generation services and fall back safely
           when API keys are not configured.
@@ -82,6 +82,10 @@
           {% csrf_token %}
           <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
           <p class="form-target" id="form-target">New node target: root</p>
+          <label class="form-toggle" for="root-mode-toggle">
+            <input id="root-mode-toggle" type="checkbox">
+            <span>Create as a separate root conversation</span>
+          </label>
           <label class="form-field">
             <span>Title</span>
             <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Optional node title">
@@ -99,7 +103,7 @@
           </label>
           <label class="form-field">
             <span>Prompt</span>
-            <textarea id="node-prompt-input" name="prompt" rows="4" placeholder="Continue the branch from the selected node"></textarea>
+            <textarea id="node-prompt-input" name="prompt" rows="4" placeholder="Continue the selected branch or start a separate root conversation"></textarea>
           </label>
           <button class="primary-button" id="node-submit-button" type="submit">Create node</button>
           <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>

@@ -379,6 +379,21 @@ body {
   color: #ddcfbe;
 }
 
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f8f1e8;
+  font-size: 0.95rem;
+}
+
+.form-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #f4a261;
+}
+
 .form-field {
   display: grid;
   gap: 6px;
