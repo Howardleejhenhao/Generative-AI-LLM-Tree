@@ -11,6 +11,55 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 20:35
+
+### Session Goal
+- Add manual node dragging on the graph canvas and persist node positions after refresh.
+- Keep the graph-first workflow intact while making user-controlled layout the default behavior.
+
+### Planned Tasks
+- add a node position update API for the workspace graph
+- implement node dragging in the canvas without breaking existing canvas panning
+- update graph UI copy if needed so dragging is discoverable
+- add regression coverage and verify the behavior with Django checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Added a dedicated node-position update API so graph layout changes can persist in the database.
+- Implemented direct node dragging on the graph canvas while keeping background drag-to-pan behavior intact.
+- Updated the graph page hinting/status UI so dragging and layout-save feedback are visible.
+- Added regression coverage for the new position update endpoint and updated the graph page copy assertion.
+- Verified the change with `python3 manage.py check`, `python3 manage.py test`, and `node --check` for the updated frontend modules.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_positioning.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/node-chat-minimal-ui`
+- New branch created/switched: `feature/manual-node-positioning`
+- Commits made:
+  - `1f793c2` - `feat: support persisted node dragging`
+  - docs progress update commit pending at time of this log edit
+- Push status:
+  - not pushed yet; will push after the progress log commit is created
+
+### Current Status
+- The graph canvas now supports manual node dragging with persisted positions after refresh.
+
+### Next Recommended Step
+- Add zoom controls so the graph workspace can scale to larger trees while preserving the new manual layout behavior.
+
+### Known Issues / Blockers / Tech Debt
+- Dragging currently persists on pointer release only; there is no debounced autosave during movement, which is acceptable for the current MVP size.
+
 ## Session 2026-03-19 20:28
 
 ### Session Goal
