@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:28
+
+### Session Goal
+- Turn the node chat page into a more immersive full-conversation surface with a floating bottom composer.
+- Make the composer start as a single line, grow to multiple lines, and then stop growing beyond a capped height.
+
+### Planned Tasks
+- widen the node chat layout so transcript content dominates the page
+- convert the composer into a floating overlay panel near the bottom edge
+- add textarea auto-grow with a fixed maximum height and verify the page with checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Converted the node chat page into a more immersive conversation surface with the transcript occupying nearly the full viewport.
+- Turned the composer into a floating bottom overlay card instead of a normal in-flow footer.
+- Changed the prompt textarea to start at one line, auto-grow to multiple lines, and stop growing once it reaches a fixed maximum height.
+- Verified the immersive node chat overlay with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/immersive-node-chat-overlay`
+- Commits made:
+  - feature, docs, and merge-back commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+
+### Current Status
+- The node chat page now behaves more like an immersive chat app, pending commit and merge-back.
+
+### Next Recommended Step
+- Finish the floating composer layout and merge it back into `feature/manual-node-positioning`.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:20
 
 ### Session Goal
