@@ -26,27 +26,32 @@
 - Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
 - Confirmed that every local feature branch is already an ancestor of `feature/manual-node-positioning`, making it the effective integration branch for the project.
 - Confirmed that `main` is still at the initial commit and is behind the integration branch by the full project history.
+- Merged `feature/manual-node-positioning` into `main` with a dedicated merge commit so the integration point is explicit in history.
+- Verified the merged `main` branch with `python3 manage.py check` and `python3 manage.py test` on the merged codebase.
+- Deleted all absorbed local feature branches after verifying that `git branch --no-merged main` returned no remaining branches.
 
 ### Files Changed
 - `docs/agent-progress.md`
 
 ### Git Workflow
 - Current branch at session start: `feature/manual-node-positioning`
-- New branch created/switched: not yet recorded
+- New branch created/switched: switched to `main` for the consolidation merge
 - Commits made:
-  - none recorded yet
+  - `9a575d3` - `docs: start main merge session`
+  - `8ced8d9` - `merge: integrate feature line into main`
 - Push status:
-  - not yet recorded
+  - pending at the time of this log update
 
 ### Current Status
-- Branch audit is complete.
-- The next action is to merge `feature/manual-node-positioning` into `main` and then record the cleanup state.
+- `main` now contains the full integrated project history.
+- No local feature branches remain outside `main`.
 
 ### Next Recommended Step
-- Switch to `main`, create a non-fast-forward merge from `feature/manual-node-positioning`, run checks, and push `main`.
+- Push the updated `main` branch to `origin/main`.
+- If desired later, clean up remote feature branches that are now historical only.
 
 ### Known Issues / Blockers / Tech Debt
-- The repository has many completed feature branches that remain locally after being absorbed into the integration branch.
+- Remote feature branches still exist on `origin`; only local feature branches were cleaned up in this session.
 
 ## Session 2026-03-19 21:48
 
