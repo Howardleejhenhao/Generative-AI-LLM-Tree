@@ -37,12 +37,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/reduce-chat-header-chrome`
 - Commits made:
-  - feature, docs, and merge-back commits pending at time of this log edit
+  - `5a6e950` - `feat: reduce chat header chrome`
+  - `ee0a304` - `docs: update agent progress log`
+  - `5265016` - `merge: bring back reduced chat header chrome`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The immersive chat header is lighter and less intrusive, pending commit and merge-back.
+- The immersive chat header is lighter and less intrusive.
 
 ### Next Recommended Step
 - Finish the lighter header styling and merge it back into `feature/manual-node-positioning`.
