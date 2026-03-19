@@ -37,12 +37,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/fix-node-chat-composer-lock`
 - Commits made:
-  - fix, docs, and merge-back commits pending at time of this log edit
+  - `c1307d5` - `fix: lock node chat composer to bottom`
+  - `90af71a` - `docs: update agent progress log`
+  - `87febbb` - `merge: bring back composer lock fix`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The node chat composer now stays pinned to the bottom of the chat workspace, pending commit and merge-back.
+- The node chat composer now stays pinned to the bottom of the chat workspace.
 
 ### Next Recommended Step
 - After merge-back, continue with graph zoom controls and overall workspace scaling.
