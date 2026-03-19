@@ -1,5 +1,5 @@
 import { postJSON } from "./api.js";
-import { renderCanvas } from "./canvas.js";
+import { getNodeBounds, renderCanvas } from "./canvas.js";
 import { syncModelOptions } from "./model-options.js";
 import { renderMessageEditors, renderNodeDetails } from "./node-panel.js";
 import { createViewportController } from "./viewport.js";
@@ -13,6 +13,7 @@ const workspaceName = document.getElementById("workspace-name");
 const graphStatus = document.getElementById("graph-status");
 const detailPanelToggle = document.getElementById("detail-panel-toggle");
 const detailPanelPeek = document.getElementById("detail-panel-peek");
+const fitViewButton = document.getElementById("graph-fit-view");
 const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
 const zoomResetButton = document.getElementById("graph-zoom-reset");
@@ -66,10 +67,12 @@ function setDetailPanelCollapsed(isCollapsed) {
   detailPanelToggle.setAttribute("aria-expanded", String(!isCollapsed));
   detailPanelPeek.hidden = !isCollapsed;
   writeStoredDetailPanelState(isCollapsed);
+  viewport.refreshLayout();
 }
 
 function handleViewportChange(viewportState) {
   zoomLevel.textContent = `${viewportState.percent}%`;
+  fitViewButton.disabled = !viewportState.hasNodes || !viewportState.canFit;
   zoomOutButton.disabled = !viewportState.hasNodes || !viewportState.canZoomOut;
   zoomInButton.disabled = !viewportState.hasNodes || !viewportState.canZoomIn;
   zoomResetButton.disabled = !viewportState.hasNodes || viewportState.percent === 100;
@@ -250,6 +253,7 @@ async function handleEditSubmit(event) {
     mergeNode(result.node);
     editFeedback.textContent = `Edited variant "${result.node.title}" created.`;
     updateSelection(result.node.id);
+    viewport.centerOnBounds(getNodeBounds(result.node));
   } catch (error) {
     editFeedback.textContent = error.message;
   } finally {
@@ -307,6 +311,7 @@ async function handleNodeSubmit(event) {
     nodeTitleInput.value = "";
     feedback.textContent = `Conversation node "${result.node.title}" created. Open it to chat.`;
     updateSelection(result.node.id);
+    viewport.centerOnBounds(getNodeBounds(result.node));
   } catch (error) {
     feedback.textContent = error.message;
   } finally {
@@ -323,6 +328,7 @@ detailPanelToggle.addEventListener("click", () => {
   setDetailPanelCollapsed(workspaceShell.dataset.detailPanelCollapsed !== "true");
 });
 detailPanelPeek.addEventListener("click", () => setDetailPanelCollapsed(false));
+fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());

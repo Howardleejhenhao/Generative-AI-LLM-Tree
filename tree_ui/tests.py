@@ -34,6 +34,7 @@ class WorkspaceGraphViewTests(TestCase):
             "Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.",
         )
         self.assertContains(response, "Workspace Zoom")
+        self.assertContains(response, "Fit view")
         self.assertContains(response, "Hide inspector")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the graph you want to work in.")

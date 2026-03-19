@@ -920,6 +920,10 @@ body:has(.chat-page-immersive) .page-shell {
   min-width: 68px;
 }
 
+.graph-control-button-fit {
+  min-width: 76px;
+}
+
 .graph-zoom-level {
   min-width: 4.4ch;
   text-align: center;
