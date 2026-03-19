@@ -33,7 +33,6 @@ python manage.py runserver
 
 ## Next Milestones
 
-- Provider abstraction for OpenAI and Gemini
-- Branch-local context builder
+- Real provider calls for OpenAI and Gemini with streaming
 - Streaming response generation
 - Node editing and re-branch creation flow

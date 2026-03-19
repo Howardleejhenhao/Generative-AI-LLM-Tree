@@ -72,8 +72,8 @@
       <section class="action-box">
         <h3>Create Branch</h3>
         <p id="streaming-status">
-          New nodes currently receive a stubbed assistant reply so the graph can be persisted
-          before provider streaming is wired.
+          New nodes now pass through provider-specific generation services and fall back safely
+          when API keys are not configured.
         </p>
         <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
           {% csrf_token %}

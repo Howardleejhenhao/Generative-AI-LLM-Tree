@@ -1,9 +1,13 @@
 import json
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
 
 from tree_ui.models import ConversationNode, NodeMessage, Workspace
+from tree_ui.services.context_builder import build_generation_messages
+from tree_ui.services.node_creation import create_node
+from tree_ui.services.providers.base import GenerationResult
 
 
 class WorkspaceGraphViewTests(TestCase):
@@ -37,6 +41,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertIsNone(node.parent)
         self.assertEqual(node.provider, ConversationNode.Provider.OPENAI)
         self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
+        self.assertIn("Fallback openai response", node.messages.get(role="assistant").content)
 
     def test_can_create_child_node_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -69,3 +74,92 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    def test_branch_local_context_uses_selected_lineage_only(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        root = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=root,
+            role=NodeMessage.Role.USER,
+            content="Root prompt",
+            order_index=0,
+        )
+        NodeMessage.objects.create(
+            node=root,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Root answer",
+            order_index=1,
+        )
+        selected_branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Branch A",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=selected_branch,
+            role=NodeMessage.Role.USER,
+            content="Branch A prompt",
+            order_index=0,
+        )
+        sibling_branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Branch B",
+            summary="",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.0-flash",
+        )
+        NodeMessage.objects.create(
+            node=sibling_branch,
+            role=NodeMessage.Role.USER,
+            content="Sibling prompt",
+            order_index=0,
+        )
+
+        messages = build_generation_messages(
+            parent=selected_branch,
+            prompt="Continue selected branch",
+        )
+
+        self.assertEqual(
+            [message.content for message in messages],
+            [
+                "Root prompt",
+                "Root answer",
+                "Branch A prompt",
+                "Continue selected branch",
+            ],
+        )
+
+    @patch("tree_ui.services.node_creation.generate_text")
+    def test_create_node_uses_provider_result_when_available(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        mock_generate_text.return_value = GenerationResult(
+            text="Real provider output",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        node = create_node(
+            workspace=workspace,
+            parent=None,
+            title="",
+            prompt="Summarize the plan",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        self.assertEqual(
+            node.messages.get(role=NodeMessage.Role.ASSISTANT).content,
+            "Real provider output",
+        )
+        mock_generate_text.assert_called_once()

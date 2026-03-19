@@ -3,21 +3,17 @@ from __future__ import annotations
 from django.db import transaction
 
 from tree_ui.models import ConversationNode, NodeMessage, Workspace
+from tree_ui.services.context_builder import (
+    SYSTEM_INSTRUCTION,
+    build_branch_lineage,
+    build_generation_messages,
+)
+from tree_ui.services.providers import ProviderError, generate_text
 
 DEFAULT_MODELS = {
     ConversationNode.Provider.OPENAI: "gpt-4.1-mini",
     ConversationNode.Provider.GEMINI: "gemini-2.0-flash",
 }
-
-
-def build_branch_lineage(parent: ConversationNode | None) -> list[ConversationNode]:
-    lineage = []
-    current = parent
-    while current is not None:
-        lineage.append(current)
-        current = current.parent
-    lineage.reverse()
-    return lineage
 
 
 def _build_summary(prompt: str) -> str:
@@ -38,20 +34,48 @@ def _build_title(title: str, prompt: str) -> str:
     return f"{compact_prompt[:39]}..."
 
 
-def _build_mock_assistant_message(
+def _build_fallback_assistant_message(
+    *,
+    parent: ConversationNode | None,
+    provider: str,
+    model_name: str,
+    prompt: str,
+    reason: str,
+) -> str:
+    lineage = build_branch_lineage(parent)
+    lineage_titles = " -> ".join(node.title for node in lineage) or "root"
+    return (
+        f"[Fallback {provider} response via {model_name}] "
+        f"Branch context follows: {lineage_titles}. "
+        f"Latest prompt: {prompt.strip()} "
+        f"(Reason: {reason})"
+    )
+
+
+def generate_assistant_reply(
     *,
     parent: ConversationNode | None,
     provider: str,
     model_name: str,
     prompt: str,
 ) -> str:
-    lineage = build_branch_lineage(parent)
-    lineage_titles = " -> ".join(node.title for node in lineage) or "root"
-    return (
-        f"[Stubbed {provider} response via {model_name}] "
-        f"Branch context follows: {lineage_titles}. "
-        f"Latest prompt: {prompt.strip()}"
-    )
+    context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    try:
+        result = generate_text(
+            provider_name=provider,
+            model_name=model_name,
+            messages=context_messages,
+            system_instruction=SYSTEM_INSTRUCTION,
+        )
+        return result.text
+    except ProviderError as exc:
+        return _build_fallback_assistant_message(
+            parent=parent,
+            provider=provider,
+            model_name=model_name,
+            prompt=prompt,
+            reason=str(exc),
+        )
 
 
 def _calculate_position(
@@ -67,7 +91,6 @@ def _calculate_position(
     return parent.position_x + 340, parent.position_y + (sibling_count * 180)
 
 
-@transaction.atomic
 def create_node(
     *,
     workspace: Workspace,
@@ -86,36 +109,38 @@ def create_node(
 
     resolved_model = model_name.strip() or DEFAULT_MODELS[provider]
     position_x, position_y = _calculate_position(workspace=workspace, parent=parent)
-
-    node = ConversationNode.objects.create(
-        workspace=workspace,
+    assistant_reply = generate_assistant_reply(
         parent=parent,
-        title=_build_title(title, normalized_prompt),
-        summary=_build_summary(normalized_prompt),
         provider=provider,
         model_name=resolved_model,
-        position_x=position_x,
-        position_y=position_y,
+        prompt=normalized_prompt,
     )
-    NodeMessage.objects.bulk_create(
-        [
-            NodeMessage(
-                node=node,
-                role=NodeMessage.Role.USER,
-                content=normalized_prompt,
-                order_index=0,
-            ),
-            NodeMessage(
-                node=node,
-                role=NodeMessage.Role.ASSISTANT,
-                content=_build_mock_assistant_message(
-                    parent=parent,
-                    provider=provider,
-                    model_name=resolved_model,
-                    prompt=normalized_prompt,
+
+    with transaction.atomic():
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=parent,
+            title=_build_title(title, normalized_prompt),
+            summary=_build_summary(normalized_prompt),
+            provider=provider,
+            model_name=resolved_model,
+            position_x=position_x,
+            position_y=position_y,
+        )
+        NodeMessage.objects.bulk_create(
+            [
+                NodeMessage(
+                    node=node,
+                    role=NodeMessage.Role.USER,
+                    content=normalized_prompt,
+                    order_index=0,
                 ),
-                order_index=1,
-            ),
-        ]
-    )
+                NodeMessage(
+                    node=node,
+                    role=NodeMessage.Role.ASSISTANT,
+                    content=assistant_reply,
+                    order_index=1,
+                ),
+            ]
+        )
     return ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
