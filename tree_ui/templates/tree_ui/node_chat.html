@@ -15,28 +15,32 @@
     </header>
 
     <section class="chat-thread-panel chat-thread-panel-minimal">
-      <div class="chat-transcript chat-transcript-minimal" id="chat-transcript"></div>
-      <form
-        class="chat-composer chat-composer-minimal"
-        id="chat-form"
-        data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
-      >
-        {% csrf_token %}
-        <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-        <label class="form-field chat-input-shell">
-          <span>Reply</span>
-          <textarea
-            id="chat-prompt-input"
-            name="prompt"
-            rows="5"
-            placeholder="Message this conversation"
-          ></textarea>
-        </label>
-        <div class="chat-composer-actions">
-          <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
-          <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
-        </div>
-      </form>
+      <div class="chat-content-column">
+        <div class="chat-transcript chat-transcript-minimal" id="chat-transcript"></div>
+      </div>
+      <div class="chat-composer-wrap">
+        <form
+          class="chat-composer chat-composer-minimal"
+          id="chat-form"
+          data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
+        >
+          {% csrf_token %}
+          <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
+          <label class="form-field chat-input-shell">
+            <span>Reply</span>
+            <textarea
+              id="chat-prompt-input"
+              name="prompt"
+              rows="4"
+              placeholder="Message this conversation"
+            ></textarea>
+          </label>
+          <div class="chat-composer-actions">
+            <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
+            <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
+          </div>
+        </form>
+      </div>
     </section>
   </section>
 
