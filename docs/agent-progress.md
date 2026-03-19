@@ -255,3 +255,44 @@
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` remains untracked and outside feature commits.
 - The current graph viewport supports panning but not zooming yet.
+
+## Session 2026-03-19 18:45
+
+### Session Goal
+- Fix the graph empty-state so it disappears as soon as real nodes exist.
+- Preserve the new drag-to-pan viewport behavior.
+
+### Planned Tasks
+- inspect the empty-state rendering path across template, CSS, and canvas JS
+- ensure hidden state is respected on initial render and subsequent client updates
+- verify the fix with local Django checks and tests
+
+### Work Completed
+- Session started; current branch and worktree state were reviewed.
+- Fixed the graph empty-state to hide correctly when workspace nodes already exist.
+- Added server-rendered `hidden` protection plus CSS handling for `.graph-empty[hidden]`.
+- Switched the client-side empty-state toggle to attribute-based control for consistency.
+- Verified the fix with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/canvas-pan-drag`
+- New branch created/switched: `feature/canvas-pan-drag`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The empty-state banner no longer persists over real graph content.
+
+### Next Recommended Step
+- Add streaming transport for node generation on top of the current provider abstraction.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.

@@ -36,7 +36,7 @@
       </div>
       <div class="graph-stage" id="graph-stage">
         <div class="graph-canvas" id="graph-canvas">
-          <div class="graph-empty" id="graph-empty">
+          <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             No nodes yet. Create the root node to start the conversation tree.
           </div>
           <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>

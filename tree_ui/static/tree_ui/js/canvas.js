@@ -59,7 +59,7 @@ export function renderCanvas(nodes, selectedNodeId, onSelect) {
   const emptyState = document.getElementById("graph-empty");
   nodeLayer.innerHTML = "";
   edgeLayer.innerHTML = "";
-  emptyState.hidden = nodes.length > 0;
+  emptyState.toggleAttribute("hidden", nodes.length > 0);
 
   const metrics = buildCanvasMetrics(nodes);
   canvas.style.width = `${metrics.width}px`;

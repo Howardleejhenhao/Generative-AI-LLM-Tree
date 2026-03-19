@@ -177,6 +177,10 @@ body {
   font-size: 1rem;
 }
 
+.graph-empty[hidden] {
+  display: none;
+}
+
 .graph-hint {
   position: absolute;
   right: 16px;
