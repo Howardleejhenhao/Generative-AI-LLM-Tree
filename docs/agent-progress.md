@@ -11,6 +11,51 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 22:21
+
+### Session Goal
+- Push the workspace page closer to a full-page graph experience where the canvas is the primary surface.
+- Reduce supporting chrome and add a collapsible inspector so the graph can temporarily take the full width.
+
+### Planned Tasks
+- create a new feature branch from `main` for the full-page graph workspace refinement
+- compress the top-of-page workspace chrome and increase the graph panel height/width emphasis
+- add a collapsible detail panel with JavaScript state handling and verify the page with checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Created `feature/full-page-graph-workspace` from `main`.
+- Reworked the workspace page so the graph reads more like the main application surface instead of a secondary panel below heavy intro chrome.
+- Compressed the top workspace copy and added a denser summary strip so more vertical space stays available for the canvas.
+- Increased the graph panel footprint and introduced a collapsible inspector so the canvas can temporarily expand to full width.
+- Added JavaScript state handling for inspector collapse/restore, including lightweight persistence in `localStorage`.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/full-page-graph-workspace`
+- Commits made:
+  - none recorded yet
+- Push status:
+  - not yet recorded
+
+### Current Status
+- Full-page graph workspace refinement is implemented and validated locally.
+
+### Next Recommended Step
+- Commit and push `feature/full-page-graph-workspace`.
+- Merge the refinement back into `main` and clean up the temporary branch.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 21:55
 
 ### Session Goal

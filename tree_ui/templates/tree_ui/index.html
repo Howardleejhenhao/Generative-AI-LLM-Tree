@@ -4,13 +4,13 @@
 {% block title %}LLM-Tree Workspace{% endblock %}
 
 {% block content %}
-  <section class="hero">
+  <section class="hero hero-compact">
     <div>
       <p class="eyebrow">Conversation DAG</p>
-      <h1>Branch your chat history like a working graph.</h1>
+      <h1>Use the graph as the main workspace, not a side panel.</h1>
       <p class="hero-copy">
-        This bootstrap slice ships the Django shell, graph-ready models, and a node-editor
-        interface prepared for provider and streaming integration.
+        Pan, zoom, branch, and compare model paths directly on the canvas, then open any node
+        into its own focused chat session when you need to go deeper.
       </p>
     </div>
     <div class="hero-meta">
@@ -22,16 +22,20 @@
         <span class="meta-label">Context Rule</span>
         <strong>Root to selected node only</strong>
       </div>
+      <div>
+        <span class="meta-label">Layout</span>
+        <strong>Zoomable graph workspace</strong>
+      </div>
     </div>
   </section>
 
-  <section class="workspace-toolbar">
+  <section class="workspace-toolbar workspace-toolbar-compact">
     <div class="workspace-switcher">
       <div class="workspace-toolbar-heading">
         <p class="eyebrow">Workspaces</p>
-        <h2>Pick the canvas you want to work in.</h2>
+        <h2>Pick the graph you want to work in.</h2>
         <p class="workspace-toolbar-copy">
-          Each workspace keeps its own conversation graph, branches, and model experiments.
+          Each workspace keeps its own graph, node chats, and branching experiments.
         </p>
       </div>
       <div class="workspace-list">
@@ -60,16 +64,29 @@
     </form>
   </section>
 
-  <section class="workspace-shell">
+  <section class="workspace-shell" id="workspace-shell" data-detail-panel-collapsed="false">
     <div class="canvas-panel">
-      <div class="panel-header">
-        <div>
+      <div class="panel-header panel-header-workspace">
+        <div class="canvas-panel-heading">
           <p class="panel-kicker">Graph View</p>
           <h2 id="workspace-name">Workspace</h2>
+          <div class="workspace-summary-strip">
+            <span class="workspace-summary-pill">{{ graph_payload.nodes|length }} nodes on canvas</span>
+            <span class="workspace-summary-pill">{{ workspace_list|length }} workspaces available</span>
+            <span class="workspace-summary-pill">Graph-first editing flow</span>
+          </div>
         </div>
-        <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
+        <div class="canvas-panel-actions">
+          <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
+          <button class="detail-toggle-button" id="detail-panel-toggle" type="button" aria-expanded="true" aria-controls="detail-panel">
+            Hide inspector
+          </button>
+        </div>
       </div>
       <div class="graph-stage" id="graph-stage">
+        <button class="detail-peek-button" id="detail-panel-peek" type="button" hidden>
+          Show inspector
+        </button>
         <div class="graph-controls" aria-label="Graph zoom controls">
           <p class="graph-controls-label">Workspace Zoom</p>
           <div class="graph-controls-row">
