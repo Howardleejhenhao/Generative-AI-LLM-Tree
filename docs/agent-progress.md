@@ -400,3 +400,44 @@
 
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` remains untracked and outside feature commits.
+
+## Session 2026-03-19 19:05
+
+### Session Goal
+- Update `AGENTS.md` so future sessions explicitly treat three additional product requirements as planned work.
+- Record the new roadmap direction in persistent progress notes.
+
+### Planned Tasks
+- inspect the current instruction file and place the new requirements in the most relevant product and UX sections
+- add the requested future requirements for node-focused chat view, draggable nodes, and zoomable full-page graph
+- update the progress log so the next session sees the newly recorded direction immediately
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the progress log were reviewed.
+- Updated `AGENTS.md` to explicitly record:
+  - node-focused conversation view for each selected node
+  - manual mouse-driven node repositioning
+  - zoomable graph workspace that can occupy the main page experience
+- Added these expectations to the product requirements, frontend approach, UX ideas, MVP priority order, and definition of done sections.
+- Recorded the roadmap update in the persistent progress log.
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/multi-root-node-creation`
+- New branch created/switched: `feature/multi-root-node-creation`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The instruction file now explicitly captures the newly requested future features.
+
+### Next Recommended Step
+- Resume feature implementation from the updated roadmap, likely starting with edit-and-rebranch or multi-workspace support depending on product priority.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` was previously untracked; it should now be tracked because the user explicitly requested updates to it.
