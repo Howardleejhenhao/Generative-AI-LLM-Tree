@@ -884,6 +884,76 @@ body:has(.chat-page-immersive) .page-shell {
   color: var(--muted);
 }
 
+.graph-minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  width: 220px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: 0 14px 30px rgba(49, 37, 22, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+.graph-minimap[hidden] {
+  display: none;
+}
+
+.graph-minimap-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.graph-minimap-header .graph-controls-label {
+  margin: 0;
+}
+
+.graph-minimap-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.graph-minimap-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.graph-minimap-surface {
+  fill: rgba(248, 243, 234, 0.94);
+  stroke: rgba(74, 58, 40, 0.12);
+}
+
+.graph-minimap-node {
+  fill: rgba(34, 34, 34, 0.18);
+  stroke: rgba(34, 34, 34, 0.18);
+}
+
+.graph-minimap-node[data-provider="openai"] {
+  fill: rgba(22, 93, 74, 0.32);
+  stroke: rgba(22, 93, 74, 0.5);
+}
+
+.graph-minimap-node[data-provider="gemini"] {
+  fill: rgba(147, 95, 16, 0.28);
+  stroke: rgba(147, 95, 16, 0.46);
+}
+
+.graph-minimap-viewport {
+  fill: rgba(255, 255, 255, 0.18);
+  stroke: rgba(31, 27, 23, 0.82);
+  stroke-width: 2;
+}
+
 .graph-controls-row {
   display: flex;
   align-items: center;
@@ -976,7 +1046,7 @@ body:has(.chat-page-immersive) .page-shell {
 .graph-hint {
   position: absolute;
   right: 16px;
-  bottom: 16px;
+  bottom: 192px;
   margin: 0;
   padding: 8px 12px;
   border-radius: 999px;
@@ -1444,17 +1514,25 @@ body:has(.chat-page-immersive) .page-shell {
     width: auto;
   }
 
+  .graph-minimap {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    bottom: 16px;
+  }
+
   .graph-controls-row {
     flex-wrap: wrap;
   }
 
   .graph-status {
     max-width: calc(100% - 32px);
-    bottom: 72px;
+    bottom: 176px;
   }
 
   .graph-hint {
     max-width: calc(100% - 32px);
+    bottom: 126px;
   }
 
   .hero-compact .hero-meta {

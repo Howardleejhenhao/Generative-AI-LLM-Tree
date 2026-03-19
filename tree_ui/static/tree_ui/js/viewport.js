@@ -26,6 +26,15 @@ function normalizeBounds(bounds) {
   };
 }
 
+function getVisibleBounds(state, stage) {
+  return {
+    minX: (-state.panX) / state.zoom,
+    minY: (-state.panY) / state.zoom,
+    maxX: (stage.clientWidth - state.panX) / state.zoom,
+    maxY: (stage.clientHeight - state.panY) / state.zoom,
+  };
+}
+
 export function createViewportController(options = {}) {
   const { onChange } = options;
 
@@ -99,7 +108,9 @@ export function createViewportController(options = {}) {
       canZoomIn: state.zoom < MAX_ZOOM,
       canZoomOut: state.zoom > MIN_ZOOM,
       canFit: Boolean(state.contentBounds),
+      contentBounds: state.contentBounds,
       hasNodes: stage.dataset.hasNodes === "true",
+      visibleBounds: getVisibleBounds(state, stage),
     });
   }
 
@@ -154,6 +165,17 @@ export function createViewportController(options = {}) {
     centerBoundsAtZoom(resolvedBounds, state.zoom);
   }
 
+  function centerOnPoint(point) {
+    if (!point) {
+      applyTransform();
+      return;
+    }
+
+    state.panX = (stage.clientWidth / 2) - (point.x * state.zoom);
+    state.panY = (stage.clientHeight / 2) - (point.y * state.zoom);
+    applyTransform();
+  }
+
   function setCanvasMetrics(metrics, hasNodes) {
     state.canvasWidth = metrics.width;
     state.canvasHeight = metrics.height;
@@ -201,6 +223,9 @@ export function createViewportController(options = {}) {
       return;
     }
     if (event.target.closest(".graph-controls")) {
+      return;
+    }
+    if (event.target.closest(".graph-minimap")) {
       return;
     }
     if (stage.dataset.hasNodes !== "true") {
@@ -269,6 +294,7 @@ export function createViewportController(options = {}) {
 
   return {
     centerOnBounds,
+    centerOnPoint,
     fitToGraph() {
       fitToBounds(state.contentBounds);
     },

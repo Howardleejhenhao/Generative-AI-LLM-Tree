@@ -11,6 +11,53 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 07:25
+
+### Session Goal
+- Add higher-level graph navigation so larger trees can be traversed faster than repeated pan/zoom alone.
+- Introduce a minimap that reflects the current viewport and allows quick jumps around the workspace.
+
+### Planned Tasks
+- create a fresh feature branch from `main` for minimap navigation work
+- add a minimap overlay that renders the current graph bounds plus the visible viewport window
+- support pointer navigation from the minimap and validate the result with JS checks plus Django tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Created `feature/graph-minimap-navigation` from `main`.
+- Added a minimap overlay to the graph workspace that shows the current graph extents and the active viewport window.
+- Split minimap rendering into a dedicated `tree_ui/static/tree_ui/js/minimap.js` module so the graph page JavaScript stays modular.
+- Extended the viewport controller to publish visible bounds and support center-point navigation for minimap jumps.
+- Prevented minimap clicks from leaking into background pan gestures inside the main graph stage.
+- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/graph-minimap-navigation`
+- Commits made:
+  - none recorded yet
+- Push status:
+  - not yet recorded
+
+### Current Status
+- Minimap navigation is implemented and validated locally on `feature/graph-minimap-navigation`.
+
+### Next Recommended Step
+- Commit and push `feature/graph-minimap-navigation`.
+- Merge it back into `main`, then clean up the temporary branch.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 23:06
 
 ### Session Goal

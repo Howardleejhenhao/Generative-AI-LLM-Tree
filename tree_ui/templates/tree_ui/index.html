@@ -97,6 +97,13 @@
             <button class="graph-control-button graph-control-button-reset" id="graph-zoom-reset" type="button">Reset</button>
           </div>
         </div>
+        <section class="graph-minimap" id="graph-minimap" hidden>
+          <div class="graph-minimap-header">
+            <p class="graph-controls-label">Minimap</p>
+            <span class="graph-minimap-meta">Click to jump</span>
+          </div>
+          <svg class="graph-minimap-svg" id="graph-minimap-svg" viewBox="0 0 220 148" aria-label="Graph minimap"></svg>
+        </section>
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             No nodes yet. Create the root node to start the conversation tree.

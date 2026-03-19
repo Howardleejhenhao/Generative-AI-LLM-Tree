@@ -1,5 +1,6 @@
 import { postJSON } from "./api.js";
 import { getNodeBounds, renderCanvas } from "./canvas.js";
+import { createMinimapController } from "./minimap.js";
 import { syncModelOptions } from "./model-options.js";
 import { renderMessageEditors, renderNodeDetails } from "./node-panel.js";
 import { createViewportController } from "./viewport.js";
@@ -44,6 +45,8 @@ const editMessageList = document.getElementById("edit-message-list");
 const editSubmitButton = document.getElementById("edit-submit-button");
 const editFeedback = document.getElementById("edit-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
+let latestViewportState = null;
+let minimap = null;
 
 function readStoredDetailPanelState() {
   try {
@@ -70,15 +73,31 @@ function setDetailPanelCollapsed(isCollapsed) {
   viewport.refreshLayout();
 }
 
+function syncMinimap() {
+  if (!minimap) {
+    return;
+  }
+
+  minimap.update({
+    nodes: payload.nodes,
+    viewportState: latestViewportState,
+  });
+}
+
 function handleViewportChange(viewportState) {
+  latestViewportState = viewportState;
   zoomLevel.textContent = `${viewportState.percent}%`;
   fitViewButton.disabled = !viewportState.hasNodes || !viewportState.canFit;
   zoomOutButton.disabled = !viewportState.hasNodes || !viewportState.canZoomOut;
   zoomInButton.disabled = !viewportState.hasNodes || !viewportState.canZoomIn;
   zoomResetButton.disabled = !viewportState.hasNodes || viewportState.percent === 100;
+  syncMinimap();
 }
 
 const viewport = createViewportController({ onChange: handleViewportChange });
+minimap = createMinimapController({
+  onNavigate: (point) => viewport.centerOnPoint(point),
+});
 
 workspaceName.textContent = payload.workspace.name;
 
@@ -119,6 +138,7 @@ function mergeNode(nextNode) {
 
 function handleCanvasMetricsChange(metrics) {
   viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
+  syncMinimap();
 }
 
 async function handleNodePositionCommit(nodeId, position) {

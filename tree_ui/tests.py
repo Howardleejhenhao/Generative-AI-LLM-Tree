@@ -35,6 +35,7 @@ class WorkspaceGraphViewTests(TestCase):
         )
         self.assertContains(response, "Workspace Zoom")
         self.assertContains(response, "Fit view")
+        self.assertContains(response, "Minimap")
         self.assertContains(response, "Hide inspector")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Pick the graph you want to work in.")
