@@ -39,12 +39,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/one-line-node-header`
 - Commits made:
-  - feature, docs, and merge-back commits pending at time of this log edit
+  - `0caed78` - `feat: compress node chat header`
+  - `0003183` - `docs: update agent progress log`
+  - `40cb4a4` - `merge: bring back one-line node header`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The node chat header is now compressed to one line, pending commit and merge-back.
+- The node chat header is now compressed to one line.
 
 ### Next Recommended Step
 - Finish the header compression and merge it back into `feature/manual-node-positioning`.
