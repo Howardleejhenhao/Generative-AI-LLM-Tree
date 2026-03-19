@@ -26,24 +26,35 @@
 - Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
 - Created `feature/workspace-ui-polish` from `main`.
 - Audited the current workspace template, chat template, app stylesheet, graph viewport/canvas modules, and tests to define a safe UI polish scope before editing.
+- Reworked the workspace hero and graph header so the page now surfaces live canvas metrics and the currently selected node more clearly.
+- Added richer inspector summary blocks plus computed node metadata so branching state and message density are easier to read at a glance.
+- Refined graph node cards with provider badges, message counts, and node-state chips to make the canvas itself more informative.
+- Expanded the focused node chat into a stronger branch workspace with lineage, child-branch navigation, and workspace switching context.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
 ### Files Changed
 - `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
 
 ### Git Workflow
 - Current branch at session start: `main`
 - New branch created/switched: `feature/workspace-ui-polish`
 - Commits made:
-  - none yet
+  - `5cd15c5` - `feat: polish workspace and chat ui`
 - Push status:
-  - not pushed yet; implementation in progress
+  - not pushed yet; final progress-log commit and branch push still pending
 
 ### Current Status
-- Existing graph controls, minimap, and inspector behaviors are already present.
-- UI polish work is now scoped around layout hierarchy, styling, and lightweight interaction improvements rather than new backend features.
+- Workspace and focused chat UI polish are implemented and verified locally.
+- Existing graph controls, minimap, viewport fitting, and node workflows remain intact after the redesign.
 
 ### Next Recommended Step
-- Implement the workspace and node chat visual refinement, then run checks/tests before committing.
+- Finalize session documentation, push `feature/workspace-ui-polish`, and then either merge the branch or continue with higher-level workflow polish.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
