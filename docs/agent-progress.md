@@ -11,6 +11,45 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-19 21:05
+
+### Session Goal
+- Lock the node chat composer to the bottom of the chat workspace so it behaves more like ChatGPT.
+- Stop the input area from shifting vertically as transcript content grows.
+
+### Planned Tasks
+- inspect the current node chat height and scroll behavior
+- restructure the chat layout so the transcript owns scrolling and the composer stays pinned
+- verify the page with Django checks/tests and merge the fix back into the base feature branch
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Reworked the node chat workspace so the transcript owns scrolling and the composer stays pinned to the bottom like a real chat app.
+- Switched the minimal chat layout from content-driven height to a two-row viewport layout with a fixed composer row.
+- Kept mobile behavior flexible by relaxing the locked-height layout on smaller screens.
+- Verified the composer lock fix with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/manual-node-positioning`
+- New branch created/switched: `feature/fix-node-chat-composer-lock`
+- Commits made:
+  - fix, docs, and merge-back commits pending at time of this log edit
+- Push status:
+  - not pushed yet; branch will be merged back into `feature/manual-node-positioning`
+
+### Current Status
+- The node chat composer now stays pinned to the bottom of the chat workspace, pending commit and merge-back.
+
+### Next Recommended Step
+- After merge-back, continue with graph zoom controls and overall workspace scaling.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-19 20:55
 
 ### Session Goal
