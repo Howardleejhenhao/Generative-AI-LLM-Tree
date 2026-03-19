@@ -240,43 +240,47 @@ body {
 .chat-shell-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: 12px;
   width: min(1080px, 100%);
   margin: 0 auto;
-  padding: 2px 0 0;
+  padding: 0;
 }
 
 .chat-shell-copy {
   min-width: 0;
-  padding-top: 1px;
+  padding-top: 0;
+}
+
+.chat-shell-copy-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
 .chat-shell-header .ghost-link {
   margin-bottom: 0;
-  align-self: start;
+  align-self: center;
   padding: 8px 12px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .chat-shell-copy h1 {
   margin: 0;
-  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+  font-size: clamp(1.25rem, 1.9vw, 1.65rem);
   font-weight: 700;
-  line-height: 1.12;
+  line-height: 1.1;
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .chat-shell-meta {
-  margin: 5px 0 0;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.86rem;
-}
-
-.chat-shell-copy .eyebrow {
-  margin-bottom: 6px;
-  font-size: 0.64rem;
-  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-topbar {
@@ -1114,6 +1118,16 @@ body {
   .chat-shell-header {
     grid-template-columns: 1fr;
     width: 100%;
+  }
+
+  .chat-shell-copy-inline {
+    display: grid;
+    gap: 4px;
+  }
+
+  .chat-shell-copy h1,
+  .chat-shell-meta {
+    white-space: normal;
   }
 
   .chat-page-minimal {

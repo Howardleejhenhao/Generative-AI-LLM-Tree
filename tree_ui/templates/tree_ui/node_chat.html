@@ -7,8 +7,7 @@
   <section class="chat-page chat-page-minimal">
     <header class="chat-shell-header">
       <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
-      <div class="chat-shell-copy">
-        <p class="eyebrow">Node Conversation</p>
+      <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
         <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
       </div>

@@ -57,10 +57,10 @@ class WorkspaceGraphViewTests(TestCase):
         response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Node Conversation")
         self.assertContains(response, "Back to graph")
         self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
+        self.assertContains(response, "Main · Openai / gpt-4.1-mini")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
