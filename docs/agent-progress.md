@@ -40,12 +40,15 @@
 - Current branch at session start: `feature/manual-node-positioning`
 - New branch created/switched: `feature/node-chat-layout-polish`
 - Commits made:
-  - feature and docs commits pending at time of this log edit
+  - `831ad37` - `feat: polish node chat layout`
+  - `c02f1ce` - `docs: update agent progress log`
+  - `ac271a8` - `merge: bring back node chat layout polish`
 - Push status:
-  - not pushed yet; branch will be merged back into `feature/manual-node-positioning` after commit
+  - merged back into `feature/manual-node-positioning`
+  - pushed to `origin/feature/manual-node-positioning`
 
 ### Current Status
-- The node chat page layout is cleaner and more consistent, pending commit and merge-back.
+- The node chat page layout is cleaner and more consistent, and the work has already been merged back into `feature/manual-node-positioning`.
 
 ### Next Recommended Step
 - After merge-back, continue with graph workspace zoom controls and summary refinement.
