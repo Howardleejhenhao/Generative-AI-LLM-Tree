@@ -1,0 +1,84 @@
+{% extends "tree_ui/base.html" %}
+{% load static %}
+
+{% block title %}LLM-Tree Workspace{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Conversation DAG</p>
+      <h1>Branch your chat history like a working graph.</h1>
+      <p class="hero-copy">
+        This bootstrap slice ships the Django shell, graph-ready models, and a node-editor
+        interface prepared for provider and streaming integration.
+      </p>
+    </div>
+    <div class="hero-meta">
+      <div>
+        <span class="meta-label">Providers</span>
+        <strong>OpenAI + Gemini</strong>
+      </div>
+      <div>
+        <span class="meta-label">Context Rule</span>
+        <strong>Root to selected node only</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace-shell">
+    <div class="canvas-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-kicker">Graph View</p>
+          <h2 id="workspace-name">Workspace</h2>
+        </div>
+        <p class="panel-note">Select a node to inspect its branch-local message bundle.</p>
+      </div>
+      <div class="graph-stage" id="graph-stage">
+        <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
+        <div class="graph-nodes" id="graph-nodes"></div>
+      </div>
+    </div>
+
+    <aside class="detail-panel" id="detail-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-kicker">Node Detail</p>
+          <h2 id="node-title">Select a node</h2>
+        </div>
+        <span class="status-chip" id="node-provider">Waiting</span>
+      </div>
+
+      <dl class="node-metadata">
+        <div>
+          <dt>Model</dt>
+          <dd id="node-model">-</dd>
+        </div>
+        <div>
+          <dt>Branch Source</dt>
+          <dd id="node-parent">-</dd>
+        </div>
+        <div>
+          <dt>Summary</dt>
+          <dd id="node-summary">Select a node on the canvas to inspect its contents.</dd>
+        </div>
+      </dl>
+
+      <div class="message-list" id="message-list"></div>
+
+      <section class="action-box">
+        <h3>Next slice</h3>
+        <p id="streaming-status">
+          Streaming transport and live node creation endpoints are the next backend milestone.
+        </p>
+        <div class="legend">
+          <span class="legend-pill legend-pill-openai">OpenAI branch</span>
+          <span class="legend-pill legend-pill-gemini">Gemini branch</span>
+        </div>
+      </section>
+    </aside>
+  </section>
+
+  {{ graph_payload|json_script:"graph-payload" }}
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}"></script>
+{% endblock %}

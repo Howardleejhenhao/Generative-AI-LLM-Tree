@@ -1,0 +1,355 @@
+:root {
+  --bg: #f4efe6;
+  --bg-accent: #e5d7c3;
+  --panel: rgba(34, 34, 34, 0.92);
+  --panel-soft: rgba(255, 248, 238, 0.82);
+  --text: #1f1b17;
+  --muted: #6c5f53;
+  --line: rgba(36, 31, 26, 0.16);
+  --openai: #165d4a;
+  --gemini: #935f10;
+  --shadow: 0 28px 60px rgba(59, 44, 26, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Helvetica Neue", "Nimbus Sans", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.7), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(234, 179, 8, 0.18), transparent 22%),
+    linear-gradient(135deg, var(--bg), #f8f4ed 48%, var(--bg-accent));
+}
+
+.page-shell {
+  width: min(1400px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.panel-kicker,
+.meta-label {
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.hero h1,
+.panel-header h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.hero h1 {
+  max-width: 12ch;
+  font-size: clamp(2.8rem, 6vw, 4.9rem);
+  line-height: 0.95;
+}
+
+.hero-copy {
+  max-width: 56ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hero-meta,
+.canvas-panel,
+.detail-panel {
+  border: 1px solid rgba(55, 43, 31, 0.1);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-meta {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  background: rgba(255, 250, 242, 0.66);
+}
+
+.hero-meta strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.workspace-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.7fr);
+  gap: 20px;
+}
+
+.canvas-panel,
+.detail-panel {
+  overflow: hidden;
+}
+
+.canvas-panel {
+  background: linear-gradient(180deg, rgba(255, 253, 250, 0.9), rgba(255, 244, 229, 0.74));
+}
+
+.detail-panel {
+  padding: 24px;
+  background: var(--panel);
+  color: #f8f1e8;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  padding: 24px 24px 0;
+}
+
+.detail-panel .panel-header {
+  padding: 0 0 20px;
+}
+
+.panel-note {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.graph-stage {
+  position: relative;
+  min-height: 620px;
+  margin: 24px;
+  border-radius: 20px;
+  border: 1px dashed rgba(74, 58, 40, 0.2);
+  background:
+    linear-gradient(rgba(95, 79, 60, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 79, 60, 0.06) 1px, transparent 1px),
+    rgba(255, 251, 245, 0.7);
+  background-size: 40px 40px;
+}
+
+.graph-edges,
+.graph-nodes {
+  position: absolute;
+  inset: 0;
+}
+
+.graph-edges {
+  width: 100%;
+  height: 100%;
+}
+
+.graph-edge {
+  fill: none;
+  stroke: rgba(44, 36, 28, 0.28);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 8 10;
+}
+
+.graph-node {
+  position: absolute;
+  width: 264px;
+  padding: 18px 18px 16px;
+  border: 1px solid rgba(59, 45, 29, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 34px rgba(49, 37, 22, 0.12);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.graph-node:hover,
+.graph-node[data-selected="true"] {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 40px rgba(49, 37, 22, 0.18);
+}
+
+.graph-node[data-provider="openai"][data-selected="true"] {
+  border-color: rgba(22, 93, 74, 0.44);
+}
+
+.graph-node[data-provider="gemini"][data-selected="true"] {
+  border-color: rgba(147, 95, 16, 0.44);
+}
+
+.graph-node span {
+  display: block;
+}
+
+.graph-node-title {
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.graph-node-meta,
+.graph-node-summary,
+.node-metadata dt,
+.message-order {
+  color: var(--muted);
+}
+
+.graph-node-meta {
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.graph-node-summary,
+.node-metadata dd,
+.message-card p,
+.action-box p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.status-chip,
+.legend-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+}
+
+.status-chip {
+  background: rgba(255, 255, 255, 0.1);
+  text-transform: capitalize;
+}
+
+.status-chip[data-provider="openai"] {
+  color: #9ce3d0;
+}
+
+.status-chip[data-provider="gemini"] {
+  color: #f8cb7e;
+}
+
+.node-metadata {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 24px;
+}
+
+.node-metadata div {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.node-metadata dt {
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.node-metadata dd {
+  color: #f8f1e8;
+}
+
+.message-list {
+  display: grid;
+  gap: 12px;
+}
+
+.message-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.message-role {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.message-card[data-role="assistant"] .message-role {
+  color: #9ce3d0;
+}
+
+.message-card[data-role="user"] .message-role {
+  color: #f8cb7e;
+}
+
+.message-card[data-role="system"] .message-role {
+  color: #c8b8ff;
+}
+
+.action-box {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.action-box h3 {
+  margin: 0 0 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.legend-pill-openai {
+  background: rgba(22, 93, 74, 0.16);
+  color: #9ce3d0;
+}
+
+.legend-pill-gemini {
+  background: rgba(147, 95, 16, 0.16);
+  color: #f8cb7e;
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .workspace-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    width: min(100vw - 20px, 1400px);
+    padding-top: 20px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .graph-stage {
+    min-height: 780px;
+    overflow: auto;
+  }
+}
