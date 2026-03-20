@@ -26,12 +26,12 @@ class WorkspaceGraphViewTests(TestCase):
         response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Conversation DAG")
+        self.assertContains(response, "LLM-Tree")
         self.assertContains(response, "graph-payload")
-        self.assertContains(response, "Graph-first conversation workspace.")
+        self.assertContains(response, "Conversation graph.")
         self.assertContains(
             response,
-            "Drag nodes to rearrange the layout. Drag the background to pan. Press",
+            "Drag nodes. Drag background to pan.",
         )
         self.assertContains(response, "Workspace Zoom")
         self.assertContains(response, "Fit view")
@@ -40,7 +40,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Shortcuts")
         self.assertContains(response, "Workspace Shortcuts")
         self.assertContains(response, "Create Workspace")
-        self.assertContains(response, "Pick the graph you want to work in.")
+        self.assertContains(response, "Workspaces")
         self.assertContains(response, "Jump to canvas")
         self.assertContains(response, "Research lane")
         self.assertContains(response, "Find node")

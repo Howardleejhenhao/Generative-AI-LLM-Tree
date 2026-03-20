@@ -11,6 +11,49 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 11:22
+
+### Session Goal
+- Push the homepage toward an explicitly minimal presentation after feedback that it still contains too much text.
+- Preserve the current graph functionality while stripping down copy and visual explanation to the essentials.
+
+### Planned Tasks
+- continue on `feature/workspace-ui-polish` with a homepage text-reduction pass
+- shorten the hero, workspace, and graph helper copy to minimal wording
+- update tests and validate the simplified homepage
+
+### Work Completed
+- Session started; branch state, latest progress log entries, and the current homepage template were reviewed before editing.
+- Reduced the homepage hero to a short title plus one CTA instead of a larger explanatory block.
+- Shortened workspace, graph, and selection helper copy so the homepage reads more like a control surface than a landing page.
+- Simplified the default search/status helper text and shortened the empty-state and detail-panel copy.
+- Updated tests to match the minimal homepage wording.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - branch already exists on `origin`, additional work not pushed yet
+
+### Current Status
+- The homepage simplification pass is complete locally.
+- The goal of this session stayed focused on explicit reduction rather than another visual expansion.
+
+### Next Recommended Step
+- Commit and push the minimal homepage wording pass, then continue only if more reduction is still needed after review.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

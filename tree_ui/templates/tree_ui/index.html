@@ -6,17 +6,11 @@
 {% block content %}
   <section class="hero hero-compact">
     <div class="hero-copy-block">
-      <p class="eyebrow">Conversation DAG</p>
-      <h1>Graph-first conversation workspace.</h1>
-      <p class="hero-copy">
-        Branch, compare, and continue conversations directly on the canvas, then open any node
-        into a focused chat when you need a deeper working view.
-      </p>
+      <p class="eyebrow">LLM-Tree</p>
+      <h1>Conversation graph.</h1>
       <a class="hero-action-link" href="#workspace-shell">Jump to canvas</a>
     </div>
     <div class="hero-meta hero-meta-minimal">
-      <span class="workspace-summary-pill">OpenAI + Gemini</span>
-      <span class="workspace-summary-pill">Branch-local memory</span>
       <span class="workspace-summary-pill" id="hero-node-count">{{ graph_payload.nodes|length }} nodes</span>
       <span class="workspace-summary-pill" id="hero-root-count">-</span>
       <span class="workspace-summary-pill" id="hero-message-count">-</span>
@@ -26,11 +20,7 @@
   <section class="workspace-toolbar workspace-toolbar-compact">
     <div class="workspace-switcher">
       <div class="workspace-toolbar-heading">
-        <p class="eyebrow">Workspaces</p>
-        <h2>Pick the graph you want to work in.</h2>
-        <p class="workspace-toolbar-copy">
-          Each workspace keeps its own graph, node chats, and branching experiments.
-        </p>
+        <h2>Workspaces</h2>
       </div>
       <div class="workspace-list">
         {% for workspace in workspace_list %}
@@ -43,10 +33,7 @@
     <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
       {% csrf_token %}
       <p class="workspace-create-kicker">Create Workspace</p>
-      <h2>Start a separate graph.</h2>
-      <p class="workspace-create-copy">
-        Spin up another workspace for a new project, client, or branch-heavy experiment.
-      </p>
+      <h2>New workspace</h2>
       <div class="workspace-create-row">
         <label class="form-field workspace-create-field">
           <span>Name</span>
@@ -71,7 +58,6 @@
           </div>
         </div>
         <div class="canvas-panel-actions">
-          <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
           <div class="canvas-panel-action-row">
             <button class="detail-toggle-button" id="detail-panel-toggle" type="button" aria-expanded="true" aria-controls="detail-panel">
               Hide inspector
@@ -119,16 +105,14 @@
         <div class="workspace-focus-inline">
           <div class="workspace-focus-copy">
             <strong id="workspace-selection-title">No node selected</strong>
-            <p id="workspace-selection-summary">
-              Choose a node to inspect details, open chat, or branch from that exact point in the tree.
-            </p>
+            <p id="workspace-selection-summary">Select a node.</p>
           </div>
           <div class="workspace-selection-flags">
             <span class="workspace-summary-pill" id="workspace-selection-type">No active path</span>
             <span class="workspace-summary-pill" id="workspace-selection-depth">Lineage depth 0</span>
           </div>
         </div>
-        <p class="workspace-search-feedback" id="workspace-search-feedback">Press <kbd>/</kbd> to focus search.</p>
+        <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd> search</p>
         <div class="workspace-search-results" id="workspace-search-results" hidden></div>
       </div>
       <div class="graph-stage" id="graph-stage">
@@ -155,8 +139,8 @@
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             <div class="graph-empty-copy-block">
-              <strong>No nodes yet. Start with a conversation lane.</strong>
-              <p>Create the first root node manually, or use a quick-start preset to prefill the form.</p>
+              <strong>No nodes yet.</strong>
+              <p>Start with a root node.</p>
             </div>
             <div class="graph-empty-presets">
               <button
@@ -201,7 +185,7 @@
           <div class="graph-nodes" id="graph-nodes"></div>
         </div>
         <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
-        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan. Press <kbd>?</kbd> for shortcuts and highlight the active branch path.</p>
+        <p class="graph-hint" id="graph-hint">Drag nodes. Drag background to pan.</p>
       </div>
     </div>
 
@@ -228,7 +212,7 @@
       <section class="detail-focus-card detail-focus-card-minimal">
         <div class="detail-focus-copy">
           <h3 id="node-mode-label">Waiting for selection</h3>
-          <p id="node-focus-copy">Pick a node to inspect its recent messages and branch from it safely.</p>
+          <p id="node-focus-copy">Pick a node.</p>
         </div>
         <div class="detail-focus-metrics detail-focus-metrics-minimal">
           <div>

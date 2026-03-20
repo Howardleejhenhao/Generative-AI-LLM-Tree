@@ -199,7 +199,7 @@ function getNodeMode(node) {
 
 function getSelectionSummaryText(node) {
   if (!node) {
-    return "Choose a node to inspect details, open chat, or branch from that exact point in the tree.";
+    return "Select a node.";
   }
 
   const messageCount = node.messages.length;
@@ -246,7 +246,7 @@ function renderSearchResults(matches) {
 
   if (!isSearchActive()) {
     workspaceSearchResults.hidden = true;
-    workspaceSearchFeedback.innerHTML = "Press <kbd>/</kbd> to focus search.";
+    workspaceSearchFeedback.innerHTML = "<kbd>/</kbd> search";
     return;
   }
 
@@ -402,7 +402,7 @@ function showEmptyNodeState() {
   nodeParent.textContent = "Root";
   nodeSummary.textContent = "Create a root conversation node to begin the workspace.";
   nodeModeLabel.textContent = "Waiting for selection";
-  nodeFocusCopy.textContent = "Pick a node to inspect its recent messages and branch from it safely.";
+  nodeFocusCopy.textContent = "Pick a node.";
   nodeMessageCount.textContent = "0";
   nodeLastRole.textContent = "Empty";
   messageList.innerHTML = "";
