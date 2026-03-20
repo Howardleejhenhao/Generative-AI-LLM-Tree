@@ -28,6 +28,7 @@
 - Collapsed the graph summary, search, and selected-focus areas into a denser single utility band instead of multiple large cards.
 - Removed the duplicate quick-start block from the inspector so onboarding guidance stays in the empty canvas only.
 - Reduced chat-context noise by removing the extra workspace card and toning down the context dock density.
+- Followed up with a spacing/shadow pass so cards, controls, and side panels feel lighter instead of stacking visual weight.
 - Updated tests to match the cleaner layout copy.
 - Verified the simplification with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
