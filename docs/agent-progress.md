@@ -11,6 +11,49 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 11:06
+
+### Session Goal
+- Improve the focused node chat so it behaves more like a durable working surface during longer conversations.
+- Make the chat page feel cleaner by allowing users to temporarily hide context chrome and recover the latest messages quickly.
+
+### Planned Tasks
+- continue on `feature/workspace-ui-polish` with a focused node chat ergonomics pass
+- add a collapsible context dock and transcript recovery controls
+- validate the chat refinements with JS and Django checks/tests
+
+### Work Completed
+- Session started; branch status, latest progress log entries, current chat template, and current chat JavaScript were reviewed before editing.
+- Added a collapsible context dock in the focused node chat so the transcript can expand when surrounding branch metadata is not needed.
+- Added a jump-to-latest action in the transcript area so long chat sessions are easier to recover after scrolling upward.
+- Added chat keyboard affordances for toggling context and sending with `Ctrl`/`Cmd` + `Enter`.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - branch already exists on `origin`, additional work not pushed yet
+
+### Current Status
+- The feature branch is clean and already includes the graph workspace redesign plus search/navigation refinements.
+- This session refined the focused chat workspace ergonomics and is ready to be committed next.
+
+### Next Recommended Step
+- Commit and push the chat ergonomics slice, then continue with whichever remaining polish stands out most in browser review.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 09:23
 
 ### Session Goal
