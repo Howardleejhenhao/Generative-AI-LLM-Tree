@@ -7,43 +7,19 @@
   <section class="hero hero-compact">
     <div class="hero-copy-block">
       <p class="eyebrow">Conversation DAG</p>
-      <h1>Use the graph as the main workspace, not a side panel.</h1>
+      <h1>Graph-first conversation workspace.</h1>
       <p class="hero-copy">
-        Pan, zoom, branch, and compare model paths directly on the canvas, then open any node
-        into its own focused chat session when you need to go deeper.
+        Branch, compare, and continue conversations directly on the canvas, then open any node
+        into a focused chat when you need a deeper working view.
       </p>
-      <div class="hero-actions">
-        <a class="hero-action-link" href="#workspace-shell">Jump to the canvas</a>
-        <p class="hero-footnote">
-          Each new node can pick its own provider and model, while lineage stays local to the selected branch.
-        </p>
-      </div>
+      <a class="hero-action-link" href="#workspace-shell">Jump to canvas</a>
     </div>
-    <div class="hero-meta hero-meta-compact">
-      <div class="hero-metric-card">
-        <span class="meta-label">Providers</span>
-        <strong>OpenAI + Gemini</strong>
-      </div>
-      <div class="hero-metric-card">
-        <span class="meta-label">Context Rule</span>
-        <strong>Root to selected node only</strong>
-      </div>
-      <div class="hero-metric-card">
-        <span class="meta-label">Layout</span>
-        <strong>Zoomable graph workspace</strong>
-      </div>
-      <div class="hero-metric-card">
-        <span class="meta-label">Current Canvas</span>
-        <strong id="hero-node-count">{{ graph_payload.nodes|length }} nodes</strong>
-      </div>
-      <div class="hero-metric-card">
-        <span class="meta-label">Root Threads</span>
-        <strong id="hero-root-count">-</strong>
-      </div>
-      <div class="hero-metric-card">
-        <span class="meta-label">Stored Messages</span>
-        <strong id="hero-message-count">-</strong>
-      </div>
+    <div class="hero-meta hero-meta-minimal">
+      <span class="workspace-summary-pill">OpenAI + Gemini</span>
+      <span class="workspace-summary-pill">Branch-local memory</span>
+      <span class="workspace-summary-pill" id="hero-node-count">{{ graph_payload.nodes|length }} nodes</span>
+      <span class="workspace-summary-pill" id="hero-root-count">-</span>
+      <span class="workspace-summary-pill" id="hero-message-count">-</span>
     </div>
   </section>
 
@@ -106,56 +82,54 @@
           </div>
         </div>
       </div>
-      <div class="workspace-stage-bar">
-        <section class="workspace-stage-summary">
-          <p class="workspace-stage-label">Live canvas summary</p>
-          <div class="workspace-stage-metrics">
-            <div class="workspace-stage-metric">
-              <span>Nodes</span>
-              <strong id="workspace-node-count">{{ graph_payload.nodes|length }}</strong>
-            </div>
-            <div class="workspace-stage-metric">
-              <span>Root threads</span>
-              <strong id="workspace-root-count">-</strong>
-            </div>
-            <div class="workspace-stage-metric">
-              <span>Messages</span>
-              <strong id="workspace-message-count">-</strong>
-            </div>
+      <div class="workspace-stage-bar workspace-stage-bar-minimal">
+        <div class="workspace-stage-metrics workspace-stage-metrics-compact">
+          <div class="workspace-stage-metric">
+            <span>Nodes</span>
+            <strong id="workspace-node-count">{{ graph_payload.nodes|length }}</strong>
           </div>
-          <div class="workspace-search-shell">
-            <label class="workspace-search-field" for="workspace-search-input">
-              <span>Find node</span>
-              <input
-                id="workspace-search-input"
-                type="search"
-                placeholder="Search titles, models, provider, or message text"
-                autocomplete="off"
-              >
-            </label>
-            <label class="workspace-search-field workspace-search-filter" for="workspace-search-provider">
-              <span>Provider</span>
-              <select id="workspace-search-provider">
-                <option value="all">All providers</option>
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </label>
+          <div class="workspace-stage-metric">
+            <span>Roots</span>
+            <strong id="workspace-root-count">-</strong>
           </div>
-          <p class="workspace-search-feedback" id="workspace-search-feedback">Press <kbd>/</kbd> to focus search.</p>
-          <div class="workspace-search-results" id="workspace-search-results" hidden></div>
-        </section>
-        <section class="workspace-stage-focus">
-          <p class="workspace-stage-label">Selected focus</p>
-          <strong id="workspace-selection-title">No node selected</strong>
-          <p id="workspace-selection-summary">
-            Choose a node to inspect details, open chat, or branch from that exact point in the tree.
-          </p>
+          <div class="workspace-stage-metric">
+            <span>Messages</span>
+            <strong id="workspace-message-count">-</strong>
+          </div>
+        </div>
+        <div class="workspace-search-shell">
+          <label class="workspace-search-field" for="workspace-search-input">
+            <span>Find node</span>
+            <input
+              id="workspace-search-input"
+              type="search"
+              placeholder="Search titles, models, provider, or message text"
+              autocomplete="off"
+            >
+          </label>
+          <label class="workspace-search-field workspace-search-filter" for="workspace-search-provider">
+            <span>Provider</span>
+            <select id="workspace-search-provider">
+              <option value="all">All providers</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
+        </div>
+        <div class="workspace-focus-inline">
+          <div class="workspace-focus-copy">
+            <strong id="workspace-selection-title">No node selected</strong>
+            <p id="workspace-selection-summary">
+              Choose a node to inspect details, open chat, or branch from that exact point in the tree.
+            </p>
+          </div>
           <div class="workspace-selection-flags">
             <span class="workspace-summary-pill" id="workspace-selection-type">No active path</span>
             <span class="workspace-summary-pill" id="workspace-selection-depth">Lineage depth 0</span>
           </div>
-        </section>
+        </div>
+        <p class="workspace-search-feedback" id="workspace-search-feedback">Press <kbd>/</kbd> to focus search.</p>
+        <div class="workspace-search-results" id="workspace-search-results" hidden></div>
       </div>
       <div class="graph-stage" id="graph-stage">
         <button class="detail-peek-button" id="detail-panel-peek" type="button" hidden>
@@ -251,13 +225,12 @@
         </div>
       </div>
 
-      <section class="detail-focus-card">
+      <section class="detail-focus-card detail-focus-card-minimal">
         <div class="detail-focus-copy">
-          <p class="panel-kicker">Conversation Snapshot</p>
           <h3 id="node-mode-label">Waiting for selection</h3>
           <p id="node-focus-copy">Pick a node to inspect its recent messages and branch from it safely.</p>
         </div>
-        <div class="detail-focus-metrics">
+        <div class="detail-focus-metrics detail-focus-metrics-minimal">
           <div>
             <span>Messages</span>
             <strong id="node-message-count">0</strong>
@@ -288,45 +261,6 @@
         <h3>Recent Activity</h3>
         <p class="edit-note">The full transcript now lives inside the node chat view. This panel only shows the latest messages.</p>
         <div class="message-list" id="message-list"></div>
-      </section>
-      <section class="action-box action-box-quickstart">
-        <h3>Quick Start</h3>
-        <p class="edit-note">Prefill the node form with a clean starting configuration, then create or tweak it.</p>
-        <div class="quick-start-stack">
-          <button
-            class="quick-start-button quick-start-button-compact"
-            type="button"
-            data-title="Research lane"
-            data-provider="openai"
-            data-model-name="gpt-4.1-mini"
-            data-root-mode="true"
-          >
-            <span class="quick-start-label">Research lane</span>
-            <span class="quick-start-meta">OpenAI / gpt-4.1-mini</span>
-          </button>
-          <button
-            class="quick-start-button quick-start-button-compact"
-            type="button"
-            data-title="Model comparison"
-            data-provider="gemini"
-            data-model-name="gemini-2.0-flash"
-            data-root-mode="true"
-          >
-            <span class="quick-start-label">Model comparison</span>
-            <span class="quick-start-meta">Gemini / gemini-2.0-flash</span>
-          </button>
-          <button
-            class="quick-start-button quick-start-button-compact"
-            type="button"
-            data-title="Follow-up branch"
-            data-provider="openai"
-            data-model-name="gpt-4.1-mini"
-            data-root-mode="false"
-          >
-            <span class="quick-start-label">Follow-up branch</span>
-            <span class="quick-start-meta">Uses the current selection as parent</span>
-          </button>
-        </div>
       </section>
       <section class="action-box">
         <h3>Create Conversation Node</h3>

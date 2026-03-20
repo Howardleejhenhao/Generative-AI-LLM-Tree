@@ -11,6 +11,51 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 11:11
+
+### Session Goal
+- Reduce visual clutter after several UI refinement passes and make the workspace easier to scan at a glance.
+- Remove duplicated information density instead of adding more controls or feature chrome.
+
+### Planned Tasks
+- continue on `feature/workspace-ui-polish` with a layout simplification pass
+- compress repeated summary areas on the graph page and reduce unnecessary side-panel chrome
+- validate the simplified layout with JS and Django checks/tests
+
+### Work Completed
+- Session started; branch state plus the current graph/chat templates and stylesheet were reviewed before editing.
+- Simplified the workspace hero from a large metrics grid into a smaller summary strip and shortened the top-level copy.
+- Collapsed the graph summary, search, and selected-focus areas into a denser single utility band instead of multiple large cards.
+- Removed the duplicate quick-start block from the inspector so onboarding guidance stays in the empty canvas only.
+- Reduced chat-context noise by removing the extra workspace card and toning down the context dock density.
+- Updated tests to match the cleaner layout copy.
+- Verified the simplification with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - branch already exists on `origin`, additional work not pushed yet
+
+### Current Status
+- The UI has been materially simplified without dropping the core workspace, search, shortcut, or chat flows.
+- This cleanup pass is ready to be committed next.
+
+### Next Recommended Step
+- Commit and push the simplification pass, then continue with smaller spacing and typography cleanup if more visual tightening is still needed.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 11:06
 
 ### Session Goal

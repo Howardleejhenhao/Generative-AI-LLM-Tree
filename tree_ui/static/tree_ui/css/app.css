@@ -1551,6 +1551,15 @@ body:has(.chat-page-immersive) .page-shell {
   align-content: start;
 }
 
+.hero-meta-minimal {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  gap: 10px;
+  padding: 18px 20px;
+  background: rgba(255, 250, 242, 0.58);
+}
+
 .hero-metric-card {
   min-height: 100px;
   padding: 14px 16px;
@@ -1573,6 +1582,11 @@ body:has(.chat-page-immersive) .page-shell {
   grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
   gap: 14px;
   padding: 0 24px 8px;
+}
+
+.workspace-stage-bar-minimal {
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .workspace-stage-summary,
@@ -1621,11 +1635,19 @@ body:has(.chat-page-immersive) .page-shell {
   line-height: 1.1;
 }
 
+.workspace-stage-metrics-compact {
+  grid-template-columns: repeat(3, minmax(0, 160px));
+}
+
 .workspace-search-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
   gap: 10px;
   margin-top: 16px;
+}
+
+.workspace-stage-bar-minimal .workspace-search-shell {
+  margin-top: 0;
 }
 
 .workspace-search-field {
@@ -1700,11 +1722,36 @@ body:has(.chat-page-immersive) .page-shell {
   line-height: 1.58;
 }
 
+.workspace-focus-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.workspace-focus-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.workspace-focus-copy p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .workspace-selection-flags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .detail-focus-card {
@@ -1717,6 +1764,16 @@ body:has(.chat-page-immersive) .page-shell {
   background:
     radial-gradient(circle at top right, rgba(247, 200, 115, 0.18), transparent 34%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+}
+
+.detail-focus-card-minimal {
+  gap: 12px;
+  padding: 16px 0 18px;
+  margin-bottom: 18px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
 }
 
 .detail-focus-copy h3 {
@@ -1735,6 +1792,10 @@ body:has(.chat-page-immersive) .page-shell {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.detail-focus-metrics-minimal div {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .detail-focus-metrics div {
@@ -1999,10 +2060,10 @@ kbd {
   right: 24px;
   bottom: 166px;
   z-index: 3;
-  width: 320px;
+  width: 292px;
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 10px;
   overflow: auto;
   padding-right: 4px;
 }
@@ -2012,18 +2073,18 @@ kbd {
 }
 
 .chat-context-card {
-  padding: 18px;
+  padding: 16px;
   border: 1px solid rgba(55, 43, 31, 0.1);
-  border-radius: 22px;
-  box-shadow: var(--shadow);
+  border-radius: 18px;
+  box-shadow: 0 18px 36px rgba(49, 37, 22, 0.1);
   backdrop-filter: blur(18px);
-  background: rgba(255, 250, 242, 0.8);
+  background: rgba(255, 250, 242, 0.74);
 }
 
 .chat-context-card h2 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.22rem;
+  font-size: 1.08rem;
 }
 
 .chat-context-card-node {
@@ -2048,7 +2109,7 @@ kbd {
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .chat-context-meta {
@@ -2083,7 +2144,7 @@ kbd {
 
 .chat-branch-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chat-jump-button {

@@ -18,7 +18,6 @@
 
     <aside class="chat-context-dock" id="chat-context-dock">
       <section class="chat-context-card chat-context-card-node">
-        <p class="panel-kicker">Focused Node</p>
         <h2>{{ node_payload.title }}</h2>
         <p class="chat-context-copy">{{ node_payload.summary|default:"Keep replying here to extend only this branch-local conversation path." }}</p>
         <div class="chat-context-metrics">
@@ -37,7 +36,6 @@
       <section class="chat-context-card">
         <div class="chat-context-header">
           <h2>Lineage</h2>
-          <span class="chat-context-meta">Branch-local context</span>
         </div>
         <div class="lineage-trail">
           {% for item in lineage_items %}
@@ -51,7 +49,6 @@
       <section class="chat-context-card">
         <div class="chat-context-header">
           <h2>Child Branches</h2>
-          <span class="chat-context-meta">Continue elsewhere</span>
         </div>
         <div class="chat-branch-list">
           {% for child in child_nodes %}
@@ -62,20 +59,6 @@
             </a>
           {% empty %}
             <p class="chat-empty-copy">No child branches yet. Reply here to keep extending this exact path.</p>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="chat-context-card">
-        <div class="chat-context-header">
-          <h2>Workspaces</h2>
-          <span class="chat-context-meta">Jump between graphs</span>
-        </div>
-        <div class="workspace-list workspace-list-compact">
-          {% for item in workspace_list %}
-            <a class="workspace-pill{% if item.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' item.slug %}">
-              {{ item.name }}
-            </a>
           {% endfor %}
         </div>
       </section>
