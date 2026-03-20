@@ -17,6 +17,10 @@ const heroMessageCount = document.getElementById("hero-message-count");
 const workspaceNodeCount = document.getElementById("workspace-node-count");
 const workspaceRootCount = document.getElementById("workspace-root-count");
 const workspaceMessageCount = document.getElementById("workspace-message-count");
+const workspaceSearchInput = document.getElementById("workspace-search-input");
+const workspaceSearchProvider = document.getElementById("workspace-search-provider");
+const workspaceSearchFeedback = document.getElementById("workspace-search-feedback");
+const workspaceSearchResults = document.getElementById("workspace-search-results");
 const workspaceSelectionTitle = document.getElementById("workspace-selection-title");
 const workspaceSelectionSummary = document.getElementById("workspace-selection-summary");
 const workspaceSelectionType = document.getElementById("workspace-selection-type");
@@ -67,6 +71,7 @@ const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let minimap = null;
 let activeLineageIds = new Set();
+let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
 
 function readStoredDetailPanelState() {
   try {
@@ -143,6 +148,23 @@ function getLineageIds(node) {
   return ids.reverse();
 }
 
+function getNodeSearchText(node) {
+  return [
+    node.title,
+    node.summary,
+    node.provider,
+    node.model_name,
+    ...node.messages.map((message) => `${message.role} ${message.content}`),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isSearchActive() {
+  return workspaceSearchInput.value.trim() !== "" || workspaceSearchProvider.value !== "all";
+}
+
 function getRootNodeCount() {
   return payload.nodes.filter((node) => node.parent_id === null || node.parent_id === undefined).length;
 }
@@ -201,6 +223,69 @@ function setWorkspaceHelpOpen(isOpen) {
   workspaceHelpDialog.hidden = !isOpen;
   workspaceHelpDialog.setAttribute("aria-hidden", String(!isOpen));
   workspaceHelpToggle.setAttribute("aria-expanded", String(isOpen));
+}
+
+function buildSearchMatches() {
+  const query = workspaceSearchInput.value.trim().toLowerCase();
+  const provider = workspaceSearchProvider.value;
+
+  return payload.nodes.filter((node) => {
+    const providerMatches = provider === "all" || node.provider === provider;
+    if (!providerMatches) {
+      return false;
+    }
+    if (!query) {
+      return true;
+    }
+    return getNodeSearchText(node).includes(query);
+  });
+}
+
+function renderSearchResults(matches) {
+  workspaceSearchResults.innerHTML = "";
+
+  if (!isSearchActive()) {
+    workspaceSearchResults.hidden = true;
+    workspaceSearchFeedback.innerHTML = "Press <kbd>/</kbd> to focus search.";
+    return;
+  }
+
+  workspaceSearchResults.hidden = false;
+
+  if (!matches.length) {
+    workspaceSearchFeedback.textContent = "No nodes match the current search.";
+    return;
+  }
+
+  workspaceSearchFeedback.textContent = `${matches.length} matching ${matches.length === 1 ? "node" : "nodes"}.`;
+
+  for (const node of matches.slice(0, 6)) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "workspace-search-result";
+
+    const title = document.createElement("span");
+    title.className = "workspace-search-result-title";
+    title.textContent = node.title;
+
+    const meta = document.createElement("span");
+    meta.className = "workspace-search-result-meta";
+    meta.textContent = `${node.provider} / ${node.model_name}`;
+
+    button.append(title, meta);
+    button.addEventListener("click", () => {
+      updateSelection(node.id);
+      viewport.centerOnBounds(getNodeBounds(node));
+    });
+    workspaceSearchResults.appendChild(button);
+  }
+}
+
+function updateSearchState() {
+  const matches = buildSearchMatches();
+  matchedNodeIds = new Set(matches.map((node) => String(node.id)));
+  renderSearchResults(matches);
+  renderGraphCanvas();
 }
 
 function updateWorkspaceSummary() {
@@ -285,6 +370,7 @@ async function handleNodePositionCommit(nodeId, position) {
 function renderGraphCanvas() {
   return renderCanvas(payload.nodes, selectedNodeId, {
     activeLineageIds,
+    matchedNodeIds,
     onSelect: updateSelection,
     onPositionCommit: handleNodePositionCommit,
     onMetricsChange: handleCanvasMetricsChange,
@@ -388,6 +474,13 @@ function handleWorkspaceKeydown(event) {
     return;
   }
 
+  if (event.key === "/") {
+    workspaceSearchInput.focus();
+    workspaceSearchInput.select();
+    event.preventDefault();
+    return;
+  }
+
   if (event.key === "Escape" && workspaceHelpDialog.hidden === false) {
     setWorkspaceHelpOpen(false);
     event.preventDefault();
@@ -476,6 +569,7 @@ async function handleEditSubmit(event) {
     }
     const result = await response.json();
     mergeNode(result.node);
+    updateSearchState();
     editFeedback.textContent = `Edited variant "${result.node.title}" created.`;
     updateSelection(result.node.id);
     viewport.centerOnBounds(getNodeBounds(result.node));
@@ -533,6 +627,7 @@ async function handleNodeSubmit(event) {
       csrfToken,
     );
     mergeNode(result.node);
+    updateSearchState();
     nodeTitleInput.value = "";
     feedback.textContent = `Conversation node "${result.node.title}" created. Open it to chat.`;
     updateSelection(result.node.id);
@@ -558,6 +653,8 @@ fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());
+workspaceSearchInput.addEventListener("input", updateSearchState);
+workspaceSearchProvider.addEventListener("change", updateSearchState);
 for (const button of quickStartButtons) {
   button.addEventListener("click", () => applyQuickStart(button));
 }
@@ -565,6 +662,6 @@ window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
 setWorkspaceHelpOpen(false);
 setDetailPanelCollapsed(readStoredDetailPanelState());
-renderGraphCanvas();
+updateSearchState();
 updateSelection(selectedNodeId);
 updateWorkspaceSummary();

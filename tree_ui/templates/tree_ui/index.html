@@ -123,6 +123,27 @@
               <strong id="workspace-message-count">-</strong>
             </div>
           </div>
+          <div class="workspace-search-shell">
+            <label class="workspace-search-field" for="workspace-search-input">
+              <span>Find node</span>
+              <input
+                id="workspace-search-input"
+                type="search"
+                placeholder="Search titles, models, provider, or message text"
+                autocomplete="off"
+              >
+            </label>
+            <label class="workspace-search-field workspace-search-filter" for="workspace-search-provider">
+              <span>Provider</span>
+              <select id="workspace-search-provider">
+                <option value="all">All providers</option>
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </label>
+          </div>
+          <p class="workspace-search-feedback" id="workspace-search-feedback">Press <kbd>/</kbd> to focus search.</p>
+          <div class="workspace-search-results" id="workspace-search-results" hidden></div>
         </section>
         <section class="workspace-stage-focus">
           <p class="workspace-stage-label">Selected focus</p>

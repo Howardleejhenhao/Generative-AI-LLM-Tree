@@ -11,6 +11,51 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-20 09:23
+
+### Session Goal
+- Improve large-graph usability after the shortcut and onboarding passes by making node discovery faster than manual scanning.
+- Add search-driven jump/navigation affordances without breaking the graph-first workspace layout.
+
+### Planned Tasks
+- continue on `feature/workspace-ui-polish` with another UX refinement slice
+- add workspace search inputs and a compact result surface for jumping to matching nodes
+- connect search state into graph rendering so matches become visually obvious, then validate with checks/tests
+
+### Work Completed
+- Session started; branch status and the latest progress log entries were reviewed before continuing work.
+- Added a workspace search bar plus provider filter so larger graphs can be narrowed without relying on manual panning.
+- Added a compact search result strip that can jump directly to matching nodes and recenter the viewport on selection.
+- Wired search state into the graph canvas so matching nodes stay prominent while non-matching nodes fade back.
+- Added the `/` keyboard shortcut to focus graph search and kept the new search UI inside the existing graph-first layout.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - branch already exists on `origin`, additional work not pushed yet
+
+### Current Status
+- The workspace branch is clean and already contains the visual redesign, shortcut overlay, lineage highlighting, and quick-start onboarding.
+- This session added search and jump navigation for denser graphs and is ready to be committed next.
+
+### Next Recommended Step
+- Commit and push the search/jump slice, then continue with whichever remaining polish is most visible in browser review.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-20 07:48
 
 ### Session Goal

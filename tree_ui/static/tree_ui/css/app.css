@@ -1187,6 +1187,10 @@ body:has(.chat-page-immersive) .page-shell {
   opacity: 0.68;
 }
 
+.graph-nodes:has(.graph-node[data-match="true"]) .graph-node[data-match="false"] {
+  opacity: 0.38;
+}
+
 .graph-node {
   position: absolute;
   width: 264px;
@@ -1212,9 +1216,18 @@ body:has(.chat-page-immersive) .page-shell {
   opacity: 1;
 }
 
+.graph-node[data-match="true"] {
+  opacity: 1;
+  border-color: rgba(74, 58, 40, 0.26);
+}
+
 .graph-node[data-lineage="true"]:not([data-selected="true"]) {
   border-color: rgba(74, 58, 40, 0.22);
   box-shadow: 0 18px 34px rgba(49, 37, 22, 0.15);
+}
+
+.graph-node[data-match="true"]:not([data-selected="true"]) {
+  box-shadow: 0 18px 36px rgba(49, 37, 22, 0.18);
 }
 
 .graph-node[data-provider="openai"][data-selected="true"] {
@@ -1606,6 +1619,79 @@ body:has(.chat-page-immersive) .page-shell {
 .workspace-stage-focus strong {
   font-size: 1.18rem;
   line-height: 1.1;
+}
+
+.workspace-search-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.workspace-search-field {
+  display: grid;
+  gap: 6px;
+}
+
+.workspace-search-field span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.workspace-search-field input,
+.workspace-search-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(74, 58, 40, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text);
+  font: inherit;
+}
+
+.workspace-search-feedback {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.workspace-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.workspace-search-result {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.workspace-search-result:hover {
+  transform: translateY(-1px);
+  border-color: rgba(74, 58, 40, 0.18);
+  box-shadow: 0 12px 24px rgba(49, 37, 22, 0.08);
+}
+
+.workspace-search-result-title {
+  font-weight: 700;
+}
+
+.workspace-search-result-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .workspace-stage-focus p {
@@ -2008,6 +2094,10 @@ kbd {
 
   .workspace-stage-bar,
   .workspace-stage-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-search-shell {
     grid-template-columns: 1fr;
   }
 

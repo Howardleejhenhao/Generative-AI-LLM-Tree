@@ -69,7 +69,14 @@ function applyNodePosition(card, node) {
 }
 
 export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
-  const { activeLineageIds = new Set(), onSelect, onPositionCommit, onMetricsChange, getViewportScale } = handlers;
+  const {
+    activeLineageIds = new Set(),
+    matchedNodeIds = new Set(),
+    onSelect,
+    onPositionCommit,
+    onMetricsChange,
+    getViewportScale,
+  } = handlers;
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
   const nodeLayer = document.getElementById("graph-nodes");
@@ -126,6 +133,7 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     button.dataset.provider = node.provider;
     button.dataset.selected = String(String(node.id) === String(selectedNodeId));
     button.dataset.lineage = String(activeLineageIds.has(String(node.id)));
+    button.dataset.match = String(matchedNodeIds.has(String(node.id)));
     button.dataset.suppressClick = "false";
     button.dataset.dragging = "false";
     applyNodePosition(button, node);
