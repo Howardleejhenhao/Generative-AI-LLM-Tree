@@ -833,6 +833,48 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-22 00:24
+
+### Session Goal
+- Resume the final visual cleanup now that deletion flows are in place.
+- Reduce the visual weight of the workspace controls so the graph canvas reads more clearly as the primary surface.
+
+### Planned Tasks
+- lighten and compact the workspace switcher/create area
+- reduce the chrome around the workspace header and command bar
+- soften the bottom create dock so it feels like a utility strip rather than a second panel
+- validate the CSS/template polish with local checks/tests
+
+### Work Completed
+- Session started; current branch state, latest progress-log entries, and the current homepage/workspace CSS and template structure were reviewed before editing.
+- Reduced the top workspace switcher and create-workspace surfaces so they read more like lightweight control cards than hero-level panels.
+- Softened the workspace command bar and summary pills so the selection/search chrome competes less with the graph.
+- Reworked the bottom create dock into a slimmer translucent utility strip instead of a heavier second panel.
+- Tightened shared button, pill, and legend sizing so the overall workspace reads more minimal without changing functionality.
+- Bumped the stylesheet asset version and verified the pass with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `95db79f` - `style: soften workspace control chrome`
+- Push status:
+  - pending docs commit and push for this session
+
+### Current Status
+- The workspace chrome is visibly lighter, and the graph should now dominate the page more clearly.
+
+### Next Recommended Step
+- Do a quick browser pass on spacing and readability, then decide whether any remaining polish should focus on node cards or the focused chat page.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
