@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js";
-import { getNodeBounds, renderCanvas } from "./canvas.js";
-import { createMinimapController } from "./minimap.js";
-import { syncModelOptions } from "./model-options.js";
-import { createViewportController } from "./viewport.js";
+import { postJSON } from "./api.js?v=20260321-node-select-fix";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-node-select-fix";
+import { createMinimapController } from "./minimap.js?v=20260321-node-select-fix";
+import { syncModelOptions } from "./model-options.js?v=20260321-node-select-fix";
+import { createViewportController } from "./viewport.js?v=20260321-node-select-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");

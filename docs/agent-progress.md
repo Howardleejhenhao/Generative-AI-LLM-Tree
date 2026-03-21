@@ -428,6 +428,49 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-21 23:06
+
+### Session Goal
+- Eliminate any remaining node-click failure caused by stale frontend assets or layer interception.
+- Ship a cache-busted, more robust graph interaction fix so the user does not need to guess whether the browser loaded the latest scripts.
+
+### Planned Tasks
+- inspect current static asset versioning for the workspace page
+- add cache busting for the graph workspace scripts involved in node interaction
+- harden graph layer pointer behavior so edges cannot interfere with node clicks
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; static asset versioning and graph layer CSS were reviewed after continued reports that node clicks still failed in the browser.
+- Added cache-busting query strings to the workspace stylesheet, graph workspace entry script, and the graph-related ES module imports so the browser is forced onto the latest interaction code.
+- Hardened the graph layer pointer behavior so the SVG edge layer cannot intercept clicks and the node layer stays on top for interaction.
+- Verified the refreshed frontend modules with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph workspace now has explicit cache busting on its interaction assets, and the graph layers are configured so nodes receive pointer interaction directly.
+
+### Next Recommended Step
+- Re-test in the browser after a hard refresh; if node clicks still fail after the forced asset refresh, inspect live browser events directly.
+
+### Known Issues / Blockers / Tech Debt
+- Static asset cache busting is currently inconsistent between the chat page and the graph workspace page.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
