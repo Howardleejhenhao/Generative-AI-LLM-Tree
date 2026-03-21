@@ -983,23 +983,28 @@
 
 ### Work Completed
 - Session started; current branch state and the latest progress-log context were reviewed before the merge workflow.
+- Pushed `feature/delete-node-workspace-confirmation` so the source branch was fully published before integrating it into `main`.
+- Switched to `main` and merged `feature/delete-node-workspace-confirmation` with a non-fast-forward merge commit.
+- Verified the merged `main` branch with `python3 manage.py check` and `python3 manage.py test`.
+- A follow-up `git pull origin main` was attempted after the merge had already been created locally; it failed because the working tree already contained the merge changes, but this did not leave the repository in a conflicted state.
 
 ### Files Changed
 - `docs/agent-progress.md`
 
 ### Git Workflow
 - Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: pending merge into `main`
+- New branch created/switched: switched to `main` for merge
 - Commits made:
-  - none yet in this session
+  - `d616d14` - `docs: start merge session log`
+  - `61ced67` - `merge: integrate workspace polish and delete flows`
 - Push status:
-  - not pushed yet for this session
+  - pending final docs commit and push of `main`
 
 ### Current Status
-- Merge workflow is in progress.
+- `main` now contains the merged workspace polish and deletion work.
 
 ### Next Recommended Step
-- Update `main`, merge this feature branch, and push the result.
+- Push the merged `main` branch and finalize the progress-log entry.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
