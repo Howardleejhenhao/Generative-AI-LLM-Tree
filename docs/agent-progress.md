@@ -54,6 +54,68 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-21 08:58
+
+### Session Goal
+- Review the repository state, explain the real implementation status, then close the highest-priority gaps identified in that review.
+- Replace simulated backend chunking with provider-driven streaming, expand edited-variant UX, and align project documentation with the actual feature set.
+
+### Planned Tasks
+- inspect current git status and active branch
+- review `AGENTS.md` and the latest progress log entries
+- verify the implemented backend and frontend feature set from code, not only from prior notes
+- implement true upstream provider streaming through the backend SSE path
+- improve edited-node variant flows in the graph/chat experience
+- update documentation and validate with checks/tests
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed first.
+- Confirmed the active branch is `feature/workspace-ui-polish` and the worktree is otherwise clean.
+- Verified from code that the project already includes Django + Docker Compose scaffolding, workspace and conversation-node data models, graph workspace rendering, node-focused chat pages, streaming SSE replies, OpenAI and Gemini provider abstraction, branch-local context building, edited-node variant creation, manual node positioning persistence, zoom, fit view, minimap, search, and keyboard shortcuts.
+- Reworked backend streaming so the browser-facing SSE endpoint now consumes provider streaming iterators instead of waiting for a full provider response and chunking it afterward.
+- Added shared SSE parsing support plus streaming implementations for both the OpenAI Responses API path and the Gemini `streamGenerateContent` path.
+- Preserved the no-key / provider-error fallback path by emitting a labeled fallback response only when upstream streaming fails before any provider tokens arrive.
+- Expanded the node chat page with versioning context, edited-source navigation, edited-variant listing, and an inline "Edit Into Variant" workflow that redirects into the new variant chat.
+- Improved graph inspector wording so branch/version source information uses node titles instead of only raw numeric ids.
+- Updated tests to cover the richer chat/version UI plus persisted assistant text from streamed provider chunks.
+- Updated `README.md` so the documented feature set now matches the actual repository scope instead of describing only the bootstrap phase.
+- Verified the session with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `README.md`
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/__init__.py`
+- `tree_ui/services/providers/base.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `118b458` - `feat: stream provider replies and expand variant workflow`
+- Push status:
+  - pending at the time of this log update; push will follow immediately after the session documentation commit
+
+### Current Status
+- The repository now includes provider-driven streaming support in the backend transport layer and a stronger edited-variant workflow in the node-focused chat surface.
+- The remaining work on this branch is limited to finalizing session documentation and pushing the completed commits.
+
+### Next Recommended Step
+- Push the finished branch and review the live browser behavior against real provider keys.
+- After that, focus on production hardening around provider streaming edge cases and any next graph/version comparison refinements that show up during browser review.
+
+### Known Issues / Blockers / Tech Debt
+- Real upstream provider streaming is now wired in code, but it still needs browser-side confirmation against live OpenAI and Gemini credentials because the automated tests only cover mocked streaming paths.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal
