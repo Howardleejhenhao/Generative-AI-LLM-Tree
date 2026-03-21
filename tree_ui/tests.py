@@ -76,11 +76,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
-        self.assertContains(response, "Lineage")
-        self.assertContains(response, "Child Branches")
-        self.assertContains(response, "Versioning")
         self.assertContains(response, "Edit Into Variant")
-        self.assertContains(response, "Hide context")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "Show editor")
 

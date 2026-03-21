@@ -168,6 +168,51 @@
 ### Known Issues / Blockers / Tech Debt
 - Existing database rows may still store deprecated Gemini model strings, but the backend now maps them to supported replacements at runtime instead of failing.
 
+## Session 2026-03-21 09:29
+
+### Session Goal
+- Tighten the node chat UX after user feedback.
+- Clear the reply textarea immediately on send and remove the unused right-side context dock from the focused chat page.
+
+### Planned Tasks
+- inspect the current chat template, JS, CSS, and related tests
+- change submit behavior so the composer clears immediately and restores only on failure
+- remove the right-side context panel and rebalance the chat layout
+- update tests and validate the simplified chat page
+
+### Work Completed
+- Session started; the current chat template, chat JavaScript, stylesheet, and tests were reviewed before editing.
+- Updated node-chat submit behavior so the reply textarea clears immediately after send instead of waiting for the streaming request to finish.
+- Added failure recovery so the original prompt is restored only if the request fails before any streamed preview begins.
+- Removed the right-side chat context dock and its toggle control to simplify the focused chat page into a cleaner single-column conversation layout.
+- Rebalanced the chat transcript spacing after removing the dock and trimmed the composer helper copy to match the simplified layout.
+- Updated the chat page test expectations to match the leaner focused-chat surface.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The focused node chat now clears the composer immediately on send and no longer shows the unused right-side context dock.
+
+### Next Recommended Step
+- Commit and push the simplified chat UX, then review the browser behavior on desktop and mobile.
+
+### Known Issues / Blockers / Tech Debt
+- The view still computes lineage and related context data server-side even though the right-side dock has been removed from the template.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

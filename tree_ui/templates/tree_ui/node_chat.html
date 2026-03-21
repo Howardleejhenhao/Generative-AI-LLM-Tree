@@ -4,91 +4,14 @@
 {% block title %}{{ node_payload.title }} | LLM-Tree{% endblock %}
 
 {% block content %}
-  <section class="chat-page chat-page-minimal chat-page-immersive" id="chat-page" data-context-collapsed="false">
+  <section class="chat-page chat-page-minimal chat-page-immersive" id="chat-page">
     <header class="chat-shell-header">
       <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
         <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
       </div>
-      <button class="ghost-link chat-context-toggle" id="chat-context-toggle" type="button" aria-expanded="true" aria-controls="chat-context-dock">
-        Hide context
-      </button>
     </header>
-
-    <aside class="chat-context-dock" id="chat-context-dock">
-      <section class="chat-context-card chat-context-card-node">
-        <h2>{{ node_payload.title }}</h2>
-        <p class="chat-context-copy">{{ node_payload.summary|default:"Keep replying here to extend only this branch-local conversation path." }}</p>
-        <div class="chat-context-metrics">
-          <span class="status-chip" data-provider="{{ node_payload.provider }}">{{ node_payload.provider }}</span>
-          <span class="workspace-summary-pill">{{ node_payload.messages|length }} messages</span>
-          {% if node_payload.edited_from_id %}
-            <span class="chat-context-flag">Edited variant</span>
-          {% elif node_payload.parent_id %}
-            <span class="chat-context-flag">Branch node</span>
-          {% else %}
-            <span class="chat-context-flag">Root node</span>
-          {% endif %}
-        </div>
-      </section>
-
-      <section class="chat-context-card">
-        <div class="chat-context-header">
-          <h2>Lineage</h2>
-        </div>
-        <div class="lineage-trail">
-          {% for item in lineage_items %}
-            <a class="lineage-chip{% if item.is_current %} lineage-chip-current{% endif %}" href="{{ item.url }}">
-              {{ item.title }}
-            </a>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="chat-context-card">
-        <div class="chat-context-header">
-          <h2>Child Branches</h2>
-        </div>
-        <div class="chat-branch-list">
-          {% for child in child_nodes %}
-            <a class="chat-branch-card" href="{{ child.url }}">
-              <strong>{{ child.title }}</strong>
-              <span>{{ child.provider|title }} / {{ child.model_name }}</span>
-              <p>{{ child.summary }}</p>
-            </a>
-          {% empty %}
-            <p class="chat-empty-copy">No child branches yet. Reply here to keep extending this exact path.</p>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="chat-context-card">
-        <div class="chat-context-header">
-          <h2>Versioning</h2>
-        </div>
-        {% if edited_source %}
-          <a class="chat-branch-card" href="{{ edited_source.url }}">
-            <strong>Edited from</strong>
-            <span>Return to source node</span>
-            <p>{{ edited_source.title }}</p>
-          </a>
-        {% else %}
-          <p class="chat-empty-copy">This node is the original version in its edit lineage.</p>
-        {% endif %}
-        <div class="chat-branch-list">
-          {% for variant in edited_variants %}
-            <a class="chat-branch-card" href="{{ variant.url }}">
-              <strong>{{ variant.title }}</strong>
-              <span>{{ variant.provider|title }} / {{ variant.model_name }}</span>
-              <p>{{ variant.summary }}</p>
-            </a>
-          {% empty %}
-            <p class="chat-empty-copy">No edited variants have been created from this node yet.</p>
-          {% endfor %}
-        </div>
-      </section>
-    </aside>
 
     <section class="chat-thread-panel chat-thread-panel-minimal">
       <div class="chat-content-column">
@@ -118,7 +41,7 @@
             <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
             <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
           </div>
-          <p class="chat-composer-note">Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send. Press <kbd>D</kbd> to toggle context.</p>
+          <p class="chat-composer-note">Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.</p>
         </form>
       </div>
       <section class="action-box">
