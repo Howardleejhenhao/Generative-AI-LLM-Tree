@@ -11,7 +11,8 @@ const promptInput = document.getElementById("chat-prompt-input");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
 const variantToggle = document.getElementById("chat-variant-toggle");
-const variantForm = document.getElementById("chat-variant-form");
+const variantPanel = document.getElementById("chat-variant-form");
+const variantForm = document.getElementById("chat-variant-editor");
 const variantTitleInput = document.getElementById("chat-variant-title-input");
 const variantMessageList = document.getElementById("chat-variant-message-list");
 const variantFeedback = document.getElementById("chat-variant-feedback");
@@ -27,9 +28,9 @@ function resizePromptInput() {
 }
 
 function setVariantEditorOpen(isOpen) {
-  variantForm.hidden = !isOpen;
-  variantToggle.textContent = isOpen ? "Hide editor" : "Show editor";
+  variantPanel.hidden = !isOpen;
   variantToggle.setAttribute("aria-expanded", String(isOpen));
+  variantToggle.dataset.open = String(isOpen);
 }
 
 function isNearBottom() {
@@ -193,7 +194,7 @@ promptInput.addEventListener("keydown", handlePromptKeydown);
 transcript.addEventListener("scroll", updateJumpButton);
 jumpButton.addEventListener("click", scrollToBottom);
 variantToggle.addEventListener("click", () => {
-  setVariantEditorOpen(variantForm.hidden);
+  setVariantEditorOpen(variantPanel.hidden);
 });
 form.addEventListener("submit", handleSubmit);
 variantForm.addEventListener("submit", handleVariantSubmit);

@@ -213,6 +213,51 @@
 ### Known Issues / Blockers / Tech Debt
 - The view still computes lineage and related context data server-side even though the right-side dock has been removed from the template.
 
+## Session 2026-03-21 09:35
+
+### Session Goal
+- Rework the focused node chat layout after visual feedback that the conversation column is not centered.
+- Replace the bottom composer with a more ChatGPT-like single-shell input treatment while keeping the variant editor accessible.
+
+### Planned Tasks
+- review the current node-chat template, CSS, JavaScript, and tests
+- center the transcript column and header framing on wider screens
+- redesign the composer into a pill-shaped single-shell input with integrated tool and send controls
+- fold the variant editor into a toggleable tools panel tied to the composer
+- update tests and validate the new chat layout
+
+### Work Completed
+- Session started; the current node-chat template, chat stylesheet, JavaScript, and tests were reviewed before editing.
+- Re-centered the focused chat experience by constraining the header and transcript content to a consistent central column instead of letting the conversation drift left.
+- Reworked the composer into a ChatGPT-like shell with a left-side tool button, central rounded textarea, and right-side send button.
+- Moved the edited-variant workflow into a toggleable tools panel that expands from the composer area instead of living as a separate block below the transcript.
+- Updated placeholder and small helper copy so the composer feels more like a primary chat input than a generic form.
+- Updated tests to reflect the new composer markup and verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The focused node chat is now centered and the composer has been redesigned into a more intentional single-shell chat control.
+
+### Next Recommended Step
+- Commit and push the new composer layout, then review the behavior in the browser to decide whether to simplify or expand the tools panel interactions further.
+
+### Known Issues / Blockers / Tech Debt
+- The tools button currently opens only the edited-variant workflow; additional tools could be added later if needed.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

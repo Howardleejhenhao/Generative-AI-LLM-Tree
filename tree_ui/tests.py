@@ -78,7 +78,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Edit Into Variant")
         self.assertContains(response, "Jump to latest")
-        self.assertContains(response, "Show editor")
+        self.assertContains(response, "想問就問")
+        self.assertContains(response, "Open extra tools")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
