@@ -58,36 +58,39 @@
         </div>
       </div>
       <div class="workspace-stage-bar workspace-stage-bar-minimal">
-        <div class="workspace-search-shell">
-          <label class="workspace-search-field" for="workspace-search-input">
-            <span>Search</span>
-            <input
-              id="workspace-search-input"
-              type="search"
-              placeholder="Title, provider, model, message"
-              autocomplete="off"
-            >
-          </label>
-          <label class="workspace-search-field workspace-search-filter" for="workspace-search-provider">
-            <span>Provider</span>
-            <select id="workspace-search-provider">
-              <option value="all">All providers</option>
-              <option value="openai">OpenAI</option>
-              <option value="gemini">Gemini</option>
-            </select>
-          </label>
-        </div>
-        <div class="workspace-focus-inline">
-          <div class="workspace-focus-copy">
-            <strong id="workspace-selection-title">No node selected</strong>
-            <p id="workspace-selection-summary">Select a node or start a root.</p>
+        <div class="workspace-command-bar">
+          <div class="workspace-search-shell workspace-search-shell-compact">
+            <label class="workspace-search-field workspace-search-field-inline" for="workspace-search-input">
+              <span class="sr-only">Search nodes</span>
+              <i class="workspace-search-slash">/</i>
+              <input
+                id="workspace-search-input"
+                type="search"
+                placeholder="Search"
+                autocomplete="off"
+              >
+            </label>
+            <label class="workspace-search-field workspace-search-filter workspace-search-filter-inline" for="workspace-search-provider">
+              <span class="sr-only">Filter provider</span>
+              <select id="workspace-search-provider">
+                <option value="all">All</option>
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </label>
           </div>
-          <div class="workspace-selection-flags">
-            <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
-            <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+          <div class="workspace-focus-inline workspace-focus-inline-compact">
+            <div class="workspace-focus-copy workspace-focus-copy-inline">
+              <strong id="workspace-selection-title">No node selected</strong>
+              <span id="workspace-selection-summary">Select node</span>
+            </div>
+            <div class="workspace-selection-flags">
+              <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
+              <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+            </div>
           </div>
+          <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd></p>
         </div>
-        <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd> search</p>
         <div class="workspace-search-results" id="workspace-search-results" hidden></div>
       </div>
       <div class="graph-stage" id="graph-stage">
@@ -278,5 +281,5 @@
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260321-quick-child-init-fix"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260321-toolbar-quick-create"></script>
 {% endblock %}

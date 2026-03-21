@@ -610,6 +610,52 @@
 ### Known Issues / Blockers / Tech Debt
 - The non-leaf flow still redirects only after streaming completes; that interaction could be made even clearer later with an earlier handoff into the child chat page.
 
+## Session 2026-03-21 23:45
+
+### Session Goal
+- Reduce the homepage top selection/search area so the graph reads more like the primary workspace.
+- Redesign the in-canvas `+` affordance so it feels more integrated with each selected node.
+
+### Planned Tasks
+- compress the workspace search/selection strip into a thinner command-style toolbar
+- restyle and reposition the quick-create control so it reads like a branch handle rather than a floating button
+- keep the existing graph interactions and node creation behavior intact
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the workspace template, graph quick-create logic, and current toolbar styling were reviewed before compressing the top strip and redesigning the node-adjacent `+` affordance.
+- Compressed the top search/selection area into a thinner command-style toolbar so the graph starts reading more like the main surface instead of sharing attention with a larger control block.
+- Shortened the default top-strip copy and reduced the passive search hint so the header chrome stays quieter.
+- Reworked the in-canvas quick-create control into a more node-attached branch handle with a connector line, softer branch-colored treatment, and a more centered alignment against the selected node.
+- Refined the quick-create panel styling so it feels like an extension of the node rather than a detached floating modal.
+- Bumped the graph workspace asset versions for the refreshed toolbar and quick-create styling pass.
+- Verified the changes with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph interactions remain stable, and the top toolbar plus node-adjacent quick-create affordance are visually more integrated into the workspace.
+
+### Next Recommended Step
+- Decide whether to downplay the bottom action dock further now that the node-adjacent branch handle is more usable.
+
+### Known Issues / Blockers / Tech Debt
+- The current quick-create control works functionally but still feels too detached from the node it belongs to.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

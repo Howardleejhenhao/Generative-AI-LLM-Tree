@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260321-quick-child-init-fix";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-quick-child-init-fix";
-import { createMinimapController } from "./minimap.js?v=20260321-quick-child-init-fix";
-import { syncModelOptions } from "./model-options.js?v=20260321-quick-child-init-fix";
-import { createViewportController } from "./viewport.js?v=20260321-quick-child-init-fix";
+import { postJSON } from "./api.js?v=20260321-toolbar-quick-create";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-toolbar-quick-create";
+import { createMinimapController } from "./minimap.js?v=20260321-toolbar-quick-create";
+import { syncModelOptions } from "./model-options.js?v=20260321-toolbar-quick-create";
+import { createViewportController } from "./viewport.js?v=20260321-toolbar-quick-create";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -152,7 +152,7 @@ function getProviderLabel(provider) {
 
 function getSelectionSummaryText(node) {
   if (!node) {
-    return "Select a node or start a root.";
+    return "Select node";
   }
 
   if (node.edited_from_id) {
@@ -200,7 +200,7 @@ function renderSearchResults(matches) {
 
   if (!isSearchActive()) {
     workspaceSearchResults.hidden = true;
-    workspaceSearchFeedback.innerHTML = "<kbd>/</kbd> search";
+    workspaceSearchFeedback.innerHTML = "<kbd>/</kbd>";
     return;
   }
 
@@ -300,14 +300,16 @@ function updateQuickCreatePosition() {
   const screenLeft = (bounds.minX - latestViewportState.visibleBounds.minX) * zoom;
   const screenTop = (bounds.minY - latestViewportState.visibleBounds.minY) * zoom;
   const nodeWidth = (bounds.maxX - bounds.minX) * zoom;
-  const preferredLeft = screenLeft + nodeWidth + 18;
-  const panelWidth = quickCreate.dataset.open === "true" ? 304 : 52;
+  const nodeHeight = (bounds.maxY - bounds.minY) * zoom;
+  const preferredLeft = screenLeft + nodeWidth + 26;
+  const panelWidth = quickCreate.dataset.open === "true" ? 320 : 58;
+  const panelHeight = quickCreate.dataset.open === "true" ? 236 : 58;
   const safeLeft = preferredLeft + panelWidth > stageWidth - 16
     ? Math.max(16, screenLeft - panelWidth - 18)
     : preferredLeft;
   const safeTop = Math.min(
-    Math.max(16, screenTop + (22 * zoom)),
-    Math.max(16, stageHeight - (quickCreate.dataset.open === "true" ? 220 : 72)),
+    Math.max(16, screenTop + (nodeHeight / 2) - (panelHeight / 2)),
+    Math.max(16, stageHeight - panelHeight - 16),
   );
 
   quickCreate.style.left = `${safeLeft}px`;
