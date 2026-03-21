@@ -306,10 +306,7 @@
       <p class="confirm-dialog-warning" id="confirm-dialog-warning"></p>
       <p class="form-feedback confirm-dialog-feedback" id="confirm-dialog-feedback" role="status" aria-live="polite"></p>
       <div class="confirm-dialog-actions">
-        <button class="detail-toggle-button detail-toggle-button-quiet" id="confirm-dialog-secondary" type="button">
-          Continue
-        </button>
-        <button class="primary-button danger-button" id="confirm-dialog-confirm" type="button" hidden>
+        <button class="primary-button danger-button" id="confirm-dialog-confirm" type="button">
           Delete
         </button>
       </div>
@@ -317,5 +314,5 @@
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-delete-flows"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-single-confirm-delete"></script>
 {% endblock %}

@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260322-delete-flows";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-delete-flows";
-import { createMinimapController } from "./minimap.js?v=20260322-delete-flows";
-import { syncModelOptions } from "./model-options.js?v=20260322-delete-flows";
-import { createViewportController } from "./viewport.js?v=20260322-delete-flows";
+import { postJSON } from "./api.js?v=20260322-single-confirm-delete";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-single-confirm-delete";
+import { createMinimapController } from "./minimap.js?v=20260322-single-confirm-delete";
+import { syncModelOptions } from "./model-options.js?v=20260322-single-confirm-delete";
+import { createViewportController } from "./viewport.js?v=20260322-single-confirm-delete";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -61,7 +61,6 @@ const confirmDialogCopy = document.getElementById("confirm-dialog-copy");
 const confirmDialogWarning = document.getElementById("confirm-dialog-warning");
 const confirmDialogFeedback = document.getElementById("confirm-dialog-feedback");
 const confirmDialogCancel = document.getElementById("confirm-dialog-cancel");
-const confirmDialogSecondary = document.getElementById("confirm-dialog-secondary");
 const confirmDialogConfirm = document.getElementById("confirm-dialog-confirm");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
@@ -69,7 +68,6 @@ let minimap = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
 let pendingConfirmation = null;
-let confirmDialogStep = 1;
 
 function syncMinimap() {
   if (!minimap) {
@@ -321,24 +319,16 @@ function renderConfirmationDialog() {
     return;
   }
 
-  const stepConfig = confirmDialogStep === 1
-    ? pendingConfirmation.stepOne
-    : pendingConfirmation.stepTwo;
-
   confirmDialogKicker.textContent = pendingConfirmation.kicker;
-  confirmDialogTitle.textContent = stepConfig.title;
-  confirmDialogCopy.textContent = stepConfig.copy;
-  confirmDialogWarning.textContent = stepConfig.warning || "";
+  confirmDialogTitle.textContent = pendingConfirmation.title;
+  confirmDialogCopy.textContent = pendingConfirmation.copy;
+  confirmDialogWarning.textContent = pendingConfirmation.warning || "";
   confirmDialogFeedback.textContent = "";
-  confirmDialogSecondary.hidden = confirmDialogStep !== 1;
-  confirmDialogConfirm.hidden = confirmDialogStep !== 2;
-  confirmDialogSecondary.textContent = pendingConfirmation.continueLabel || "Continue";
   confirmDialogConfirm.textContent = pendingConfirmation.confirmLabel;
 }
 
 function openConfirmationDialog(config) {
   pendingConfirmation = config;
-  confirmDialogStep = 1;
   renderConfirmationDialog();
   setWorkspaceHelpOpen(false);
   setConfirmDialogOpen(true);
@@ -346,11 +336,9 @@ function openConfirmationDialog(config) {
 
 function closeConfirmationDialog() {
   pendingConfirmation = null;
-  confirmDialogStep = 1;
   confirmDialogFeedback.textContent = "";
   confirmDialogWarning.textContent = "";
   confirmDialogCancel.disabled = false;
-  confirmDialogSecondary.disabled = false;
   confirmDialogConfirm.disabled = false;
   setConfirmDialogOpen(false);
 }
@@ -690,18 +678,10 @@ function handleWorkspaceDelete() {
   const nodeLabel = `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`;
   openConfirmationDialog({
     kicker: "Delete Workspace",
-    continueLabel: "Continue",
     confirmLabel: "Delete workspace",
-    stepOne: {
-      title: `Delete ${payload.workspace.name}?`,
-      copy: `This will remove the entire workspace and its ${nodeLabel}.`,
-      warning: "You will be redirected after deletion.",
-    },
-    stepTwo: {
-      title: "Final confirmation",
-      copy: `Delete workspace "${payload.workspace.name}" and everything inside it?`,
-      warning: "This cannot be undone.",
-    },
+    title: `Delete ${payload.workspace.name}?`,
+    copy: `This will remove the entire workspace and its ${nodeLabel}.`,
+    warning: "This cannot be undone. You will be redirected after deletion.",
     onConfirm: async () => {
       const result = await postJSON(
         workspaceDeleteButton.dataset.deleteWorkspaceUrl,
@@ -729,20 +709,12 @@ function handleNodeDelete() {
 
   openConfirmationDialog({
     kicker: "Delete Node",
-    continueLabel: "Continue",
     confirmLabel: descendantCount > 0 ? `Delete ${subtreeLabel}` : "Delete node",
-    stepOne: {
-      title: `Delete ${selectedNode.title}?`,
-      copy: `This action will remove ${subtreeLabel} from the current workspace.`,
-      warning: descendantWarning,
-    },
-    stepTwo: {
-      title: "Final confirmation",
-      copy: descendantCount > 0
-        ? `Delete "${selectedNode.title}" and every branch below it?`
-        : `Delete leaf node "${selectedNode.title}"?`,
-      warning: "This cannot be undone.",
-    },
+    title: `Delete ${selectedNode.title}?`,
+    copy: descendantCount > 0
+      ? `This action will remove "${selectedNode.title}" and every branch below it.`
+      : `This action will remove leaf node "${selectedNode.title}" from the current workspace.`,
+    warning: `${descendantWarning} This cannot be undone.`,
     onConfirm: async () => {
       const fallbackSelectionId = selectedNode.parent_id
         ? String(selectedNode.parent_id)
@@ -779,7 +751,6 @@ async function handleConfirmationFinal() {
   }
 
   confirmDialogCancel.disabled = true;
-  confirmDialogSecondary.disabled = true;
   confirmDialogConfirm.disabled = true;
   confirmDialogFeedback.textContent = "";
 
@@ -848,10 +819,6 @@ workspaceDeleteButton.addEventListener("click", handleWorkspaceDelete);
 nodeDeleteButton.addEventListener("click", handleNodeDelete);
 confirmDialogCancel.addEventListener("click", closeConfirmationDialog);
 confirmDialogBackdrop.addEventListener("click", closeConfirmationDialog);
-confirmDialogSecondary.addEventListener("click", () => {
-  confirmDialogStep = 2;
-  renderConfirmationDialog();
-});
 confirmDialogConfirm.addEventListener("click", handleConfirmationFinal);
 fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
