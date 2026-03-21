@@ -792,6 +792,46 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-22 00:19
+
+### Session Goal
+- Simplify the new deletion modal from two confirmations down to a single confirmation step.
+- Keep the same delete API safety guard while reducing the UX friction.
+
+### Planned Tasks
+- remove the intermediate `Continue` step from the shared confirmation modal
+- keep workspace and node deletion messaging clear in the single confirm view
+- validate the UI change with local checks/tests
+
+### Work Completed
+- Session started; current branch status, latest progress-log state, and the delete-modal implementation were reviewed before editing.
+- Removed the intermediate `Continue` step from the shared delete modal so workspace and node deletion now require only one explicit confirmation click.
+- Kept the backend-side `confirm: true` requirement intact, so the UX is simpler without weakening API-side protection.
+- Updated the graph page asset version to force browsers to load the simplified confirmation flow.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `d12df97` - `fix: simplify delete confirmation flow`
+- Push status:
+  - pending docs commit and push for this session
+
+### Current Status
+- The delete modal now uses a single confirmation step.
+
+### Next Recommended Step
+- Do a quick browser pass to confirm the simplified modal copy feels right, then continue with the final visual cleanup pass.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
