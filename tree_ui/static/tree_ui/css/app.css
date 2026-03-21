@@ -35,13 +35,13 @@
 
 .workspace-shell {
   grid-template-columns: minmax(0, 1fr);
-  min-height: calc(100vh - 250px);
+  min-height: calc(100vh - 230px);
 }
 
 .canvas-panel {
   display: grid;
-  gap: 16px;
-  padding: 0 0 20px;
+  gap: 14px;
+  padding: 0 0 16px;
 }
 
 .panel-header-workspace {
@@ -65,20 +65,20 @@
 }
 
 .workspace-stage-bar-minimal {
-  gap: 12px;
+  gap: 10px;
 }
 
 .workspace-command-bar {
   display: grid;
   grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  min-height: 54px;
-  padding: 6px 8px 6px 10px;
-  border: 1px solid rgba(74, 58, 40, 0.08);
-  border-radius: 18px;
-  background: rgba(255, 252, 247, 0.62);
-  backdrop-filter: blur(10px);
+  min-height: 48px;
+  padding: 5px 6px 5px 8px;
+  border: 1px solid rgba(74, 58, 40, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 252, 247, 0.5);
+  backdrop-filter: blur(8px);
 }
 
 .workspace-search-shell {
@@ -129,11 +129,12 @@
   min-width: 36px;
   color: var(--muted);
   text-align: right;
+  font-size: 0.82rem;
 }
 
 .workspace-focus-inline {
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -148,7 +149,7 @@
 }
 
 .workspace-focus-copy strong {
-  font-size: 0.96rem;
+  font-size: 0.92rem;
 }
 
 .workspace-focus-copy-inline {
@@ -172,6 +173,10 @@
 }
 
 .workspace-selection-flags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin-top: 0;
 }
 
@@ -197,23 +202,27 @@
 
 .graph-action-dock {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   margin: 0 24px;
-  padding: 18px 20px 0;
-  border-top: 1px solid rgba(74, 58, 40, 0.08);
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 252, 247, 0.44);
+  box-shadow: 0 18px 40px rgba(57, 43, 27, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .graph-action-form {
   display: grid;
   grid-template-columns: auto auto minmax(220px, 1.2fr) minmax(140px, 0.6fr) minmax(180px, 0.8fr) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   margin-top: 0;
 }
 
 .graph-action-target {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -222,7 +231,7 @@
 }
 
 .graph-action-target strong {
-  font-size: 1rem;
+  font-size: 0.94rem;
   line-height: 1.2;
 }
 
@@ -230,11 +239,11 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1px solid rgba(74, 58, 40, 0.1);
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.62);
   color: var(--text);
   white-space: nowrap;
 }
@@ -249,11 +258,11 @@
 .graph-action-field input,
 .graph-action-field select {
   width: 100%;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1px solid rgba(74, 58, 40, 0.1);
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--text);
   font: inherit;
 }
@@ -263,8 +272,8 @@
 }
 
 .graph-action-submit {
-  min-height: 48px;
-  padding-inline: 20px;
+  min-height: 44px;
+  padding-inline: 18px;
   white-space: nowrap;
 }
 
@@ -319,7 +328,7 @@
   }
 
   .graph-action-dock {
-    padding-top: 16px;
+    padding: 12px;
   }
 
   .graph-action-toggle,
@@ -442,39 +451,39 @@ body:has(.chat-page-immersive) .page-shell {
 
 .workspace-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  gap: 18px;
-  margin-bottom: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .workspace-toolbar-compact {
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .workspace-switcher,
 .workspace-create-form {
-  border-radius: 24px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(57, 43, 27, 0.08);
+  backdrop-filter: blur(14px);
 }
 
 .workspace-switcher {
-  border: 1px solid rgba(55, 43, 31, 0.1);
-  background: rgba(255, 250, 242, 0.74);
-  padding: 24px;
+  border: 1px solid rgba(55, 43, 31, 0.08);
+  background: rgba(255, 250, 242, 0.56);
+  padding: 18px 20px;
 }
 
 .workspace-toolbar-compact .workspace-switcher,
 .workspace-toolbar-compact .workspace-create-form {
-  padding: 18px 20px;
+  padding: 14px 16px;
 }
 
 .workspace-toolbar-heading h2,
 .workspace-create-form h2 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-size: clamp(1.2rem, 1.8vw, 1.55rem);
   line-height: 1.05;
 }
 
@@ -492,23 +501,23 @@ body:has(.chat-page-immersive) .page-shell {
 .workspace-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .workspace-toolbar-compact .workspace-list {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .workspace-pill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 10px 15px;
-  border: 1px solid rgba(74, 58, 40, 0.12);
+  padding: 8px 13px;
+  border: 1px solid rgba(74, 58, 40, 0.1);
   text-decoration: none;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.78);
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
@@ -531,13 +540,13 @@ body:has(.chat-page-immersive) .page-shell {
 
 .workspace-create-form {
   display: grid;
-  gap: 12px;
-  padding: 24px;
-  border: 1px solid rgba(32, 22, 16, 0.12);
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid rgba(55, 43, 31, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(247, 200, 115, 0.22), transparent 32%),
-    linear-gradient(135deg, #24322d, #18211d 58%, #3f291c);
-  color: #f8f1e8;
+    radial-gradient(circle at top right, rgba(247, 200, 115, 0.14), transparent 34%),
+    rgba(255, 249, 242, 0.62);
+  color: var(--text);
 }
 
 .workspace-create-kicker {
@@ -546,11 +555,11 @@ body:has(.chat-page-immersive) .page-shell {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #f0cb8a;
+  color: var(--muted);
 }
 
 .workspace-create-copy {
-  color: rgba(248, 241, 232, 0.78);
+  color: var(--muted);
 }
 
 .workspace-create-row {
@@ -561,13 +570,13 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .workspace-create-field span {
-  color: rgba(248, 241, 232, 0.72);
+  color: var(--muted);
 }
 
 .workspace-create-form .form-field input {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 248, 240, 0.92);
-  color: #1f1b17;
+  border-color: rgba(74, 58, 40, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text);
 }
 
 .workspace-create-form .form-field input::placeholder {
@@ -577,18 +586,19 @@ body:has(.chat-page-immersive) .page-shell {
 .workspace-create-button {
   border: 0;
   border-radius: 999px;
-  padding: 12px 18px;
+  min-height: 44px;
+  padding: 0 16px;
   font: inherit;
   font-weight: 700;
   color: #1a1510;
-  background: linear-gradient(135deg, #f7c873, #f2b36f);
+  background: linear-gradient(135deg, #f6d38d, #f1bf77);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .workspace-feedback {
   min-height: 1.4em;
-  color: rgba(248, 241, 232, 0.82);
+  color: var(--muted);
 }
 
 .chat-page {
@@ -1182,10 +1192,11 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .canvas-panel-actions {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-self: center;
-  justify-items: end;
+  justify-content: flex-end;
 }
 
 .workspace-summary-strip {
@@ -1197,24 +1208,25 @@ body:has(.chat-page-immersive) .page-shell {
 .workspace-summary-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  padding: 6px 12px;
+  min-height: 28px;
+  padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid rgba(74, 58, 40, 0.12);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.7);
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .detail-toggle-button,
 .detail-peek-button {
   border: 1px solid rgba(74, 58, 40, 0.14);
   border-radius: 999px;
-  padding: 10px 14px;
+  min-height: 38px;
+  padding: 8px 12px;
   font: inherit;
   font-weight: 700;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.74);
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
@@ -1846,8 +1858,8 @@ body:has(.chat-page-immersive) .page-shell {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  font-size: 0.8rem;
-  padding: 8px 12px;
+  font-size: 0.74rem;
+  padding: 6px 10px;
 }
 
 .status-chip {
