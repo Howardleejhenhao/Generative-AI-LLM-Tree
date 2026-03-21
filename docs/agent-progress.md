@@ -895,11 +895,15 @@
 - Tightened node-card padding, chip sizing, title/meta hierarchy, and summary height so the cards read cleaner and lighter.
 - Updated stylesheet and script asset versions so the browser picks up the minimap removal and card refinements immediately.
 - Verified the cleanup with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- After browser feedback that the graph disappeared, fixed a frontend crash caused by `viewport.js` still dereferencing the removed `graph-hint` element during transform updates.
+- Bumped the workspace script/module version again so the fixed viewport module is forced through browser cache.
+- Re-verified the correction with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/css/app.css`
 - `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
 - `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/templates/tree_ui/index.html`
 - `tree_ui/tests.py`
@@ -909,15 +913,15 @@
 - New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
 - Commits made:
   - `90c62a7` - `style: remove minimap and tighten graph cards`
-  - `17f8cbf` - `docs: update agent progress log`
+  - `9bf0b7c` - `fix: restore graph after minimap removal`
 - Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
+  - pending docs commit and push for this session
 
 ### Current Status
-- The workspace has shed the minimap and passive hint, and node cards are visually tighter.
+- The minimap/hint removal is complete, and the follow-up viewport crash has been corrected.
 
 ### Next Recommended Step
-- Do one last browser pass to decide whether the node cards are now finished or need one more typography adjustment.
+- Hard-refresh the workspace once to load the fixed script bundle, then resume any remaining visual polish from this stable state.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
