@@ -53,6 +53,10 @@
 }
 
 .canvas-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
   align-self: center;
 }
 
@@ -1224,6 +1228,24 @@ body:has(.chat-page-immersive) .page-shell {
 
 .detail-toggle-button-quiet {
   background: rgba(255, 255, 255, 0.72);
+}
+
+.detail-toggle-button-danger {
+  border-color: rgba(152, 49, 32, 0.18);
+  background: rgba(255, 241, 238, 0.88);
+  color: #8b3325;
+}
+
+.detail-toggle-button-danger:hover {
+  background: rgba(255, 247, 244, 0.96);
+  box-shadow: 0 12px 24px rgba(127, 47, 28, 0.12);
+}
+
+.detail-toggle-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
 }
 
 .detail-panel-actions {
@@ -2545,6 +2567,72 @@ kbd {
 .workspace-help-list dd {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+}
+
+.confirm-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 16, 12, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.confirm-dialog-card {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 32px));
+  margin: min(16vh, 120px) auto 0;
+  padding: 24px;
+  border: 1px solid rgba(55, 43, 31, 0.1);
+  border-radius: 28px;
+  box-shadow: 0 40px 80px rgba(26, 20, 15, 0.24);
+  backdrop-filter: blur(18px);
+  background: rgba(255, 250, 242, 0.95);
+}
+
+.confirm-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.confirm-dialog-header h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.confirm-dialog-copy,
+.confirm-dialog-warning,
+.confirm-dialog-feedback {
+  margin: 16px 0 0;
+}
+
+.confirm-dialog-copy {
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.confirm-dialog-warning {
+  color: #8b3325;
+  line-height: 1.55;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.danger-button {
+  color: #fffaf6;
+  background: linear-gradient(135deg, #c65d3a, #ab3f2b);
 }
 
 .chat-shell-header {

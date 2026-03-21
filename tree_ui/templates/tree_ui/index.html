@@ -54,6 +54,14 @@
           <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-help-toggle" type="button" aria-expanded="false" aria-controls="workspace-help-dialog">
             Shortcuts
           </button>
+          <button
+            class="detail-toggle-button detail-toggle-button-danger"
+            id="workspace-delete-button"
+            type="button"
+            data-delete-workspace-url="{% url 'delete_workspace' graph_payload.workspace.slug %}"
+          >
+            Delete workspace
+          </button>
         </div>
       </div>
       <div class="workspace-stage-bar workspace-stage-bar-minimal">
@@ -86,6 +94,9 @@
             <div class="workspace-selection-flags">
               <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
               <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+              <button class="detail-toggle-button detail-toggle-button-danger" id="node-delete-button" type="button" disabled>
+                Delete node
+              </button>
             </div>
           </div>
           <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd></p>
@@ -237,6 +248,7 @@
   </section>
 
   <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
+  <div id="node-delete-url-template" data-node-delete-url-template="{% url 'delete_workspace_node' graph_payload.workspace.slug 999999 %}" hidden></div>
   <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
     <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
     <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">
@@ -278,7 +290,32 @@
       </div>
     </div>
   </section>
+  <section class="confirm-dialog" id="confirm-dialog" hidden aria-hidden="true">
+    <div class="confirm-dialog-backdrop" id="confirm-dialog-backdrop"></div>
+    <div class="confirm-dialog-card" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <div class="confirm-dialog-header">
+        <div>
+          <p class="panel-kicker" id="confirm-dialog-kicker">Delete</p>
+          <h2 id="confirm-dialog-title">Confirm action</h2>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="confirm-dialog-cancel" type="button">
+          Cancel
+        </button>
+      </div>
+      <p class="confirm-dialog-copy" id="confirm-dialog-copy"></p>
+      <p class="confirm-dialog-warning" id="confirm-dialog-warning"></p>
+      <p class="form-feedback confirm-dialog-feedback" id="confirm-dialog-feedback" role="status" aria-live="polite"></p>
+      <div class="confirm-dialog-actions">
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="confirm-dialog-secondary" type="button">
+          Continue
+        </button>
+        <button class="primary-button danger-button" id="confirm-dialog-confirm" type="button" hidden>
+          Delete
+        </button>
+      </div>
+    </div>
+  </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260321-branch-handle-tighten"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-delete-flows"></script>
 {% endblock %}

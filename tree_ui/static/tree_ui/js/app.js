@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260321-branch-handle-tighten";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-branch-handle-tighten";
-import { createMinimapController } from "./minimap.js?v=20260321-branch-handle-tighten";
-import { syncModelOptions } from "./model-options.js?v=20260321-branch-handle-tighten";
-import { createViewportController } from "./viewport.js?v=20260321-branch-handle-tighten";
+import { postJSON } from "./api.js?v=20260322-delete-flows";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-delete-flows";
+import { createMinimapController } from "./minimap.js?v=20260322-delete-flows";
+import { syncModelOptions } from "./model-options.js?v=20260322-delete-flows";
+import { createViewportController } from "./viewport.js?v=20260322-delete-flows";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -20,6 +20,8 @@ const workspaceHelpToggle = document.getElementById("workspace-help-toggle");
 const workspaceHelpDialog = document.getElementById("workspace-help-dialog");
 const workspaceHelpBackdrop = document.getElementById("workspace-help-backdrop");
 const workspaceHelpClose = document.getElementById("workspace-help-close");
+const workspaceDeleteButton = document.getElementById("workspace-delete-button");
+const nodeDeleteButton = document.getElementById("node-delete-button");
 const fitViewButton = document.getElementById("graph-fit-view");
 const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
@@ -27,6 +29,7 @@ const zoomResetButton = document.getElementById("graph-zoom-reset");
 const zoomLevel = document.getElementById("graph-zoom-level");
 const graphStage = document.getElementById("graph-stage");
 const nodeChatUrlTemplate = document.getElementById("node-chat-url-template");
+const nodeDeleteUrlTemplate = document.getElementById("node-delete-url-template");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
@@ -50,11 +53,23 @@ const quickModelInput = document.getElementById("quick-node-model-input");
 const quickSubmitButton = document.getElementById("quick-node-submit-button");
 const quickCancelButton = document.getElementById("graph-quick-create-cancel");
 const quickFeedback = document.getElementById("quick-node-feedback");
+const confirmDialog = document.getElementById("confirm-dialog");
+const confirmDialogBackdrop = document.getElementById("confirm-dialog-backdrop");
+const confirmDialogKicker = document.getElementById("confirm-dialog-kicker");
+const confirmDialogTitle = document.getElementById("confirm-dialog-title");
+const confirmDialogCopy = document.getElementById("confirm-dialog-copy");
+const confirmDialogWarning = document.getElementById("confirm-dialog-warning");
+const confirmDialogFeedback = document.getElementById("confirm-dialog-feedback");
+const confirmDialogCancel = document.getElementById("confirm-dialog-cancel");
+const confirmDialogSecondary = document.getElementById("confirm-dialog-secondary");
+const confirmDialogConfirm = document.getElementById("confirm-dialog-confirm");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let minimap = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
+let pendingConfirmation = null;
+let confirmDialogStep = 1;
 
 function syncMinimap() {
   if (!minimap) {
@@ -254,10 +269,15 @@ function updateWorkspaceSummary() {
     ? `${getProviderLabel(selectedNode.provider)} / ${selectedNode.model_name}`
     : "New root";
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
+  nodeDeleteButton.disabled = !selectedNode;
 }
 
 function getNodeChatUrl(nodeId) {
   return nodeChatUrlTemplate.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
+}
+
+function getNodeDeleteUrl(nodeId) {
+  return nodeDeleteUrlTemplate.dataset.nodeDeleteUrlTemplate.replace("999999", String(nodeId));
 }
 
 function openNodeChat(nodeId) {
@@ -269,6 +289,81 @@ function openNodeChat(nodeId) {
 
 function getNodePositionUrl(nodeId) {
   return graphStatus.dataset.nodePositionUrlTemplate.replace("999999", String(nodeId));
+}
+
+function getSubtreeNodeIds(rootNodeId) {
+  const subtreeIds = [];
+  const stack = [String(rootNodeId)];
+
+  while (stack.length) {
+    const currentId = stack.pop();
+    subtreeIds.push(currentId);
+
+    for (const node of payload.nodes) {
+      if (String(node.parent_id) === currentId) {
+        stack.push(String(node.id));
+      }
+    }
+  }
+
+  return subtreeIds;
+}
+
+function setConfirmDialogOpen(isOpen) {
+  confirmDialog.hidden = !isOpen;
+  confirmDialog.setAttribute("aria-hidden", String(!isOpen));
+}
+
+function renderConfirmationDialog() {
+  if (!pendingConfirmation) {
+    confirmDialogFeedback.textContent = "";
+    confirmDialogWarning.textContent = "";
+    return;
+  }
+
+  const stepConfig = confirmDialogStep === 1
+    ? pendingConfirmation.stepOne
+    : pendingConfirmation.stepTwo;
+
+  confirmDialogKicker.textContent = pendingConfirmation.kicker;
+  confirmDialogTitle.textContent = stepConfig.title;
+  confirmDialogCopy.textContent = stepConfig.copy;
+  confirmDialogWarning.textContent = stepConfig.warning || "";
+  confirmDialogFeedback.textContent = "";
+  confirmDialogSecondary.hidden = confirmDialogStep !== 1;
+  confirmDialogConfirm.hidden = confirmDialogStep !== 2;
+  confirmDialogSecondary.textContent = pendingConfirmation.continueLabel || "Continue";
+  confirmDialogConfirm.textContent = pendingConfirmation.confirmLabel;
+}
+
+function openConfirmationDialog(config) {
+  pendingConfirmation = config;
+  confirmDialogStep = 1;
+  renderConfirmationDialog();
+  setWorkspaceHelpOpen(false);
+  setConfirmDialogOpen(true);
+}
+
+function closeConfirmationDialog() {
+  pendingConfirmation = null;
+  confirmDialogStep = 1;
+  confirmDialogFeedback.textContent = "";
+  confirmDialogWarning.textContent = "";
+  confirmDialogCancel.disabled = false;
+  confirmDialogSecondary.disabled = false;
+  confirmDialogConfirm.disabled = false;
+  setConfirmDialogOpen(false);
+}
+
+function removeNodesFromGraph(deletedNodeIds) {
+  const deletedIdSet = new Set(deletedNodeIds.map((id) => String(id)));
+  payload.nodes = payload.nodes.filter((node) => !deletedIdSet.has(String(node.id)));
+  for (const nodeId of deletedIdSet) {
+    nodesById.delete(nodeId);
+  }
+
+  activeLineageIds = new Set([...activeLineageIds].filter((id) => !deletedIdSet.has(id)));
+  matchedNodeIds = new Set([...matchedNodeIds].filter((id) => !deletedIdSet.has(id)));
 }
 
 function setQuickCreateOpen(isOpen) {
@@ -406,6 +501,7 @@ function updateFormState() {
 }
 
 function showEmptyNodeState() {
+  selectedNodeId = "";
   activeLineageIds = new Set();
   quickCreate.hidden = true;
   setQuickCreateOpen(false);
@@ -451,10 +547,24 @@ function applyQuickStart(button) {
 
 function handleWorkspaceKeydown(event) {
   if (isTypingTarget(event.target)) {
+    if (event.key === "Escape" && confirmDialog.hidden === false) {
+      closeConfirmationDialog();
+      event.preventDefault();
+    }
     if (event.key === "Escape" && workspaceHelpDialog.hidden === false) {
       setWorkspaceHelpOpen(false);
       event.preventDefault();
     }
+    return;
+  }
+
+  if (event.key === "Escape" && confirmDialog.hidden === false) {
+    closeConfirmationDialog();
+    event.preventDefault();
+    return;
+  }
+
+  if (confirmDialog.hidden === false) {
     return;
   }
 
@@ -575,6 +685,115 @@ async function handleNodeSubmit(event) {
   }
 }
 
+function handleWorkspaceDelete() {
+  const nodeCount = payload.nodes.length;
+  const nodeLabel = `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`;
+  openConfirmationDialog({
+    kicker: "Delete Workspace",
+    continueLabel: "Continue",
+    confirmLabel: "Delete workspace",
+    stepOne: {
+      title: `Delete ${payload.workspace.name}?`,
+      copy: `This will remove the entire workspace and its ${nodeLabel}.`,
+      warning: "You will be redirected after deletion.",
+    },
+    stepTwo: {
+      title: "Final confirmation",
+      copy: `Delete workspace "${payload.workspace.name}" and everything inside it?`,
+      warning: "This cannot be undone.",
+    },
+    onConfirm: async () => {
+      const result = await postJSON(
+        workspaceDeleteButton.dataset.deleteWorkspaceUrl,
+        { confirm: true },
+        csrfToken,
+      );
+      window.location.href = result.redirect_url;
+    },
+  });
+}
+
+function handleNodeDelete() {
+  const selectedNode = getSelectedNode();
+  if (!selectedNode) {
+    feedback.textContent = "Select a node first.";
+    return;
+  }
+
+  const subtreeIds = getSubtreeNodeIds(selectedNode.id);
+  const descendantCount = Math.max(0, subtreeIds.length - 1);
+  const subtreeLabel = `${subtreeIds.length} ${subtreeIds.length === 1 ? "node" : "nodes"}`;
+  const descendantWarning = descendantCount === 0
+    ? "This node is a leaf."
+    : `This will also remove ${descendantCount} descendant ${descendantCount === 1 ? "node" : "nodes"}.`;
+
+  openConfirmationDialog({
+    kicker: "Delete Node",
+    continueLabel: "Continue",
+    confirmLabel: descendantCount > 0 ? `Delete ${subtreeLabel}` : "Delete node",
+    stepOne: {
+      title: `Delete ${selectedNode.title}?`,
+      copy: `This action will remove ${subtreeLabel} from the current workspace.`,
+      warning: descendantWarning,
+    },
+    stepTwo: {
+      title: "Final confirmation",
+      copy: descendantCount > 0
+        ? `Delete "${selectedNode.title}" and every branch below it?`
+        : `Delete leaf node "${selectedNode.title}"?`,
+      warning: "This cannot be undone.",
+    },
+    onConfirm: async () => {
+      const fallbackSelectionId = selectedNode.parent_id
+        ? String(selectedNode.parent_id)
+        : String(payload.nodes.find((node) => !subtreeIds.includes(String(node.id)))?.id || "");
+      const result = await postJSON(
+        getNodeDeleteUrl(selectedNode.id),
+        { confirm: true },
+        csrfToken,
+      );
+      removeNodesFromGraph(result.deleted_node_ids);
+      feedback.textContent = `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "node" : "nodes"}.`;
+      updateSearchState();
+
+      if (nodesById.has(fallbackSelectionId)) {
+        updateSelection(fallbackSelectionId);
+        return;
+      }
+
+      if (payload.nodes[0]) {
+        updateSelection(payload.nodes[0].id);
+        return;
+      }
+
+      showEmptyNodeState();
+      updateFormState();
+      renderGraphCanvas();
+    },
+  });
+}
+
+async function handleConfirmationFinal() {
+  if (!pendingConfirmation) {
+    return;
+  }
+
+  confirmDialogCancel.disabled = true;
+  confirmDialogSecondary.disabled = true;
+  confirmDialogConfirm.disabled = true;
+  confirmDialogFeedback.textContent = "";
+
+  try {
+    await pendingConfirmation.onConfirm();
+    closeConfirmationDialog();
+  } catch (error) {
+    confirmDialogFeedback.textContent = error.message;
+    confirmDialogCancel.disabled = false;
+    confirmDialogSecondary.disabled = false;
+    confirmDialogConfirm.disabled = false;
+  }
+}
+
 function toggleQuickCreate() {
   setQuickCreateOpen(quickCreate.dataset.open !== "true");
   updateQuickCreatePosition();
@@ -625,6 +844,15 @@ workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
 workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspaceHelpDialog.hidden));
 workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceHelpBackdrop.addEventListener("click", () => setWorkspaceHelpOpen(false));
+workspaceDeleteButton.addEventListener("click", handleWorkspaceDelete);
+nodeDeleteButton.addEventListener("click", handleNodeDelete);
+confirmDialogCancel.addEventListener("click", closeConfirmationDialog);
+confirmDialogBackdrop.addEventListener("click", closeConfirmationDialog);
+confirmDialogSecondary.addEventListener("click", () => {
+  confirmDialogStep = 2;
+  renderConfirmationDialog();
+});
+confirmDialogConfirm.addEventListener("click", handleConfirmationFinal);
 fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());
@@ -638,6 +866,7 @@ window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
 syncQuickCreateDefaults();
 setWorkspaceHelpOpen(false);
+setConfirmDialogOpen(false);
 updateSearchState();
 updateSelection(selectedNodeId);
 updateWorkspaceSummary();

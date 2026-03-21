@@ -44,6 +44,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Research lane")
         self.assertContains(response, "Search")
         self.assertContains(response, "Add child node")
+        self.assertContains(response, "Delete workspace")
+        self.assertContains(response, "Delete node")
         self.assertNotContains(response, "Node Detail")
         self.assertNotContains(response, "Open chat")
         self.assertNotContains(response, "Recent Activity")
@@ -122,6 +124,33 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(workspace.name, "Research Space")
         self.assertEqual(workspace.slug, "research-space")
         self.assertIn(reverse("workspace_graph", args=[workspace.slug]), response.json()["redirect_url"])
+
+    def test_can_delete_workspace_via_api_and_redirect(self):
+        first = Workspace.objects.create(name="Main", slug="main")
+        second = Workspace.objects.create(name="Alt", slug="alt")
+
+        response = self.client.post(
+            reverse("delete_workspace", args=[first.slug]),
+            data=json.dumps({"confirm": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Workspace.objects.filter(pk=first.pk).exists())
+        self.assertTrue(Workspace.objects.filter(pk=second.pk).exists())
+        self.assertEqual(response.json()["redirect_url"], reverse("workspace_graph", args=[second.slug]))
+
+    def test_delete_workspace_requires_confirmation(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        response = self.client.post(
+            reverse("delete_workspace", args=[workspace.slug]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Workspace.objects.filter(pk=workspace.pk).exists())
 
     def test_can_create_root_node_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -209,6 +238,73 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    def test_can_delete_node_subtree_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        root = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Branch",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        grandchild = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=branch,
+            title="Grandchild",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        sibling = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Sibling",
+            summary="",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.5-flash",
+        )
+
+        response = self.client.post(
+            reverse("delete_workspace_node", args=[workspace.slug, branch.id]),
+            data=json.dumps({"confirm": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ConversationNode.objects.filter(pk=branch.pk).exists())
+        self.assertFalse(ConversationNode.objects.filter(pk=grandchild.pk).exists())
+        self.assertTrue(ConversationNode.objects.filter(pk=root.pk).exists())
+        self.assertTrue(ConversationNode.objects.filter(pk=sibling.pk).exists())
+        self.assertEqual(set(response.json()["deleted_node_ids"]), {branch.id, grandchild.id})
+        self.assertEqual(response.json()["deleted_count"], 2)
+
+    def test_delete_node_requires_confirmation(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.post(
+            reverse("delete_workspace_node", args=[workspace.slug, node.id]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(ConversationNode.objects.filter(pk=node.pk).exists())
 
     def test_can_create_edited_variant_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

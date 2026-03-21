@@ -160,12 +160,40 @@ def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
+def _parse_json_payload(request) -> dict:
+    try:
+        return json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON payload.") from exc
+
+
+def _require_delete_confirmation(payload: dict) -> None:
+    if payload.get("confirm") is not True:
+        raise ValueError("Deletion requires explicit confirmation.")
+
+
+def _collect_subtree_node_ids(*, workspace: Workspace, root_node_id: int) -> list[int]:
+    rows = workspace.nodes.values_list("id", "parent_id")
+    child_map: dict[int | None, list[int]] = {}
+    for node_id, parent_id in rows:
+        child_map.setdefault(parent_id, []).append(node_id)
+
+    subtree_ids: list[int] = []
+    stack = [root_node_id]
+    while stack:
+        current_id = stack.pop()
+        subtree_ids.append(current_id)
+        stack.extend(child_map.get(current_id, []))
+
+    return subtree_ids
+
+
 @require_POST
 def create_workspace_view(request):
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     try:
         workspace = create_workspace(
@@ -186,6 +214,36 @@ def create_workspace_view(request):
             "redirect_url": reverse("workspace_graph", args=[workspace.slug]),
         },
         status=201,
+    )
+
+
+@require_POST
+def delete_workspace_view(request, slug: str):
+    workspace = get_object_or_404(Workspace, slug=slug)
+
+    try:
+        payload = _parse_json_payload(request)
+        _require_delete_confirmation(payload)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    next_workspace = list_workspaces().exclude(pk=workspace.pk).first()
+    deleted_workspace_name = workspace.name
+    deleted_workspace_slug = workspace.slug
+    workspace.delete()
+
+    return JsonResponse(
+        {
+            "deleted_workspace": {
+                "name": deleted_workspace_name,
+                "slug": deleted_workspace_slug,
+            },
+            "redirect_url": (
+                reverse("workspace_graph", args=[next_workspace.slug])
+                if next_workspace
+                else reverse("workspace_home")
+            ),
+        }
     )
 
 
@@ -220,6 +278,33 @@ def create_workspace_node(request, slug: str):
 
 
 @require_POST
+def delete_workspace_node(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+
+    try:
+        payload = _parse_json_payload(request)
+        _require_delete_confirmation(payload)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    deleted_node_title = node.title
+    deleted_node_ids = _collect_subtree_node_ids(workspace=workspace, root_node_id=node.id)
+    node.delete()
+
+    return JsonResponse(
+        {
+            "deleted_node": {
+                "id": node_id,
+                "title": deleted_node_title,
+            },
+            "deleted_node_ids": deleted_node_ids,
+            "deleted_count": len(deleted_node_ids),
+        }
+    )
+
+
+@require_POST
 def create_edited_node_variant(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     original_node = get_object_or_404(
@@ -228,9 +313,9 @@ def create_edited_node_variant(request, slug: str, node_id: int):
         workspace=workspace,
     )
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     try:
         node = create_edited_variant(
