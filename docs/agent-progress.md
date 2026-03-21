@@ -258,6 +258,52 @@
 ### Known Issues / Blockers / Tech Debt
 - The tools button currently opens only the edited-variant workflow; additional tools could be added later if needed.
 
+## Session 2026-03-21 09:40
+
+### Session Goal
+- Correct the broken node-chat redesign after browser feedback that the composer layout was malformed and the conversation still was not centered.
+- Remove the variant UI from the focused chat page for now and restore a stable, minimal chat experience.
+
+### Planned Tasks
+- review the current node-chat template, JavaScript, CSS, and test expectations
+- revert the unstable composer experiment to a reliable single-form layout
+- remove variant controls from the focused chat page
+- keep the immediate-clear-on-send behavior while centering the transcript column
+- validate with checks and tests, then commit and push
+
+### Work Completed
+- Session started; the current node-chat template, CSS, JavaScript, and tests were reviewed before editing.
+- Removed the unstable integrated tools composer and the focused-chat variant UI so the chat page is back to a single stable composer form.
+- Preserved the immediate-clear-on-send behavior and the restore-on-early-failure guard in the chat submit flow.
+- Centered the transcript content by constraining each transcript item to a shared centered column instead of letting the full-width message grid drift left.
+- Kept the composer width aligned to the same central chat column so the page now reads as one conversation surface.
+- Updated the chat-page test expectations to match the simplified focused-chat surface.
+- Verified the correction with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The focused chat page is back on a stable single-form composer, and the conversation column is explicitly centered in CSS.
+
+### Next Recommended Step
+- Commit and push the corrected node-chat layout, then confirm in the browser that the visual centering now matches expectations.
+
+### Known Issues / Blockers / Tech Debt
+- The node-chat view still computes lineage and child-branch context on the server even though those blocks are no longer rendered in the template.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

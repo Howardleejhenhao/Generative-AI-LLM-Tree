@@ -28,60 +28,23 @@
         >
           {% csrf_token %}
           <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-          <div class="chat-composer-shell">
-            <button
-              class="chat-tool-button"
-              id="chat-variant-toggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="chat-variant-form"
-              aria-label="Open extra tools"
-              title="Open extra tools"
-            >
-              +
-            </button>
-            <label class="form-field chat-input-shell">
-              <span>Reply</span>
-              <textarea
-                id="chat-prompt-input"
-                name="prompt"
-                rows="1"
-                placeholder="想問就問"
-              ></textarea>
-            </label>
-            <button class="chat-send-button" id="chat-submit-button" type="submit" aria-label="Send message">
-              Send
-            </button>
+          <label class="form-field chat-input-shell">
+            <span>Reply</span>
+            <textarea
+              id="chat-prompt-input"
+              name="prompt"
+              rows="1"
+              placeholder="想問就問"
+            ></textarea>
+          </label>
+          <div class="chat-composer-actions">
+            <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
+            <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
           </div>
           <div class="chat-composer-meta">
-            <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
             <p class="chat-composer-note">Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.</p>
           </div>
         </form>
-        <section class="chat-tools-panel" id="chat-variant-form" hidden>
-          <div class="chat-context-header">
-            <div>
-              <h2>Edit Into Variant</h2>
-              <p class="edit-note">Create a version-safe node from the current transcript and jump into the new branch.</p>
-            </div>
-          </div>
-          <form
-            class="composer-form chat-variant-form"
-            id="chat-variant-editor"
-            data-node-edit-url="{% url 'create_edited_node_variant' workspace.slug node_payload.id %}"
-          >
-            {% csrf_token %}
-            <label class="form-field">
-              <span>Variant Title</span>
-              <input id="chat-variant-title-input" name="title" type="text" maxlength="160" value="{{ node_payload.title }} (Edited)">
-            </label>
-            <div class="editor-list" id="chat-variant-message-list"></div>
-            <div class="chat-composer-actions">
-              <p class="form-feedback" id="chat-variant-feedback" role="status" aria-live="polite"></p>
-              <button class="secondary-button" id="chat-variant-submit-button" type="submit">Create edited variant</button>
-            </div>
-          </form>
-        </section>
       </div>
     </section>
   </section>
