@@ -258,6 +258,51 @@
 ### Known Issues / Blockers / Tech Debt
 - The tools button currently opens only the edited-variant workflow; additional tools could be added later if needed.
 
+## Session 2026-03-21 10:28
+
+### Session Goal
+- Strip the workspace page down to a more minimal, graph-first composition.
+- Remove the heavy right-side inspector and rework node creation into a lighter, map-building style flow.
+
+### Planned Tasks
+- review the workspace template, canvas interactions, and detail-panel dependencies
+- remove non-essential node detail copy and the full inspector block from the main page
+- redesign node creation into a compact graph action tray that fits a more XMind-like build flow
+- update tests and validate the simplified workspace
+
+### Work Completed
+- Session started; current branch, clean worktree, latest progress notes, and the workspace UI files were reviewed before editing.
+- Removed the right-side node inspector from the workspace page so the graph is no longer split by a heavy detail column.
+- Simplified the workspace header and search/selection strip to keep only graph-level controls and the selected-node essentials.
+- Reworked node creation into a compact action dock below the canvas so adding a root or child feels closer to a map-building flow.
+- Kept node chat access from the main workspace through a small selected-node action instead of a full detail panel.
+- Updated the workspace JavaScript to stop depending on inspector-only DOM state and trimmed selection copy to minimal summaries.
+- Updated the workspace page test expectations and verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The workspace page is now materially more minimal and graph-first, with the inspector removed and creation moved into a lighter dock.
+
+### Next Recommended Step
+- Review the live browser layout and refine the node-creation dock further if you want it to feel even closer to XMind's quick child-creation workflow.
+
+### Known Issues / Blockers / Tech Debt
+- The main graph page no longer exposes edited-variant creation directly; that flow now remains in the focused chat view only.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

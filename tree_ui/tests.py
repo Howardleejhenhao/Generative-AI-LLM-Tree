@@ -32,20 +32,22 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Conversation graph.")
         self.assertContains(
             response,
-            "Drag nodes. Drag background to pan.",
+            "Drag nodes. Drag canvas to pan.",
         )
-        self.assertContains(response, "Workspace Zoom")
+        self.assertContains(response, "Zoom")
         self.assertContains(response, "Fit view")
         self.assertContains(response, "Minimap")
-        self.assertContains(response, "Hide inspector")
         self.assertContains(response, "Shortcuts")
         self.assertContains(response, "Workspace Shortcuts")
         self.assertContains(response, "Create Workspace")
         self.assertContains(response, "Workspaces")
-        self.assertContains(response, "Jump to canvas")
+        self.assertContains(response, "Canvas")
         self.assertContains(response, "Research lane")
-        self.assertContains(response, "Find node")
-        self.assertContains(response, "Branch / Version Source")
+        self.assertContains(response, "Search")
+        self.assertContains(response, "Open chat")
+        self.assertNotContains(response, "Node Detail")
+        self.assertNotContains(response, "Recent Activity")
+        self.assertNotContains(response, "Branch / Version Source")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
