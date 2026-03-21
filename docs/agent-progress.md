@@ -698,6 +698,41 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-21 23:58
+
+### Session Goal
+- Remove the last homepage hero CTA and reduce the landing copy to a simple final project title plus one short description line.
+- Keep the workspace-first experience intact while making the homepage feel more finished and minimal.
+
+### Planned Tasks
+- remove the top `Canvas` action from the homepage hero
+- change the hero title to `LLM tree`
+- add one short, smaller descriptive sentence under the title
+- update tests and validate the homepage cleanup
+
+### Work Completed
+- Session started; current branch status, homepage template, stylesheet, tests, and latest progress log entries were reviewed before editing.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The final homepage cleanup is in progress.
+
+### Next Recommended Step
+- Remove the remaining hero CTA, simplify the copy, then verify the homepage regression test.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

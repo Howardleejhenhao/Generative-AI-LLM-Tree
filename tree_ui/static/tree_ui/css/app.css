@@ -25,16 +25,12 @@
 }
 
 .hero-compact {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
 }
 
 .hero-compact .hero-copy-block {
   gap: 6px;
-}
-
-.hero-compact .hero-action-link {
-  align-self: center;
 }
 
 .workspace-shell {
@@ -399,6 +395,11 @@ body:has(.chat-page-immersive) .page-shell {
 .hero-compact h1 {
   max-width: 14ch;
   font-size: clamp(2.2rem, 4vw, 3.35rem);
+}
+
+.hero-compact .hero-footnote {
+  max-width: 34rem;
+  font-size: 0.98rem;
 }
 
 .hero-copy {
@@ -2048,35 +2049,6 @@ body:has(.chat-page-immersive) .page-shell {
   display: grid;
   align-content: end;
   gap: 8px;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.hero-action-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(74, 58, 40, 0.12);
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--text);
-  font-weight: 700;
-  text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
-}
-
-.hero-action-link:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(49, 37, 22, 0.1);
-  background: rgba(255, 255, 255, 0.96);
 }
 
 .hero-footnote {
