@@ -67,7 +67,9 @@ async function handleSubmit(event) {
         preview(data) {
           previewPrompt = data.prompt;
           assistantText = "";
-          feedback.textContent = `Streaming reply from ${data.provider} / ${data.model_name}...`;
+          feedback.textContent = data.created_new_branch
+            ? `This node already has children. Continuing in a new child branch via ${data.provider} / ${data.model_name}...`
+            : `Streaming reply from ${data.provider} / ${data.model_name}...`;
           renderTranscript([
             {
               role: "user",
@@ -97,6 +99,10 @@ async function handleSubmit(event) {
           }
         },
         node(data) {
+          if (data.created_new_branch && data.node_chat_url) {
+            window.location.href = data.node_chat_url;
+            return;
+          }
           payload.messages = data.node.messages;
           resizePromptInput();
           feedback.textContent = "Reply added to this node.";

@@ -188,6 +188,20 @@ def create_node(
     )
 
 
+def create_continuation_child(
+    *,
+    source_node: ConversationNode,
+    title: str,
+) -> ConversationNode:
+    return create_node(
+        workspace=source_node.workspace,
+        parent=source_node,
+        title=title,
+        provider=source_node.provider,
+        model_name=source_node.model_name,
+    )
+
+
 def append_messages_to_node_with_reply(
     *,
     node: ConversationNode,

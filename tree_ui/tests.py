@@ -82,6 +82,29 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
 
+    def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Parent node",
+            summary="Discuss the launch plan.",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        ConversationNode.objects.create(
+            workspace=workspace,
+            parent=node,
+            title="Existing child",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This node already has child branches. Sending here will open a new child branch.")
+
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
             reverse("create_workspace"),
@@ -295,6 +318,49 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(
             NodeMessage.objects.get(node=node, role=NodeMessage.Role.ASSISTANT).content,
             "Streamed reply",
+        )
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_streaming_from_non_leaf_node_creates_new_child_branch(self, mock_stream_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        ConversationNode.objects.create(
+            workspace=workspace,
+            parent=node,
+            title="Existing child",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        mock_stream_text.return_value = iter(["Branch ", "reply"])
+
+        response = self.client.post(
+            reverse("stream_node_message", args=[workspace.slug, node.id]),
+            data=json.dumps(
+                {
+                    "prompt": "Continue from the historical node.",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        streamed = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn('"created_new_branch": true', streamed)
+        self.assertEqual(ConversationNode.objects.filter(workspace=workspace).count(), 3)
+        self.assertEqual(NodeMessage.objects.filter(node=node).count(), 0)
+        new_child = ConversationNode.objects.filter(workspace=workspace, parent=node).latest("created_at")
+        self.assertEqual(NodeMessage.objects.filter(node=new_child).count(), 2)
+        self.assertEqual(
+            NodeMessage.objects.get(node=new_child, role=NodeMessage.Role.ASSISTANT).content,
+            "Branch reply",
         )
 
     def test_branch_local_context_uses_selected_lineage_only(self):

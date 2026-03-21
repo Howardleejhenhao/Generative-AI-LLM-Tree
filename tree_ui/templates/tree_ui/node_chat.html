@@ -44,7 +44,13 @@
             <button class="primary-button" id="chat-submit-button" type="submit">Send</button>
           </div>
           <div class="chat-composer-meta">
-            <p class="chat-composer-note">Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.</p>
+            <p class="chat-composer-note">
+              {% if can_append_in_place %}
+                Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.
+              {% else %}
+                This node already has child branches. Sending here will open a new child branch.
+              {% endif %}
+            </p>
           </div>
         </form>
       </div>
@@ -52,5 +58,5 @@
   </section>
 
   {{ node_payload|json_script:"node-chat-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260321-chat-center"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260321-branch-chat-rule"></script>
 {% endblock %}

@@ -11,6 +11,7 @@ from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     append_messages_to_node_with_reply,
+    create_continuation_child,
     create_node,
     resolve_message_append_inputs,
     resolve_node_creation_inputs,
@@ -132,6 +133,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
                 }
                 for variant in edited_variants
             ],
+            "can_append_in_place": not child_nodes.exists(),
         },
     )
 
@@ -297,37 +299,57 @@ def stream_node_message(request, slug: str, node_id: int):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
+    target_node = node
+    created_new_branch = False
+    if node.children.exists():
+        target_node = create_continuation_child(
+            source_node=node,
+            title=resolved_inputs["summary"],
+        )
+        created_new_branch = True
+
     def event_stream():
         try:
             assistant_chunks: list[str] = []
             yield _sse_event(
                 "preview",
                 {
-                    "node_id": node.id,
-                    "title": node.title,
-                    "provider": node.provider,
+                    "node_id": target_node.id,
+                    "title": target_node.title,
+                    "provider": target_node.provider,
                     "model_name": resolve_model_name(
-                        provider=node.provider,
-                        model_name=node.model_name,
+                        provider=target_node.provider,
+                        model_name=target_node.model_name,
                     ),
                     "summary": resolved_inputs["summary"],
                     "prompt": resolved_inputs["prompt"],
+                    "created_new_branch": created_new_branch,
+                    "source_node_id": node.id,
+                    "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, target_node.id]),
                 },
             )
             for chunk in stream_assistant_reply(
-                parent=node,
-                provider=node.provider,
-                model_name=node.model_name,
+                parent=target_node,
+                provider=target_node.provider,
+                model_name=target_node.model_name,
                 prompt=resolved_inputs["prompt"],
             ):
                 assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
             updated_node = append_messages_to_node_with_reply(
-                node=node,
+                node=target_node,
                 prompt=resolved_inputs["prompt"],
                 assistant_reply="".join(assistant_chunks),
             )
-            yield _sse_event("node", {"node": serialize_node(updated_node)})
+            yield _sse_event(
+                "node",
+                {
+                    "node": serialize_node(updated_node),
+                    "created_new_branch": created_new_branch,
+                    "source_node_id": node.id,
+                    "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, updated_node.id]),
+                },
+            )
             yield _sse_event("done", {})
         except Exception as exc:
             yield _sse_event("error", {"message": str(exc)})

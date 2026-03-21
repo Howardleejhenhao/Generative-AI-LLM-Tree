@@ -520,6 +520,52 @@
 ### Known Issues / Blockers / Tech Debt
 - The bottom action dock still does most of the creation work and feels more form-like than map-like.
 
+## Session 2026-03-21 23:35
+
+### Session Goal
+- Make node chat behavior lineage-safe by preventing in-place continuation on nodes that already have children.
+- Ensure continuing from a historical non-leaf node automatically creates a new child branch instead of mutating old history.
+
+### Planned Tasks
+- inspect the node chat streaming flow in both the frontend and backend
+- route non-leaf chat submissions into a newly created child node on the server
+- update the chat UI so the rule is visible to the user
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the node chat streaming flow, node creation service, and current tests were reviewed before changing the continuation rule.
+- Added a continuation-child helper in the node creation service so historical node continuation can branch without duplicating provider/model logic.
+- Updated `stream_node_message` so leaf nodes still append in place, while non-leaf nodes automatically create a new child and stream the reply into that new branch instead.
+- Extended the SSE payload with branch metadata so the frontend can detect when a reply is being written into a newly created child node.
+- Updated the node chat client to redirect into the new child chat after a non-leaf continuation finishes streaming.
+- Added an explicit composer note on non-leaf node chat pages so users know sending there opens a new child branch.
+- Added backend and template coverage for the new rule and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- Chat continuation is now lineage-safe: only leaf nodes append in place, and non-leaf nodes automatically continue into a new child branch.
+
+### Next Recommended Step
+- Decide whether non-leaf chat pages should stay writable with auto-branching or become explicitly read-only with a stronger “continue in new child” call to action.
+
+### Known Issues / Blockers / Tech Debt
+- The current non-leaf flow redirects only after the streamed reply completes; if desired, it could be refined later into an immediate branch handoff before streaming begins.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
