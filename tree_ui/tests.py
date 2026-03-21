@@ -30,13 +30,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "LLM tree")
         self.assertContains(response, "graph-payload")
         self.assertContains(response, "A branching chat workspace for exploring conversations as a graph.")
-        self.assertContains(
-            response,
-            "Drag nodes. Drag canvas to pan.",
-        )
         self.assertContains(response, "Zoom")
         self.assertContains(response, "Fit view")
-        self.assertContains(response, "Minimap")
         self.assertContains(response, "Shortcuts")
         self.assertContains(response, "Workspace Shortcuts")
         self.assertContains(response, "Create Workspace")
@@ -46,6 +41,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Add child node")
         self.assertContains(response, "Delete workspace")
         self.assertContains(response, "Delete node")
+        self.assertNotContains(response, "Drag nodes. Drag canvas to pan.")
+        self.assertNotContains(response, "Minimap")
         self.assertNotContains(response, "Node Detail")
         self.assertNotContains(response, "Open chat")
         self.assertNotContains(response, "Recent Activity")

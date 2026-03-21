@@ -1,6 +1,5 @@
 import { postJSON } from "./api.js?v=20260322-single-confirm-delete";
 import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-single-confirm-delete";
-import { createMinimapController } from "./minimap.js?v=20260322-single-confirm-delete";
 import { syncModelOptions } from "./model-options.js?v=20260322-single-confirm-delete";
 import { createViewportController } from "./viewport.js?v=20260322-single-confirm-delete";
 
@@ -64,21 +63,9 @@ const confirmDialogCancel = document.getElementById("confirm-dialog-cancel");
 const confirmDialogConfirm = document.getElementById("confirm-dialog-confirm");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
-let minimap = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
 let pendingConfirmation = null;
-
-function syncMinimap() {
-  if (!minimap) {
-    return;
-  }
-
-  minimap.update({
-    nodes: payload.nodes,
-    viewportState: latestViewportState,
-  });
-}
 
 function handleViewportChange(viewportState) {
   latestViewportState = viewportState;
@@ -87,7 +74,6 @@ function handleViewportChange(viewportState) {
   zoomOutButton.disabled = !viewportState.hasNodes || !viewportState.canZoomOut;
   zoomInButton.disabled = !viewportState.hasNodes || !viewportState.canZoomIn;
   zoomResetButton.disabled = !viewportState.hasNodes || viewportState.percent === 100;
-  syncMinimap();
   updateQuickCreatePosition();
 }
 
@@ -95,9 +81,6 @@ const nodesById = new Map(payload.nodes.map((node) => [String(node.id), node]));
 let selectedNodeId = String(payload.nodes[0]?.id || "");
 
 const viewport = createViewportController({ onChange: handleViewportChange });
-minimap = createMinimapController({
-  onNavigate: (point) => viewport.centerOnPoint(point),
-});
 
 workspaceName.textContent = payload.workspace.name;
 
@@ -433,7 +416,6 @@ function mergeNode(nextNode) {
 
 function handleCanvasMetricsChange(metrics) {
   viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
-  syncMinimap();
   updateQuickCreatePosition();
 }
 

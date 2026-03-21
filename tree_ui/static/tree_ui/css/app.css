@@ -1461,75 +1461,6 @@ body:has(.chat-page-immersive) .page-shell {
   color: var(--muted);
 }
 
-.graph-minimap {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  z-index: 2;
-  display: grid;
-  gap: 8px;
-  width: 220px;
-  padding: 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(74, 58, 40, 0.12);
-  background: rgba(255, 250, 242, 0.92);
-  box-shadow: 0 14px 30px rgba(49, 37, 22, 0.12);
-  backdrop-filter: blur(16px);
-}
-
-.graph-minimap[hidden] {
-  display: none;
-}
-
-.graph-minimap-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-
-.graph-minimap-header .graph-controls-label {
-  margin: 0;
-}
-
-.graph-minimap-meta {
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
-.graph-minimap-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 14px;
-  cursor: pointer;
-}
-
-.graph-minimap-surface {
-  fill: rgba(248, 243, 234, 0.94);
-  stroke: rgba(74, 58, 40, 0.12);
-}
-
-.graph-minimap-node {
-  fill: rgba(34, 34, 34, 0.18);
-  stroke: rgba(34, 34, 34, 0.18);
-}
-
-.graph-minimap-node[data-provider="openai"] {
-  fill: rgba(22, 93, 74, 0.32);
-  stroke: rgba(22, 93, 74, 0.5);
-}
-
-.graph-minimap-node[data-provider="gemini"] {
-  fill: rgba(147, 95, 16, 0.28);
-  stroke: rgba(147, 95, 16, 0.46);
-}
-
-.graph-minimap-viewport {
-  fill: rgba(255, 255, 255, 0.18);
-  stroke: rgba(31, 27, 23, 0.82);
-  stroke-width: 2;
-}
 
 .graph-controls-row {
   display: flex;
@@ -1692,20 +1623,6 @@ body:has(.chat-page-immersive) .page-shell {
 
 .quick-start-copy {
   line-height: 1.5;
-}
-
-.graph-hint {
-  position: absolute;
-  right: 16px;
-  bottom: 192px;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 250, 242, 0.88);
-  border: 1px solid rgba(74, 58, 40, 0.12);
-  color: var(--muted);
-  font-size: 0.82rem;
-  pointer-events: none;
 }
 
 .graph-status {
@@ -2389,16 +2306,15 @@ body:has(.chat-page-immersive) .page-shell {
     rgba(255, 251, 245, 0.78);
 }
 
-.graph-controls,
-.graph-minimap {
+.graph-controls {
   box-shadow: 0 10px 22px rgba(49, 37, 22, 0.08);
 }
 
 .graph-node {
   position: absolute;
   overflow: hidden;
-  padding: 14px 16px 16px;
-  border-radius: 22px;
+  padding: 12px 14px 14px;
+  border-radius: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(252, 248, 241, 0.9));
   box-shadow: 0 12px 26px rgba(49, 37, 22, 0.1);
@@ -2430,11 +2346,11 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .graph-node-topline {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .graph-node-footer {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .graph-node-provider,
@@ -2443,10 +2359,10 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-context-flag {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -2472,20 +2388,23 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .graph-node-title {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  font-size: 0.98rem;
   line-height: 1.2;
 }
 
 .graph-node-meta {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  font-size: 0.77rem;
+  letter-spacing: 0.06em;
 }
 
 .graph-node-summary {
   display: -webkit-box;
-  min-height: 4.65em;
+  min-height: 3.15em;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 kbd {
@@ -2912,13 +2831,6 @@ kbd {
     align-items: stretch;
   }
 
-  .graph-minimap {
-    left: 16px;
-    right: 16px;
-    width: auto;
-    bottom: 16px;
-  }
-
   .graph-controls-row {
     flex-wrap: wrap;
   }
@@ -2926,11 +2838,6 @@ kbd {
   .graph-status {
     max-width: calc(100% - 32px);
     bottom: 176px;
-  }
-
-  .graph-hint {
-    max-width: calc(100% - 32px);
-    bottom: 126px;
   }
 
   .hero-compact .hero-meta {
