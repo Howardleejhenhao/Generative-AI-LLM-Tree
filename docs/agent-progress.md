@@ -742,6 +742,55 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-22 00:08
+
+### Session Goal
+- Add safe deletion flows for workspaces and nodes before the final visual cleanup pass.
+- Make node deletion recursive for non-leaf nodes and require a double-confirmation dialog before destructive actions run.
+
+### Planned Tasks
+- add backend delete endpoints for workspaces and nodes
+- ensure deleting a node removes its full descendant subtree
+- add regression tests for workspace deletion and recursive node deletion
+- wire graph UI delete controls with a two-step confirmation modal
+- validate with local checks/tests
+
+### Work Completed
+- Session started; `AGENTS.md`, the latest progress log state, current branch, and the existing graph/chat code paths were reviewed before implementation.
+- Switched from `feature/workspace-ui-polish` to `feature/delete-node-workspace-confirmation` for this destructive-flow feature slice.
+- Added backend delete endpoints for workspaces and nodes, both guarded by an explicit `confirm` requirement in the request payload.
+- Implemented recursive node-subtree deletion so deleting a non-leaf node removes all descendants while leaving unrelated branches intact.
+- Added regression coverage for workspace deletion, recursive node deletion, and missing-confirmation rejection paths.
+- Added graph-page delete controls for the current workspace and the currently selected node.
+- Built a shared two-step confirmation modal so both destructive actions require a double confirmation before the request is sent.
+- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `5a8b711` - `feat: add confirmed workspace and node deletion`
+- Push status:
+  - pending docs commit and push for this session
+
+### Current Status
+- Workspace and node deletion now work from the graph page with a shared double-confirmation modal.
+
+### Next Recommended Step
+- Run one browser pass on the new confirmation modal and delete controls, then resume the final visual cleanup.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
