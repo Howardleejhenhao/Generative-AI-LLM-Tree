@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260321-toolbar-quick-create";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-toolbar-quick-create";
-import { createMinimapController } from "./minimap.js?v=20260321-toolbar-quick-create";
-import { syncModelOptions } from "./model-options.js?v=20260321-toolbar-quick-create";
-import { createViewportController } from "./viewport.js?v=20260321-toolbar-quick-create";
+import { postJSON } from "./api.js?v=20260321-branch-handle-tighten";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-branch-handle-tighten";
+import { createMinimapController } from "./minimap.js?v=20260321-branch-handle-tighten";
+import { syncModelOptions } from "./model-options.js?v=20260321-branch-handle-tighten";
+import { createViewportController } from "./viewport.js?v=20260321-branch-handle-tighten";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -301,11 +301,11 @@ function updateQuickCreatePosition() {
   const screenTop = (bounds.minY - latestViewportState.visibleBounds.minY) * zoom;
   const nodeWidth = (bounds.maxX - bounds.minX) * zoom;
   const nodeHeight = (bounds.maxY - bounds.minY) * zoom;
-  const preferredLeft = screenLeft + nodeWidth + 26;
+  const preferredLeft = screenLeft + nodeWidth + 12;
   const panelWidth = quickCreate.dataset.open === "true" ? 320 : 58;
   const panelHeight = quickCreate.dataset.open === "true" ? 236 : 58;
   const safeLeft = preferredLeft + panelWidth > stageWidth - 16
-    ? Math.max(16, screenLeft - panelWidth - 18)
+    ? Math.max(16, screenLeft - panelWidth - 10)
     : preferredLeft;
   const safeTop = Math.min(
     Math.max(16, screenTop + (nodeHeight / 2) - (panelHeight / 2)),

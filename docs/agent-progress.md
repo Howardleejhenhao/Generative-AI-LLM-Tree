@@ -656,6 +656,48 @@
 ### Known Issues / Blockers / Tech Debt
 - The current quick-create control works functionally but still feels too detached from the node it belongs to.
 
+## Session 2026-03-21 23:53
+
+### Session Goal
+- Tighten the spacing between the selected node and the branch handle so the `+` reads as attached to the node.
+
+### Planned Tasks
+- reduce the quick-create anchor offset in the graph positioning logic
+- shorten the branch-handle connector line in CSS
+- validate the small adjustment and update the progress log
+
+### Work Completed
+- Session started; the current quick-create positioning logic and branch-handle styling were reviewed after feedback that the `+` still sits too far from the node.
+- Reduced the quick-create anchor offset so the branch handle sits noticeably closer to the selected node.
+- Shortened the branch-handle connector line so the `+` reads as attached to the node instead of floating beside it.
+- Bumped the workspace asset versions again so the tighter branch-handle positioning is forced through browser cache.
+- Verified the adjustment with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The branch handle now sits closer to the selected node and should read more like a direct node extension.
+
+### Next Recommended Step
+- Review whether the branch handle should also be slightly smaller or inherit provider color accents from the selected node.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
