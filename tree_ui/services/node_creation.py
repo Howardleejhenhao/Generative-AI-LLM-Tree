@@ -11,12 +11,8 @@ from tree_ui.services.context_builder import (
     build_branch_lineage,
     build_generation_messages,
 )
+from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
-
-DEFAULT_MODELS = {
-    ConversationNode.Provider.OPENAI: "gpt-4.1-mini",
-    ConversationNode.Provider.GEMINI: "gemini-2.0-flash",
-}
 
 
 def _build_summary(prompt: str) -> str:
@@ -101,7 +97,7 @@ def resolve_node_creation_inputs(
     if provider not in ConversationNode.Provider.values:
         raise ValueError("Unsupported provider.")
 
-    resolved_model = model_name.strip() or DEFAULT_MODELS[provider]
+    resolved_model = resolve_model_name(provider=provider, model_name=model_name)
     position_x, position_y = _calculate_position(workspace=workspace, parent=parent)
 
     return {

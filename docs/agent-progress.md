@@ -117,6 +117,57 @@
 ### Known Issues / Blockers / Tech Debt
 - Real upstream provider streaming is now wired in code, but it still needs browser-side confirmation against live OpenAI and Gemini credentials because the automated tests only cover mocked streaming paths.
 
+## Session 2026-03-21 09:24
+
+### Session Goal
+- Fix the Gemini runtime failure caused by the deprecated `gemini-2.0-flash` model string.
+- Update defaults and UI options to current supported Gemini models while keeping older saved nodes functional.
+
+### Planned Tasks
+- confirm the official replacement model from Gemini docs
+- inspect the repo for every remaining `gemini-2.0-flash` reference
+- add a compatibility mapping so legacy saved nodes transparently use a supported Gemini model
+- update tests, docs, and progress notes after validation
+
+### Work Completed
+- Session started; current branch, repository state, and progress log were reviewed before editing.
+- Confirmed from Google AI Developers documentation that `gemini-2.5-flash` is the current stable replacement to prefer over the deprecated `gemini-2.0-flash`.
+- Located remaining legacy Gemini model references in defaults, UI model selectors, quick-start presets, demo data, and tests.
+- Added a shared model-resolution layer so legacy Gemini model names are transparently upgraded before provider calls are made.
+- Updated serialized node payloads and node-chat metadata to surface the resolved Gemini model name in the UI instead of the deprecated stored alias.
+- Replaced new-node defaults and model-picker options so fresh Gemini nodes now use current supported models.
+- Updated quick-start presets, demo graph data, and tests to stop introducing deprecated Gemini model names.
+- Verified the fix with `node --check tree_ui/static/tree_ui/js/model-options.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/demo_graph.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/model_catalog.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/static/tree_ui/js/model-options.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The deprecated Gemini model issue is fixed in code for both new nodes and previously saved nodes that still carry the old alias.
+
+### Next Recommended Step
+- Commit and push the Gemini model upgrade fix, then re-test the browser flow against the real Gemini key.
+
+### Known Issues / Blockers / Tech Debt
+- Existing database rows may still store deprecated Gemini model strings, but the backend now maps them to supported replacements at runtime instead of failing.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

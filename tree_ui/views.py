@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from tree_ui.models import ConversationNode, Workspace
+from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
@@ -100,7 +101,10 @@ def workspace_node_chat(request, slug: str, node_id: int):
                     "title": child.title,
                     "summary": child.summary,
                     "provider": child.provider,
-                    "model_name": child.model_name,
+                    "model_name": resolve_model_name(
+                        provider=child.provider,
+                        model_name=child.model_name,
+                    ),
                     "url": reverse("workspace_node_chat", args=[workspace.slug, child.id]),
                 }
                 for child in child_nodes
@@ -120,7 +124,10 @@ def workspace_node_chat(request, slug: str, node_id: int):
                     "title": variant.title,
                     "summary": variant.summary,
                     "provider": variant.provider,
-                    "model_name": variant.model_name,
+                    "model_name": resolve_model_name(
+                        provider=variant.provider,
+                        model_name=variant.model_name,
+                    ),
                     "url": reverse("workspace_node_chat", args=[workspace.slug, variant.id]),
                 }
                 for variant in edited_variants
@@ -299,7 +306,10 @@ def stream_node_message(request, slug: str, node_id: int):
                     "node_id": node.id,
                     "title": node.title,
                     "provider": node.provider,
-                    "model_name": node.model_name,
+                    "model_name": resolve_model_name(
+                        provider=node.provider,
+                        model_name=node.model_name,
+                    ),
                     "summary": resolved_inputs["summary"],
                     "prompt": resolved_inputs["prompt"],
                 },

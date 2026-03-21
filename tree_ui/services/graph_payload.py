@@ -1,4 +1,5 @@
 from tree_ui.models import ConversationNode, Workspace
+from tree_ui.services.model_catalog import resolve_model_name
 
 
 def serialize_node(node: ConversationNode) -> dict:
@@ -9,7 +10,7 @@ def serialize_node(node: ConversationNode) -> dict:
         "title": node.title,
         "summary": node.summary,
         "provider": node.provider,
-        "model_name": node.model_name,
+        "model_name": resolve_model_name(provider=node.provider, model_name=node.model_name),
         "position": {"x": node.position_x, "y": node.position_y},
         "messages": [
             {

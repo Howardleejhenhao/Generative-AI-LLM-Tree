@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import override_settings
 from django.test import TestCase
@@ -10,6 +10,7 @@ from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.node_creation import append_messages_to_node
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers.base import GenerationResult
+from tree_ui.services.providers.registry import generate_text as registry_generate_text
 
 
 class WorkspaceGraphViewTests(TestCase):
@@ -139,7 +140,7 @@ class WorkspaceGraphViewTests(TestCase):
                 {
                     "title": "Conversation B",
                     "provider": "gemini",
-                    "model_name": "gemini-2.0-flash",
+                    "model_name": "gemini-2.5-flash",
                 }
             ),
             content_type="application/json",
@@ -171,7 +172,7 @@ class WorkspaceGraphViewTests(TestCase):
                 {
                     "title": "Branch node",
                     "provider": "gemini",
-                    "model_name": "gemini-2.0-flash",
+                    "model_name": "gemini-2.5-flash",
                     "parent_id": parent.id,
                 }
             ),
@@ -339,7 +340,7 @@ class WorkspaceGraphViewTests(TestCase):
             title="Branch B",
             summary="",
             provider=ConversationNode.Provider.GEMINI,
-            model_name="gemini-2.0-flash",
+            model_name="gemini-2.5-flash",
         )
         NodeMessage.objects.create(
             node=sibling_branch,
@@ -389,6 +390,26 @@ class WorkspaceGraphViewTests(TestCase):
             "Real provider output",
         )
         mock_generate_text.assert_called_once()
+
+    @patch("tree_ui.services.providers.registry._get_provider")
+    def test_legacy_gemini_model_alias_is_upgraded_for_generation(self, mock_get_provider):
+        provider = Mock()
+        provider.generate.return_value = GenerationResult(
+            text="Aliased provider output",
+            provider="gemini",
+            model_name="gemini-2.5-flash",
+        )
+        mock_get_provider.return_value = provider
+
+        result = registry_generate_text(
+            provider_name=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.0-flash",
+            messages=[],
+            system_instruction="Test instruction",
+        )
+
+        self.assertEqual(result.model_name, "gemini-2.5-flash")
+        self.assertEqual(provider.generate.call_args.kwargs["model_name"], "gemini-2.5-flash")
 
     def test_create_edited_variant_preserves_original_node(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
