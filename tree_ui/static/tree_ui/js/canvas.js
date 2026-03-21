@@ -141,7 +141,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     button.dataset.selected = String(String(node.id) === String(selectedNodeId));
     button.dataset.lineage = String(activeLineageIds.has(String(node.id)));
     button.dataset.match = String(matchedNodeIds.has(String(node.id)));
-    button.dataset.suppressClick = "false";
     button.dataset.dragging = "false";
     applyNodePosition(button, node);
 
@@ -187,28 +186,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
     let dragState = null;
 
-    button.addEventListener("click", (event) => {
-      if (button.dataset.suppressClick === "true") {
-        event.preventDefault();
-        button.dataset.suppressClick = "false";
-        return;
-      }
-      const now = Date.now();
-      const isRepeatClick = lastNodeClick.nodeId === node.id && (now - lastNodeClick.timestamp) <= DOUBLE_CLICK_MS;
-      lastNodeClick = {
-        nodeId: node.id,
-        timestamp: now,
-      };
-      onSelect?.(node.id);
-      if (isRepeatClick) {
-        onOpenChat?.(node.id);
-        lastNodeClick = {
-          nodeId: null,
-          timestamp: 0,
-        };
-      }
-    });
-
     button.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) {
         return;
@@ -223,7 +200,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         moved: false,
       };
       button.setPointerCapture(event.pointerId);
-      event.preventDefault();
     });
 
     button.addEventListener("pointermove", (event) => {
@@ -241,7 +217,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         dragState.moved = true;
         stage.dataset.nodeDragging = "true";
         button.dataset.dragging = "true";
-        button.dataset.suppressClick = "true";
       }
 
       const scale = Math.max(getViewportScale?.() || 1, 0.01);
@@ -264,6 +239,24 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
       if (button.hasPointerCapture(pointerId)) {
         button.releasePointerCapture(pointerId);
+      }
+
+      if (!didMove) {
+        const now = Date.now();
+        const isRepeatClick = lastNodeClick.nodeId === node.id && (now - lastNodeClick.timestamp) <= DOUBLE_CLICK_MS;
+        lastNodeClick = {
+          nodeId: node.id,
+          timestamp: now,
+        };
+        onSelect?.(node.id);
+        if (isRepeatClick) {
+          onOpenChat?.(node.id);
+          lastNodeClick = {
+            nodeId: null,
+            timestamp: 0,
+          };
+        }
+        return;
       }
 
       if (didMove) {

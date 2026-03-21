@@ -400,6 +400,7 @@
 - Session started; the current workspace template, CSS, JS, and tests were reviewed after confirming double-click node entry is the preferred interaction.
 - Removed the `Open chat` pill from the workspace selection strip so graph navigation now stays visually minimal.
 - Switched node opening behavior to a cross-render double-click detector because the first click re-renders the canvas and breaks a native DOM `dblclick` listener.
+- Fixed a follow-up regression where node selection could fail because the interaction still depended on a `click` path disrupted by `pointerdown`; selection and double-click open now resolve from `pointerup` based on drag distance instead.
 - Kept keyboard `C` navigation intact while moving the node chat URL source to a hidden template element instead of a visible button.
 - Updated tests to reflect the removed workspace chat pill and verified the change with `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
