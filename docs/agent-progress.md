@@ -471,6 +471,53 @@
 ### Known Issues / Blockers / Tech Debt
 - Static asset cache busting is currently inconsistent between the chat page and the graph workspace page.
 
+## Session 2026-03-21 23:18
+
+### Session Goal
+- Move child-node creation closer to the selected node so the workspace feels more like a mind-mapping tool.
+- Reduce dependence on the bottom action dock for the primary branch-building action.
+
+### Planned Tasks
+- inspect the current graph node render structure and create-node flow
+- add an inline quick-add affordance beside the selected node
+- wire the quick-add interaction into the existing node creation API without duplicating backend logic
+- validate the frontend scripts and Django test suite, then update the progress log
+
+### Work Completed
+- Session started; the latest workspace interaction code and progress history were reviewed before implementing a node-adjacent quick-create flow.
+- Added a selected-node quick-create affordance inside the graph stage so a `+` button now appears near the active node instead of forcing the user back to the bottom dock for every child branch.
+- Built a compact floating child-creation panel with title, provider, model, and add controls, all wired to the existing node-creation API path.
+- Kept the bottom action dock for broader editing, but moved the primary "branch from this node" action closer to the canvas to better match a mind-mapping flow.
+- Updated the viewport interaction guard so using the floating quick-create panel does not accidentally trigger graph panning.
+- Added cache-busted graph asset references for the updated workspace interaction pass and extended the workspace page test to cover the quick-create affordance.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- Node selection and chat entry are working, and child creation now has a node-adjacent canvas affordance instead of relying only on the bottom dock.
+
+### Next Recommended Step
+- Review the live browser feel of the new quick-create panel and decide whether to simplify the remaining top selection strip and bottom dock further.
+
+### Known Issues / Blockers / Tech Debt
+- The bottom action dock still does most of the creation work and feels more form-like than map-like.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

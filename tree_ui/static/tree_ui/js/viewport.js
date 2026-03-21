@@ -228,6 +228,9 @@ export function createViewportController(options = {}) {
     if (event.target.closest(".graph-minimap")) {
       return;
     }
+    if (event.target.closest(".graph-quick-create")) {
+      return;
+    }
     if (stage.dataset.hasNodes !== "true") {
       return;
     }

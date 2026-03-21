@@ -1176,6 +1176,114 @@ body:has(.chat-page-immersive) .page-shell {
   color: var(--muted);
 }
 
+.graph-quick-create {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: 10px;
+  width: 304px;
+  pointer-events: auto;
+}
+
+.graph-quick-create[data-open="false"] {
+  width: 48px;
+}
+
+.graph-quick-create[hidden] {
+  display: none;
+}
+
+.graph-quick-create-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 999px;
+  padding: 0;
+  font: inherit;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--text);
+  background: rgba(255, 250, 242, 0.96);
+  box-shadow: 0 14px 28px rgba(49, 37, 22, 0.12);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.graph-quick-create-toggle:hover,
+.graph-quick-create[data-open="true"] .graph-quick-create-toggle {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(49, 37, 22, 0.16);
+  background: rgba(255, 250, 242, 1);
+}
+
+.graph-quick-create-panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 250, 242, 0.96);
+  box-shadow: 0 18px 34px rgba(49, 37, 22, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.graph-quick-create-panel[hidden] {
+  display: none;
+}
+
+.graph-quick-create-label {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.graph-quick-create-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.graph-quick-create-field {
+  display: grid;
+}
+
+.graph-quick-create-field input,
+.graph-quick-create-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  font: inherit;
+}
+
+.graph-quick-create-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.graph-quick-create-submit,
+.graph-quick-create-cancel {
+  min-height: 40px;
+}
+
+.graph-quick-create-cancel {
+  padding-inline: 14px;
+}
+
+.graph-quick-create-feedback {
+  margin: 0;
+  color: var(--muted);
+}
+
 .graph-minimap {
   position: absolute;
   right: 16px;
@@ -2555,6 +2663,19 @@ kbd {
     left: 16px;
     right: 16px;
     width: auto;
+  }
+
+  .graph-quick-create {
+    width: min(304px, calc(100% - 32px));
+  }
+
+  .graph-quick-create-row {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-quick-create-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .graph-minimap {

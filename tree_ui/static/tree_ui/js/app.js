@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260321-node-select-fix";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-node-select-fix";
-import { createMinimapController } from "./minimap.js?v=20260321-node-select-fix";
-import { syncModelOptions } from "./model-options.js?v=20260321-node-select-fix";
-import { createViewportController } from "./viewport.js?v=20260321-node-select-fix";
+import { postJSON } from "./api.js?v=20260321-quick-child";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-quick-child";
+import { createMinimapController } from "./minimap.js?v=20260321-quick-child";
+import { syncModelOptions } from "./model-options.js?v=20260321-quick-child";
+import { createViewportController } from "./viewport.js?v=20260321-quick-child";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -25,6 +25,7 @@ const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
 const zoomResetButton = document.getElementById("graph-zoom-reset");
 const zoomLevel = document.getElementById("graph-zoom-level");
+const graphStage = document.getElementById("graph-stage");
 const nodeChatUrlTemplate = document.getElementById("node-chat-url-template");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
@@ -39,6 +40,16 @@ const modelInput = document.getElementById("node-model-input");
 const submitButton = document.getElementById("node-submit-button");
 const quickStartButtons = Array.from(document.querySelectorAll(".quick-start-button"));
 const rootModeToggle = document.getElementById("root-mode-toggle");
+const quickCreate = document.getElementById("graph-quick-create");
+const quickCreateToggle = document.getElementById("graph-quick-create-toggle");
+const quickCreatePanel = document.getElementById("graph-quick-create-panel");
+const quickCreateLabel = document.getElementById("graph-quick-create-label");
+const quickTitleInput = document.getElementById("quick-node-title-input");
+const quickProviderInput = document.getElementById("quick-node-provider-input");
+const quickModelInput = document.getElementById("quick-node-model-input");
+const quickSubmitButton = document.getElementById("quick-node-submit-button");
+const quickCancelButton = document.getElementById("graph-quick-create-cancel");
+const quickFeedback = document.getElementById("quick-node-feedback");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let minimap = null;
@@ -64,6 +75,7 @@ function handleViewportChange(viewportState) {
   zoomInButton.disabled = !viewportState.hasNodes || !viewportState.canZoomIn;
   zoomResetButton.disabled = !viewportState.hasNodes || viewportState.percent === 100;
   syncMinimap();
+  updateQuickCreatePosition();
 }
 
 const viewport = createViewportController({ onChange: handleViewportChange });
@@ -259,6 +271,61 @@ function getNodePositionUrl(nodeId) {
   return graphStatus.dataset.nodePositionUrlTemplate.replace("999999", String(nodeId));
 }
 
+function setQuickCreateOpen(isOpen) {
+  const selectedNode = getSelectedNode();
+  const shouldOpen = Boolean(isOpen && selectedNode);
+  quickCreate.dataset.open = String(shouldOpen);
+  quickCreatePanel.hidden = !shouldOpen;
+  quickCreateToggle.setAttribute("aria-expanded", String(shouldOpen));
+  quickFeedback.textContent = "";
+  if (shouldOpen) {
+    quickCreateLabel.textContent = `Child of ${selectedNode.title}`;
+    window.requestAnimationFrame(() => quickTitleInput.focus());
+  }
+}
+
+function updateQuickCreatePosition() {
+  const selectedNode = getSelectedNode();
+  if (!selectedNode || !latestViewportState?.hasNodes) {
+    quickCreate.hidden = true;
+    setQuickCreateOpen(false);
+    return;
+  }
+
+  quickCreate.hidden = false;
+  const stageWidth = graphStage.clientWidth;
+  const stageHeight = graphStage.clientHeight;
+  const bounds = getNodeBounds(selectedNode);
+  const zoom = latestViewportState.zoom || 1;
+  const screenLeft = (bounds.minX - latestViewportState.visibleBounds.minX) * zoom;
+  const screenTop = (bounds.minY - latestViewportState.visibleBounds.minY) * zoom;
+  const nodeWidth = (bounds.maxX - bounds.minX) * zoom;
+  const preferredLeft = screenLeft + nodeWidth + 18;
+  const panelWidth = quickCreate.dataset.open === "true" ? 304 : 52;
+  const safeLeft = preferredLeft + panelWidth > stageWidth - 16
+    ? Math.max(16, screenLeft - panelWidth - 18)
+    : preferredLeft;
+  const safeTop = Math.min(
+    Math.max(16, screenTop + (22 * zoom)),
+    Math.max(16, stageHeight - (quickCreate.dataset.open === "true" ? 220 : 72)),
+  );
+
+  quickCreate.style.left = `${safeLeft}px`;
+  quickCreate.style.top = `${safeTop}px`;
+}
+
+function syncQuickCreateDefaults() {
+  quickProviderInput.value = providerInput.value;
+  syncModelOptions(quickProviderInput, quickModelInput);
+  if (modelOptionsMatchDock()) {
+    quickModelInput.value = modelInput.value;
+  }
+}
+
+function modelOptionsMatchDock() {
+  return Array.from(quickModelInput.options).some((option) => option.value === modelInput.value);
+}
+
 function isRootModeEnabled() {
   return rootModeToggle.checked;
 }
@@ -282,6 +349,7 @@ function mergeNode(nextNode) {
 function handleCanvasMetricsChange(metrics) {
   viewport.setCanvasMetrics(metrics, payload.nodes.length > 0);
   syncMinimap();
+  updateQuickCreatePosition();
 }
 
 async function handleNodePositionCommit(nodeId, position) {
@@ -337,6 +405,8 @@ function updateFormState() {
 
 function showEmptyNodeState() {
   activeLineageIds = new Set();
+  quickCreate.hidden = true;
+  setQuickCreateOpen(false);
   updateWorkspaceSummary();
 }
 
@@ -352,9 +422,12 @@ function updateSelection(nodeId) {
   }
 
   activeLineageIds = new Set(getLineageIds(node));
+  setQuickCreateOpen(false);
+  syncQuickCreateDefaults();
   updateFormState();
   updateWorkspaceSummary();
   renderGraphCanvas();
+  updateQuickCreatePosition();
 }
 
 function applyQuickStart(button) {
@@ -462,22 +535,31 @@ async function handleWorkspaceCreateSubmit(event) {
   }
 }
 
+async function createNodeRequest({ parentId, title, provider, modelName }) {
+  return postJSON(
+    nodeForm.dataset.nodeCreateUrl,
+    {
+      parent_id: parentId,
+      title,
+      provider,
+      model_name: modelName,
+    },
+    csrfToken,
+  );
+}
+
 async function handleNodeSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
   submitButton.disabled = true;
 
   try {
-    const result = await postJSON(
-      nodeForm.dataset.nodeCreateUrl,
-      {
-        parent_id: isRootModeEnabled() ? null : getSelectedNode()?.id ?? null,
-        title: nodeTitleInput.value,
-        provider: providerInput.value,
-        model_name: modelInput.value,
-      },
-      csrfToken,
-    );
+    const result = await createNodeRequest({
+      parentId: isRootModeEnabled() ? null : getSelectedNode()?.id ?? null,
+      title: nodeTitleInput.value,
+      provider: providerInput.value,
+      modelName: modelInput.value,
+    });
     mergeNode(result.node);
     updateSearchState();
     nodeTitleInput.value = "";
@@ -491,9 +573,52 @@ async function handleNodeSubmit(event) {
   }
 }
 
+function toggleQuickCreate() {
+  setQuickCreateOpen(quickCreate.dataset.open !== "true");
+  updateQuickCreatePosition();
+}
+
+async function handleQuickCreateSubmit(event) {
+  event.preventDefault();
+  const selectedNode = getSelectedNode();
+  if (!selectedNode) {
+    quickFeedback.textContent = "Select a node first.";
+    return;
+  }
+
+  quickFeedback.textContent = "";
+  quickSubmitButton.disabled = true;
+
+  try {
+    const result = await createNodeRequest({
+      parentId: selectedNode.id,
+      title: quickTitleInput.value,
+      provider: quickProviderInput.value,
+      modelName: quickModelInput.value,
+    });
+    mergeNode(result.node);
+    quickTitleInput.value = "";
+    setQuickCreateOpen(false);
+    updateSearchState();
+    feedback.textContent = `Added ${result.node.title}.`;
+    updateSelection(result.node.id);
+    viewport.centerOnBounds(getNodeBounds(result.node));
+  } catch (error) {
+    quickFeedback.textContent = error.message;
+  } finally {
+    quickSubmitButton.disabled = false;
+  }
+}
+
 providerInput.addEventListener("change", () => syncModelOptions(providerInput, modelInput));
+providerInput.addEventListener("change", syncQuickCreateDefaults);
+modelInput.addEventListener("change", syncQuickCreateDefaults);
+quickProviderInput.addEventListener("change", () => syncModelOptions(quickProviderInput, quickModelInput));
 rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);
+quickCreateToggle.addEventListener("click", toggleQuickCreate);
+quickCreatePanel.addEventListener("submit", handleQuickCreateSubmit);
+quickCancelButton.addEventListener("click", () => setQuickCreateOpen(false));
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
 workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspaceHelpDialog.hidden));
 workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
@@ -509,6 +634,7 @@ for (const button of quickStartButtons) {
 }
 window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
+syncQuickCreateDefaults();
 setWorkspaceHelpOpen(false);
 updateSearchState();
 updateSelection(selectedNodeId);

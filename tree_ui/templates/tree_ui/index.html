@@ -108,6 +108,43 @@
           </div>
           <svg class="graph-minimap-svg" id="graph-minimap-svg" viewBox="0 0 220 148" aria-label="Graph minimap"></svg>
         </section>
+        <section class="graph-quick-create" id="graph-quick-create" hidden data-open="false" aria-label="Quick child node creation">
+          <button
+            class="graph-quick-create-toggle"
+            id="graph-quick-create-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="graph-quick-create-panel"
+            aria-label="Add child node"
+          >
+            +
+          </button>
+          <form class="graph-quick-create-panel" id="graph-quick-create-panel" hidden>
+            <p class="graph-quick-create-label" id="graph-quick-create-label">Add child</p>
+            <label class="graph-quick-create-field" for="quick-node-title-input">
+              <span class="sr-only">Child node title</span>
+              <input id="quick-node-title-input" name="title" type="text" maxlength="160" placeholder="Child title">
+            </label>
+            <div class="graph-quick-create-row">
+              <label class="graph-quick-create-field" for="quick-node-provider-input">
+                <span class="sr-only">Child node provider</span>
+                <select id="quick-node-provider-input" name="provider" aria-label="Child node provider">
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              </label>
+              <label class="graph-quick-create-field" for="quick-node-model-input">
+                <span class="sr-only">Child node model</span>
+                <select id="quick-node-model-input" name="model_name" aria-label="Child node model"></select>
+              </label>
+            </div>
+            <div class="graph-quick-create-actions">
+              <button class="primary-button graph-quick-create-submit" id="quick-node-submit-button" type="submit">Add child</button>
+              <button class="detail-toggle-button detail-toggle-button-quiet graph-quick-create-cancel" id="graph-quick-create-cancel" type="button">Close</button>
+            </div>
+            <p class="form-feedback graph-quick-create-feedback" id="quick-node-feedback" role="status" aria-live="polite"></p>
+          </form>
+        </section>
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             <div class="graph-empty-copy-block">
@@ -241,5 +278,5 @@
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260321-node-select-fix"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260321-quick-child"></script>
 {% endblock %}
