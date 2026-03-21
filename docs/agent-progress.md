@@ -321,11 +321,15 @@
 - Added a dedicated centered `chat-content-shell` wrapper so the transcript area now has a single explicit alignment anchor instead of relying on padding math alone.
 - Bound the `Jump to latest` control to that same centered shell so it no longer floats relative to the full viewport width.
 - Re-aligned the composer wrapper to the same centered width as the transcript shell, making transcript, jump control, and composer share one visual center line.
+- Unified the chat header, transcript shell, and composer around the same shared shell-width variable instead of letting each area compute its own width independently.
+- Removed the remaining viewport-relative horizontal padding from the transcript so centering now comes from structure rather than spacing tricks.
+- Added static asset version query strings for the main stylesheet and node-chat script to force the browser to load the corrected CSS/JS instead of stale cached files.
 - Verified the structural centering fix with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
 
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/templates/tree_ui/node_chat.html`
 
 ### Git Workflow
@@ -337,10 +341,10 @@
   - not pushed yet in this session
 
 ### Current Status
-- The transcript, jump button, and composer now share a centered shell in the layout structure instead of separate viewport-relative anchors.
+- The header, transcript, jump button, and composer now share a centered shell-width system, and browser cache should no longer mask the updated styling.
 
 ### Next Recommended Step
-- Commit and push the centering fix, then verify the browser rendering against the exact page that previously looked off-center.
+- Commit and push the centering fix, then hard-refresh the exact page that previously looked off-center to confirm the cached assets have been replaced.
 
 ### Known Issues / Blockers / Tech Debt
 - Pure padding-based centering has proven too brittle for this page layout.
