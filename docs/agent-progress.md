@@ -876,6 +876,51 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-22 00:32
+
+### Session Goal
+- Remove the remaining minimap and graph hint text after review that they are unnecessary.
+- Continue the final polish by tightening the graph node card typography and spacing.
+
+### Planned Tasks
+- remove the minimap markup and its frontend initialization path
+- remove the passive graph hint copy from the workspace
+- refine node card spacing and type hierarchy
+- validate the cleanup with local checks/tests
+
+### Work Completed
+- Session started; current branch state, latest progress-log entries, and the minimap/node-card code paths were reviewed before editing.
+- Removed the minimap markup and its app-level initialization path so the graph no longer renders an unnecessary secondary navigator.
+- Removed the passive `Drag nodes. Drag canvas to pan.` hint from the workspace.
+- Tightened node-card padding, chip sizing, title/meta hierarchy, and summary height so the cards read cleaner and lighter.
+- Updated stylesheet and script asset versions so the browser picks up the minimap removal and card refinements immediately.
+- Verified the cleanup with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `90c62a7` - `style: remove minimap and tighten graph cards`
+- Push status:
+  - pending docs commit and push for this session
+
+### Current Status
+- The workspace has shed the minimap and passive hint, and node cards are visually tighter.
+
+### Next Recommended Step
+- Do one last browser pass to decide whether the node cards are now finished or need one more typography adjustment.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
