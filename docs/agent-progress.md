@@ -490,6 +490,8 @@
 - Kept the bottom action dock for broader editing, but moved the primary "branch from this node" action closer to the canvas to better match a mind-mapping flow.
 - Updated the viewport interaction guard so using the floating quick-create panel does not accidentally trigger graph panning.
 - Added cache-busted graph asset references for the updated workspace interaction pass and extended the workspace page test to cover the quick-create affordance.
+- Fixed a follow-up runtime failure where the viewport controller fired before `nodesById` was initialized, which prevented the graph from rendering at all after the quick-create change.
+- Bumped the graph workspace asset versions again so browsers are forced off the broken quick-create build and onto the initialization fix.
 - Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
 ### Files Changed

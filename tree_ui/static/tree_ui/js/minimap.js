@@ -1,4 +1,4 @@
-import { getNodeBounds } from "./canvas.js?v=20260321-node-select-fix";
+import { getNodeBounds } from "./canvas.js?v=20260321-quick-child-init-fix";
 
 const MINIMAP_WIDTH = 220;
 const MINIMAP_HEIGHT = 148;

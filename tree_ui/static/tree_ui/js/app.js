@@ -1,8 +1,8 @@
-import { postJSON } from "./api.js?v=20260321-quick-child";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-quick-child";
-import { createMinimapController } from "./minimap.js?v=20260321-quick-child";
-import { syncModelOptions } from "./model-options.js?v=20260321-quick-child";
-import { createViewportController } from "./viewport.js?v=20260321-quick-child";
+import { postJSON } from "./api.js?v=20260321-quick-child-init-fix";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260321-quick-child-init-fix";
+import { createMinimapController } from "./minimap.js?v=20260321-quick-child-init-fix";
+import { syncModelOptions } from "./model-options.js?v=20260321-quick-child-init-fix";
+import { createViewportController } from "./viewport.js?v=20260321-quick-child-init-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
@@ -78,15 +78,15 @@ function handleViewportChange(viewportState) {
   updateQuickCreatePosition();
 }
 
+const nodesById = new Map(payload.nodes.map((node) => [String(node.id), node]));
+let selectedNodeId = String(payload.nodes[0]?.id || "");
+
 const viewport = createViewportController({ onChange: handleViewportChange });
 minimap = createMinimapController({
   onNavigate: (point) => viewport.centerOnPoint(point),
 });
 
 workspaceName.textContent = payload.workspace.name;
-
-const nodesById = new Map(payload.nodes.map((node) => [String(node.id), node]));
-let selectedNodeId = String(payload.nodes[0]?.id || "");
 
 function getSelectedNode() {
   return nodesById.get(selectedNodeId) || null;
