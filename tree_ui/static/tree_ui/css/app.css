@@ -598,7 +598,7 @@ body:has(.chat-page-immersive) .page-shell {
 
 .chat-content-shell {
   position: relative;
-  width: var(--chat-shell-width);
+  width: 100%;
   height: 100%;
   min-height: 0;
 }
@@ -2093,7 +2093,7 @@ kbd {
 
 .chat-jump-button {
   position: absolute;
-  right: 12px;
+  right: max(12px, calc((100vw - var(--chat-shell-width)) / 2));
   bottom: 198px;
   z-index: 4;
   min-height: 40px;

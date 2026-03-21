@@ -349,6 +349,44 @@
 ### Known Issues / Blockers / Tech Debt
 - Pure padding-based centering has proven too brittle for this page layout.
 
+## Session 2026-03-21 10:20
+
+### Session Goal
+- Move the focused-chat scrollbar back to the far right edge of the viewport while keeping the conversation itself centered.
+
+### Planned Tasks
+- inspect which chat container currently owns the scrollbar
+- widen the scrollable shell back to full width while keeping inner chat content centered
+- verify that the transcript and composer alignment remain stable after the scrollbar move
+
+### Work Completed
+- Session started; the centered chat shell layout was reviewed before editing.
+- Changed the transcript shell back to full width so the scrollable container once again owns the full viewport width and the scrollbar can sit on the far right edge.
+- Kept the conversation content centered by leaving the message column width constraint on the transcript children instead of the outer scroll shell.
+- Repositioned the `Jump to latest` control against the centered chat column boundary so it stays visually associated with the conversation even after the scrollbar moves outward.
+- Verified the scrollbar-shell adjustment with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The chat scrollbar is now owned by the full-width transcript shell rather than the centered inner shell.
+
+### Next Recommended Step
+- Commit and push the scrollbar alignment fix, then verify it in the browser with a normal refresh.
+
+### Known Issues / Blockers / Tech Debt
+- None newly recorded yet for this session.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal
