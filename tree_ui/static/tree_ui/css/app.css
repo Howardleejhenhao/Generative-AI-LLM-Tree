@@ -522,8 +522,9 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .chat-transcript-minimal > * {
-  width: 100%;
-  margin-inline: 0;
+  width: var(--chat-shell-width);
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 .chat-message {

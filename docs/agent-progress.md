@@ -387,6 +387,39 @@
 ### Known Issues / Blockers / Tech Debt
 - None newly recorded yet for this session.
 
+## Session 2026-03-21 10:22
+
+### Session Goal
+- Keep the conversation column exactly as before while moving only the scrollbar to the far right edge.
+
+### Planned Tasks
+- inspect the latest scrollbar-related CSS change
+- restore the centered message column width while leaving the scroll shell full width
+- verify the layout logic with checks/tests and push the minimal correction
+
+### Work Completed
+- Session started; the latest scrollbar-related CSS change was reviewed before editing.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The requested adjustment is now narrowed to restoring only the centered message-column width inside the full-width scroll shell.
+
+### Next Recommended Step
+- Keep the full-width scroll shell, but re-apply the previous centered message width inside it.
+
+### Known Issues / Blockers / Tech Debt
+- None newly recorded yet for this session.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal
