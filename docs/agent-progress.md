@@ -304,6 +304,47 @@
 ### Known Issues / Blockers / Tech Debt
 - The node-chat view still computes lineage and child-branch context on the server even though those blocks are no longer rendered in the template.
 
+## Session 2026-03-21 10:08
+
+### Session Goal
+- Fix the remaining perceived chat misalignment by changing the node-chat layout structure, not just tweaking spacing.
+- Make the transcript, jump button, and composer share the same centered content shell.
+
+### Planned Tasks
+- inspect the current node-chat template/CSS to identify why the page still reads as off-center
+- add a dedicated centered shell around the transcript region
+- align the jump button and composer to that same shell
+- validate with checks/tests and push the correction
+
+### Work Completed
+- Session started; the current node-chat template and stylesheet were reviewed before editing.
+- Added a dedicated centered `chat-content-shell` wrapper so the transcript area now has a single explicit alignment anchor instead of relying on padding math alone.
+- Bound the `Jump to latest` control to that same centered shell so it no longer floats relative to the full viewport width.
+- Re-aligned the composer wrapper to the same centered width as the transcript shell, making transcript, jump control, and composer share one visual center line.
+- Verified the structural centering fix with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The transcript, jump button, and composer now share a centered shell in the layout structure instead of separate viewport-relative anchors.
+
+### Next Recommended Step
+- Commit and push the centering fix, then verify the browser rendering against the exact page that previously looked off-center.
+
+### Known Issues / Blockers / Tech Debt
+- Pure padding-based centering has proven too brittle for this page layout.
+
 ## Session 2026-03-20 11:11
 
 ### Session Goal

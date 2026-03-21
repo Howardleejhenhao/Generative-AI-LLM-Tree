@@ -587,9 +587,18 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .chat-content-column {
+  display: flex;
+  justify-content: center;
   height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+.chat-content-shell {
+  position: relative;
+  width: min(860px, calc(100vw - 48px));
+  height: 100%;
+  min-height: 0;
 }
 
 .chat-composer-wrap {
@@ -598,6 +607,8 @@ body:has(.chat-page-immersive) .page-shell {
   right: 24px;
   bottom: 22px;
   z-index: 4;
+  display: flex;
+  justify-content: center;
   pointer-events: none;
 }
 
@@ -612,7 +623,8 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-composer-minimal {
   position: relative;
   margin-top: 0;
-  width: min(860px, calc(100vw - 48px));
+  width: 100%;
+  max-width: 860px;
   margin-inline: auto;
   padding: 10px 12px 10px;
   border: 1px solid rgba(74, 58, 40, 0.12);
@@ -2083,7 +2095,7 @@ kbd {
 
 .chat-jump-button {
   position: absolute;
-  right: 24px;
+  right: 12px;
   bottom: 198px;
   z-index: 4;
   min-height: 40px;
@@ -2230,6 +2242,7 @@ kbd {
 
   .chat-content-column,
   .chat-composer-wrap,
+  .chat-content-shell,
   .chat-transcript-minimal {
     width: 100%;
   }
