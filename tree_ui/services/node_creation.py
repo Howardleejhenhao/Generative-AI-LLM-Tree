@@ -11,12 +11,8 @@ from tree_ui.services.context_builder import (
     build_branch_lineage,
     build_generation_messages,
 )
-from tree_ui.services.providers import ProviderError, generate_text
-
-DEFAULT_MODELS = {
-    ConversationNode.Provider.OPENAI: "gpt-4.1-mini",
-    ConversationNode.Provider.GEMINI: "gemini-2.0-flash",
-}
+from tree_ui.services.model_catalog import resolve_model_name
+from tree_ui.services.providers import ProviderError, generate_text, stream_text
 
 
 def _build_summary(prompt: str) -> str:
@@ -101,7 +97,7 @@ def resolve_node_creation_inputs(
     if provider not in ConversationNode.Provider.values:
         raise ValueError("Unsupported provider.")
 
-    resolved_model = model_name.strip() or DEFAULT_MODELS[provider]
+    resolved_model = resolve_model_name(provider=provider, model_name=model_name)
     position_x, position_y = _calculate_position(workspace=workspace, parent=parent)
 
     return {
@@ -132,6 +128,39 @@ def iter_text_chunks(text: str, chunk_size: int = 24):
             time.sleep(settings.LLM_STREAM_CHUNK_DELAY_SECONDS)
 
 
+def stream_assistant_reply(
+    *,
+    parent: ConversationNode | None,
+    provider: str,
+    model_name: str,
+    prompt: str,
+):
+    context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    emitted_chunk = False
+
+    try:
+        for chunk in stream_text(
+            provider_name=provider,
+            model_name=model_name,
+            messages=context_messages,
+            system_instruction=SYSTEM_INSTRUCTION,
+        ):
+            emitted_chunk = True
+            yield chunk
+    except ProviderError as exc:
+        if emitted_chunk:
+            raise
+
+        fallback_message = _build_fallback_assistant_message(
+            parent=parent,
+            provider=provider,
+            model_name=model_name,
+            prompt=prompt,
+            reason=str(exc),
+        )
+        yield from iter_text_chunks(fallback_message)
+
+
 def create_node(
     *,
     workspace: Workspace,
@@ -156,6 +185,20 @@ def create_node(
         model_name=resolved_inputs["model_name"],
         position_x=resolved_inputs["position_x"],
         position_y=resolved_inputs["position_y"],
+    )
+
+
+def create_continuation_child(
+    *,
+    source_node: ConversationNode,
+    title: str,
+) -> ConversationNode:
+    return create_node(
+        workspace=source_node.workspace,
+        parent=source_node,
+        title=title,
+        provider=source_node.provider,
+        model_name=source_node.model_name,
     )
 
 

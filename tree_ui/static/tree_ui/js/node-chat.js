@@ -3,6 +3,7 @@ import { streamJSON } from "./streaming.js";
 
 const payload = JSON.parse(document.getElementById("node-chat-payload").textContent);
 
+const jumpButton = document.getElementById("chat-jump-button");
 const transcript = document.getElementById("chat-transcript");
 const form = document.getElementById("chat-form");
 const promptInput = document.getElementById("chat-prompt-input");
@@ -18,14 +19,39 @@ function resizePromptInput() {
   promptInput.style.overflowY = promptInput.scrollHeight > PROMPT_MAX_HEIGHT ? "auto" : "hidden";
 }
 
-function renderTranscript(extraMessages = []) {
-  renderChatTranscript(transcript, [...payload.messages, ...extraMessages]);
+function isNearBottom() {
+  return transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 80;
+}
+
+function scrollToBottom() {
   transcript.scrollTop = transcript.scrollHeight;
+  updateJumpButton();
+}
+
+function updateJumpButton() {
+  jumpButton.hidden = isNearBottom();
+}
+
+function renderTranscript(extraMessages = []) {
+  const shouldStick = isNearBottom();
+  renderChatTranscript(transcript, [...payload.messages, ...extraMessages]);
+  if (shouldStick) {
+    scrollToBottom();
+  }
+  updateJumpButton();
 }
 
 async function handleSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
+  const submittedPrompt = promptInput.value;
+  if (!submittedPrompt.trim()) {
+    feedback.textContent = "Prompt is required.";
+    return;
+  }
+
+  promptInput.value = "";
+  resizePromptInput();
   submitButton.disabled = true;
   let previewPrompt = "";
   let assistantText = "";
@@ -34,14 +60,16 @@ async function handleSubmit(event) {
     await streamJSON(
       form.dataset.nodeMessageStreamUrl,
       {
-        prompt: promptInput.value,
+        prompt: submittedPrompt,
       },
       csrfToken,
       {
         preview(data) {
           previewPrompt = data.prompt;
           assistantText = "";
-          feedback.textContent = `Streaming reply from ${data.provider} / ${data.model_name}...`;
+          feedback.textContent = data.created_new_branch
+            ? `This node already has children. Continuing in a new child branch via ${data.provider} / ${data.model_name}...`
+            : `Streaming reply from ${data.provider} / ${data.model_name}...`;
           renderTranscript([
             {
               role: "user",
@@ -52,6 +80,7 @@ async function handleSubmit(event) {
               content: "Generating...",
             },
           ]);
+          scrollToBottom();
         },
         delta(data) {
           assistantText += data.delta;
@@ -65,13 +94,20 @@ async function handleSubmit(event) {
               content: assistantText || "Generating...",
             },
           ]);
+          if (isNearBottom()) {
+            scrollToBottom();
+          }
         },
         node(data) {
+          if (data.created_new_branch && data.node_chat_url) {
+            window.location.href = data.node_chat_url;
+            return;
+          }
           payload.messages = data.node.messages;
-          promptInput.value = "";
           resizePromptInput();
           feedback.textContent = "Reply added to this node.";
           renderTranscript();
+          scrollToBottom();
         },
         error(data) {
           throw new Error(data.message || "Streaming request failed.");
@@ -79,6 +115,10 @@ async function handleSubmit(event) {
       },
     );
   } catch (error) {
+    if (!previewPrompt) {
+      promptInput.value = submittedPrompt;
+      resizePromptInput();
+    }
     feedback.textContent = error.message;
     renderTranscript();
   } finally {
@@ -86,7 +126,18 @@ async function handleSubmit(event) {
   }
 }
 
+function handlePromptKeydown(event) {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    form.requestSubmit();
+    event.preventDefault();
+  }
+}
+
 promptInput.addEventListener("input", resizePromptInput);
+promptInput.addEventListener("keydown", handlePromptKeydown);
+transcript.addEventListener("scroll", updateJumpButton);
+jumpButton.addEventListener("click", scrollToBottom);
 form.addEventListener("submit", handleSubmit);
 resizePromptInput();
 renderTranscript();
+scrollToBottom();

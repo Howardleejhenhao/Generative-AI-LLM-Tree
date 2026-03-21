@@ -76,7 +76,7 @@ def build_demo_workspace_payload() -> dict:
                 "title": "Gemini Angle",
                 "summary": "Explore alternate phrasing and comparative branch outcomes.",
                 "provider": "gemini",
-                "model_name": "gemini-2.0-flash",
+                "model_name": "gemini-2.5-flash",
                 "position": {"x": 420, "y": 310},
                 "messages": [
                     {
@@ -103,7 +103,7 @@ def build_demo_workspace_payload() -> dict:
                 "title": "Edited Re-branch",
                 "summary": "Version-safe branch created from an older node revision.",
                 "provider": "gemini",
-                "model_name": "gemini-2.0-pro-exp",
+                "model_name": "gemini-2.5-pro",
                 "position": {"x": 760, "y": 150},
                 "messages": [
                     {

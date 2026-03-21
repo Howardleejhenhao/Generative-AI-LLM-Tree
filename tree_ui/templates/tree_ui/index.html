@@ -5,40 +5,16 @@
 
 {% block content %}
   <section class="hero hero-compact">
-    <div>
-      <p class="eyebrow">Conversation DAG</p>
-      <h1>Use the graph as the main workspace, not a side panel.</h1>
-      <p class="hero-copy">
-        Pan, zoom, branch, and compare model paths directly on the canvas, then open any node
-        into its own focused chat session when you need to go deeper.
-      </p>
-    </div>
-    <div class="hero-meta">
-      <div>
-        <span class="meta-label">Providers</span>
-        <strong>OpenAI + Gemini</strong>
-      </div>
-      <div>
-        <span class="meta-label">Context Rule</span>
-        <strong>Root to selected node only</strong>
-      </div>
-      <div>
-        <span class="meta-label">Layout</span>
-        <strong>Zoomable graph workspace</strong>
-      </div>
+    <div class="hero-copy-block">
+      <h1>LLM tree</h1>
+      <p class="hero-footnote">A branching chat workspace for exploring conversations as a graph.</p>
     </div>
   </section>
 
   <section class="workspace-toolbar workspace-toolbar-compact">
-    <div class="workspace-switcher">
-      <div class="workspace-toolbar-heading">
-        <p class="eyebrow">Workspaces</p>
-        <h2>Pick the graph you want to work in.</h2>
-        <p class="workspace-toolbar-copy">
-          Each workspace keeps its own graph, node chats, and branching experiments.
-        </p>
-      </div>
-      <div class="workspace-list">
+    <div class="workspace-switcher workspace-switcher-inline">
+      <p class="workspace-inline-label">Workspaces</p>
+      <div class="workspace-list workspace-list-inline">
         {% for workspace in workspace_list %}
           <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
             {{ workspace.name }}
@@ -46,49 +22,85 @@
         {% endfor %}
       </div>
     </div>
-    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
+    <form class="workspace-create-form workspace-create-form-inline" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
       {% csrf_token %}
       <p class="workspace-create-kicker">Create Workspace</p>
-      <h2>Start a separate graph.</h2>
-      <p class="workspace-create-copy">
-        Spin up another workspace for a new project, client, or branch-heavy experiment.
-      </p>
-      <div class="workspace-create-row">
-        <label class="form-field workspace-create-field">
-          <span>Name</span>
-          <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
-        </label>
-        <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
-      </div>
+      <label class="form-field workspace-create-field workspace-create-field-inline">
+        <span class="sr-only">Workspace name</span>
+        <input id="workspace-name-input" type="text" maxlength="120" placeholder="New workspace">
+      </label>
+      <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
       <p class="form-feedback workspace-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
     </form>
   </section>
 
-  <section class="workspace-shell" id="workspace-shell" data-detail-panel-collapsed="false">
+  <section class="workspace-shell" id="workspace-shell">
     <div class="canvas-panel">
       <div class="panel-header panel-header-workspace">
         <div class="canvas-panel-heading">
-          <p class="panel-kicker">Graph View</p>
+          <p class="panel-kicker">Workspace</p>
           <h2 id="workspace-name">Workspace</h2>
           <div class="workspace-summary-strip">
-            <span class="workspace-summary-pill">{{ graph_payload.nodes|length }} nodes on canvas</span>
-            <span class="workspace-summary-pill">{{ workspace_list|length }} workspaces available</span>
-            <span class="workspace-summary-pill">Graph-first editing flow</span>
+            <span class="workspace-summary-pill" id="workspace-node-pill">{{ graph_payload.nodes|length }} nodes</span>
+            <span class="workspace-summary-pill">{{ workspace_list|length }} workspaces</span>
           </div>
         </div>
         <div class="canvas-panel-actions">
-          <p class="panel-note">Select a node to inspect the conversation container, then open its dedicated chat view.</p>
-          <button class="detail-toggle-button" id="detail-panel-toggle" type="button" aria-expanded="true" aria-controls="detail-panel">
-            Hide inspector
+          <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-help-toggle" type="button" aria-expanded="false" aria-controls="workspace-help-dialog">
+            Shortcuts
+          </button>
+          <button
+            class="detail-toggle-button detail-toggle-button-danger"
+            id="workspace-delete-button"
+            type="button"
+            data-delete-workspace-url="{% url 'delete_workspace' graph_payload.workspace.slug %}"
+          >
+            Delete workspace
           </button>
         </div>
       </div>
+      <div class="workspace-stage-bar workspace-stage-bar-minimal">
+        <div class="workspace-command-bar">
+          <div class="workspace-search-shell workspace-search-shell-compact">
+            <label class="workspace-search-field workspace-search-field-inline" for="workspace-search-input">
+              <span class="sr-only">Search nodes</span>
+              <i class="workspace-search-slash">/</i>
+              <input
+                id="workspace-search-input"
+                type="search"
+                placeholder="Search"
+                autocomplete="off"
+              >
+            </label>
+            <label class="workspace-search-field workspace-search-filter workspace-search-filter-inline" for="workspace-search-provider">
+              <span class="sr-only">Filter provider</span>
+              <select id="workspace-search-provider">
+                <option value="all">All</option>
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </label>
+          </div>
+          <div class="workspace-focus-inline workspace-focus-inline-compact">
+            <div class="workspace-focus-copy workspace-focus-copy-inline">
+              <strong id="workspace-selection-title">No node selected</strong>
+              <span id="workspace-selection-summary">Select node</span>
+            </div>
+            <div class="workspace-selection-flags">
+              <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
+              <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+              <button class="detail-toggle-button detail-toggle-button-danger" id="node-delete-button" type="button" disabled>
+                Delete node
+              </button>
+            </div>
+          </div>
+          <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd></p>
+        </div>
+        <div class="workspace-search-results" id="workspace-search-results" hidden></div>
+      </div>
       <div class="graph-stage" id="graph-stage">
-        <button class="detail-peek-button" id="detail-panel-peek" type="button" hidden>
-          Show inspector
-        </button>
         <div class="graph-controls" aria-label="Graph zoom controls">
-          <p class="graph-controls-label">Workspace Zoom</p>
+          <p class="graph-controls-label">Zoom</p>
           <div class="graph-controls-row">
             <button class="graph-control-button" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
             <span class="graph-zoom-level" id="graph-zoom-level">100%</span>
@@ -97,120 +109,197 @@
             <button class="graph-control-button graph-control-button-reset" id="graph-zoom-reset" type="button">Reset</button>
           </div>
         </div>
-        <section class="graph-minimap" id="graph-minimap" hidden>
-          <div class="graph-minimap-header">
-            <p class="graph-controls-label">Minimap</p>
-            <span class="graph-minimap-meta">Click to jump</span>
-          </div>
-          <svg class="graph-minimap-svg" id="graph-minimap-svg" viewBox="0 0 220 148" aria-label="Graph minimap"></svg>
+        <section class="graph-quick-create" id="graph-quick-create" hidden data-open="false" aria-label="Quick child node creation">
+          <button
+            class="graph-quick-create-toggle"
+            id="graph-quick-create-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="graph-quick-create-panel"
+            aria-label="Add child node"
+          >
+            +
+          </button>
+          <form class="graph-quick-create-panel" id="graph-quick-create-panel" hidden>
+            <p class="graph-quick-create-label" id="graph-quick-create-label">Add child</p>
+            <label class="graph-quick-create-field" for="quick-node-title-input">
+              <span class="sr-only">Child node title</span>
+              <input id="quick-node-title-input" name="title" type="text" maxlength="160" placeholder="Child title">
+            </label>
+            <div class="graph-quick-create-row">
+              <label class="graph-quick-create-field" for="quick-node-provider-input">
+                <span class="sr-only">Child node provider</span>
+                <select id="quick-node-provider-input" name="provider" aria-label="Child node provider">
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              </label>
+              <label class="graph-quick-create-field" for="quick-node-model-input">
+                <span class="sr-only">Child node model</span>
+                <select id="quick-node-model-input" name="model_name" aria-label="Child node model"></select>
+              </label>
+            </div>
+            <div class="graph-quick-create-actions">
+              <button class="primary-button graph-quick-create-submit" id="quick-node-submit-button" type="submit">Add child</button>
+              <button class="detail-toggle-button detail-toggle-button-quiet graph-quick-create-cancel" id="graph-quick-create-cancel" type="button">Close</button>
+            </div>
+            <p class="form-feedback graph-quick-create-feedback" id="quick-node-feedback" role="status" aria-live="polite"></p>
+          </form>
         </section>
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
-            No nodes yet. Create the root node to start the conversation tree.
+            <div class="graph-empty-copy-block">
+              <strong>No nodes yet.</strong>
+              <p>Start with a root.</p>
+            </div>
+            <div class="graph-empty-presets">
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Research lane"
+                data-provider="openai"
+                data-model-name="gpt-4.1-mini"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Research lane</span>
+                <span class="quick-start-meta">OpenAI / gpt-4.1-mini</span>
+                <span class="quick-start-copy">Start a general-purpose exploration branch.</span>
+              </button>
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Model comparison"
+                data-provider="gemini"
+                data-model-name="gemini-2.5-flash"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Model comparison</span>
+                <span class="quick-start-meta">Gemini / gemini-2.5-flash</span>
+                <span class="quick-start-copy">Spin up a separate branch for side-by-side output comparison.</span>
+              </button>
+              <button
+                class="quick-start-button"
+                type="button"
+                data-title="Branch review"
+                data-provider="openai"
+                data-model-name="gpt-4.1"
+                data-root-mode="true"
+              >
+                <span class="quick-start-label">Branch review</span>
+                <span class="quick-start-meta">OpenAI / gpt-4.1</span>
+                <span class="quick-start-copy">Create a root conversation intended for critique and iteration.</span>
+              </button>
+            </div>
           </div>
           <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
           <div class="graph-nodes" id="graph-nodes"></div>
         </div>
         <p class="graph-status" id="graph-status" data-node-position-url-template="{% url 'update_node_position' graph_payload.workspace.slug 999999 %}" role="status" aria-live="polite"></p>
-        <p class="graph-hint" id="graph-hint">Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.</p>
       </div>
-    </div>
-
-    <aside class="detail-panel" id="detail-panel">
-      <div class="panel-header">
-        <div>
-          <p class="panel-kicker">Node Detail</p>
-          <h2 id="node-title">Select a node</h2>
-        </div>
-        <div class="detail-panel-actions">
-          <a
-            class="detail-link-button"
-            id="open-chat-link"
-            href="#"
-            data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}"
-            hidden
-          >
-            Open chat view
-          </a>
-          <span class="status-chip" id="node-provider">Waiting</span>
-        </div>
-      </div>
-
-      <dl class="node-metadata">
-        <div>
-          <dt>Model</dt>
-          <dd id="node-model">-</dd>
-        </div>
-        <div>
-          <dt>Branch Source</dt>
-          <dd id="node-parent">-</dd>
-        </div>
-        <div>
-          <dt>Summary</dt>
-          <dd id="node-summary">Select a node on the canvas to inspect its contents.</dd>
-        </div>
-      </dl>
-
-      <section class="action-box action-box-preview">
-        <h3>Recent Activity</h3>
-        <p class="edit-note">The full transcript now lives inside the node chat view. This panel only shows the latest messages.</p>
-        <div class="message-list" id="message-list"></div>
-      </section>
-      <section class="action-box">
-        <h3>Create Conversation Node</h3>
-        <p id="streaming-status">
-          This page now only creates conversation containers. Open a node after creation to start chatting inside it.
-        </p>
-        <form class="composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
+      <section class="graph-action-dock">
+        <form class="graph-action-form composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
           {% csrf_token %}
           <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
-          <p class="form-target" id="form-target">New node target: root</p>
-          <label class="form-toggle" for="root-mode-toggle">
+          <div class="graph-action-target">
+            <p class="panel-kicker">Create</p>
+            <strong id="form-target">Root</strong>
+          </div>
+          <label class="graph-action-toggle" for="root-mode-toggle">
             <input id="root-mode-toggle" type="checkbox">
-            <span>Create as a separate root conversation</span>
+            <span>New root</span>
           </label>
-          <label class="form-field">
-            <span>Title</span>
-            <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Optional node title">
+          <label class="graph-action-field graph-action-field-title" for="node-title-input">
+            <span class="sr-only">Node title</span>
+            <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Node title">
           </label>
-          <label class="form-field">
-            <span>Provider</span>
-            <select id="node-provider-input" name="provider">
+          <label class="graph-action-field" for="node-provider-input">
+            <span class="sr-only">Provider</span>
+            <select id="node-provider-input" name="provider" aria-label="Provider">
               <option value="openai">OpenAI</option>
               <option value="gemini">Gemini</option>
             </select>
           </label>
-          <label class="form-field">
-            <span>Model</span>
-            <select id="node-model-input" name="model_name"></select>
+          <label class="graph-action-field graph-action-field-model" for="node-model-input">
+            <span class="sr-only">Model</span>
+            <select id="node-model-input" name="model_name" aria-label="Model"></select>
           </label>
-          <button class="primary-button" id="node-submit-button" type="submit">Create conversation node</button>
+          <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
           <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
         </form>
-        <div class="legend">
+        <div class="legend graph-action-legend">
           <span class="legend-pill legend-pill-openai">OpenAI branch</span>
           <span class="legend-pill legend-pill-gemini">Gemini branch</span>
         </div>
       </section>
+    </div>
+  </section>
 
-      <section class="action-box" id="edit-box">
-        <h3>Edit Into New Variant</h3>
-        <p class="edit-note">
-          This creates a new version-safe node and keeps the original history unchanged.
-        </p>
-        <form class="composer-form" id="edit-form" data-node-edit-url-template="{% url 'create_edited_node_variant' graph_payload.workspace.slug 999999 %}">
-          <label class="form-field">
-            <span>Variant Title</span>
-            <input id="edit-title-input" name="title" type="text" maxlength="160" placeholder="Edited node title">
-          </label>
-          <div class="editor-list" id="edit-message-list"></div>
-          <button class="secondary-button" id="edit-submit-button" type="submit">Create edited variant</button>
-          <p class="form-feedback" id="edit-feedback" role="status" aria-live="polite"></p>
-        </form>
-      </section>
-    </aside>
+  <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
+  <div id="node-delete-url-template" data-node-delete-url-template="{% url 'delete_workspace_node' graph_payload.workspace.slug 999999 %}" hidden></div>
+  <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
+    <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
+    <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">
+      <div class="workspace-help-header">
+        <div>
+          <p class="panel-kicker">Workspace Shortcuts</p>
+          <h2 id="workspace-help-title">Keyboard navigation for the graph</h2>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-help-close" type="button">
+          Close
+        </button>
+      </div>
+      <div class="workspace-help-grid">
+        <article class="workspace-help-section">
+          <h3>Viewport</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>+</kbd> / <kbd>=</kbd></dt><dd>Zoom in</dd></div>
+            <div><dt><kbd>-</kbd></dt><dd>Zoom out</dd></div>
+            <div><dt><kbd>0</kbd></dt><dd>Reset zoom</dd></div>
+            <div><dt><kbd>F</kbd></dt><dd>Fit graph to view</dd></div>
+          </dl>
+        </article>
+        <article class="workspace-help-section">
+          <h3>Workspace</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>?</kbd></dt><dd>Open or close this help panel</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>Close the help panel</dd></div>
+            <div><dt><kbd>/</kbd></dt><dd>Jump to search</dd></div>
+          </dl>
+        </article>
+        <article class="workspace-help-section">
+          <h3>Build</h3>
+          <dl class="workspace-help-list">
+            <div><dt><kbd>C</kbd></dt><dd>Open selected node chat</dd></div>
+            <div><dt><kbd>Click</kbd></dt><dd>Select a node</dd></div>
+            <div><dt><kbd>Drag</kbd></dt><dd>Move a node and persist its layout</dd></div>
+          </dl>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="confirm-dialog" id="confirm-dialog" hidden aria-hidden="true">
+    <div class="confirm-dialog-backdrop" id="confirm-dialog-backdrop"></div>
+    <div class="confirm-dialog-card" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <div class="confirm-dialog-header">
+        <div>
+          <p class="panel-kicker" id="confirm-dialog-kicker">Delete</p>
+          <h2 id="confirm-dialog-title">Confirm action</h2>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="confirm-dialog-cancel" type="button">
+          Cancel
+        </button>
+      </div>
+      <p class="confirm-dialog-copy" id="confirm-dialog-copy"></p>
+      <p class="confirm-dialog-warning" id="confirm-dialog-warning"></p>
+      <p class="form-feedback confirm-dialog-feedback" id="confirm-dialog-feedback" role="status" aria-live="polite"></p>
+      <div class="confirm-dialog-actions">
+        <button class="primary-button danger-button" id="confirm-dialog-confirm" type="button">
+          Delete
+        </button>
+      </div>
+    </div>
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-graph-hint-fix"></script>
 {% endblock %}

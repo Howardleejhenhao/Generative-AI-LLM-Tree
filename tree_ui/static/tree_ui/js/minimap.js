@@ -1,4 +1,4 @@
-import { getNodeBounds } from "./canvas.js";
+import { getNodeBounds } from "./canvas.js?v=20260321-branch-handle-tighten";
 
 const MINIMAP_WIDTH = 220;
 const MINIMAP_HEIGHT = 148;

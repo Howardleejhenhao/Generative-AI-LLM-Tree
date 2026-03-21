@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from typing import Iterator
+
 from django.conf import settings
 
 from tree_ui.models import ConversationNode
 from tree_ui.services.context_builder import ContextMessage
+from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.providers.base import GenerationResult, ProviderError
 from tree_ui.services.providers.gemini_provider import GeminiProvider
 from tree_ui.services.providers.openai_provider import OpenAIProvider
@@ -33,8 +36,25 @@ def generate_text(
     system_instruction: str,
 ) -> GenerationResult:
     provider = _get_provider(provider_name)
+    resolved_model_name = resolve_model_name(provider=provider_name, model_name=model_name)
     return provider.generate(
-        model_name=model_name,
+        model_name=resolved_model_name,
+        messages=messages,
+        system_instruction=system_instruction,
+    )
+
+
+def stream_text(
+    *,
+    provider_name: str,
+    model_name: str,
+    messages: list[ContextMessage],
+    system_instruction: str,
+) -> Iterator[str]:
+    provider = _get_provider(provider_name)
+    resolved_model_name = resolve_model_name(provider=provider_name, model_name=model_name)
+    return provider.generate_stream(
+        model_name=resolved_model_name,
         messages=messages,
         system_instruction=system_instruction,
     )

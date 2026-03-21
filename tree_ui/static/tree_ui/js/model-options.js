@@ -1,6 +1,6 @@
 export const MODEL_OPTIONS = {
   openai: ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"],
-  gemini: ["gemini-2.0-flash", "gemini-2.0-pro-exp", "gemini-1.5-pro"],
+  gemini: ["gemini-2.5-flash", "gemini-2.5-pro"],
 };
 
 export function syncModelOptions(providerSelect, modelSelect) {

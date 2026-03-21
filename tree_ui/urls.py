@@ -12,9 +12,19 @@ urlpatterns = [
     ),
     path("api/workspaces/", views.create_workspace_view, name="create_workspace"),
     path(
+        "api/workspaces/<slug:slug>/delete/",
+        views.delete_workspace_view,
+        name="delete_workspace",
+    ),
+    path(
         "api/workspaces/<slug:slug>/nodes/",
         views.create_workspace_node,
         name="create_workspace_node",
+    ),
+    path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/delete/",
+        views.delete_workspace_node,
+        name="delete_workspace_node",
     ),
     path(
         "api/workspaces/<slug:slug>/nodes/<int:node_id>/position/",

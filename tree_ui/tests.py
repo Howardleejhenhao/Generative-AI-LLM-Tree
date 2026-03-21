@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import override_settings
 from django.test import TestCase
@@ -10,6 +10,7 @@ from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.node_creation import append_messages_to_node
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers.base import GenerationResult
+from tree_ui.services.providers.registry import generate_text as registry_generate_text
 
 
 class WorkspaceGraphViewTests(TestCase):
@@ -26,19 +27,26 @@ class WorkspaceGraphViewTests(TestCase):
         response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Conversation DAG")
+        self.assertContains(response, "LLM tree")
         self.assertContains(response, "graph-payload")
-        self.assertContains(response, "Use the graph as the main workspace, not a side panel.")
-        self.assertContains(
-            response,
-            "Drag nodes to rearrange the layout. Drag the background to pan. Use the zoom controls for larger trees.",
-        )
-        self.assertContains(response, "Workspace Zoom")
+        self.assertContains(response, "A branching chat workspace for exploring conversations as a graph.")
+        self.assertContains(response, "Zoom")
         self.assertContains(response, "Fit view")
-        self.assertContains(response, "Minimap")
-        self.assertContains(response, "Hide inspector")
+        self.assertContains(response, "Shortcuts")
+        self.assertContains(response, "Workspace Shortcuts")
         self.assertContains(response, "Create Workspace")
-        self.assertContains(response, "Pick the graph you want to work in.")
+        self.assertContains(response, "Workspaces")
+        self.assertContains(response, "Research lane")
+        self.assertContains(response, "Search")
+        self.assertContains(response, "Add child node")
+        self.assertContains(response, "Delete workspace")
+        self.assertContains(response, "Delete node")
+        self.assertNotContains(response, "Drag nodes. Drag canvas to pan.")
+        self.assertNotContains(response, "Minimap")
+        self.assertNotContains(response, "Node Detail")
+        self.assertNotContains(response, "Open chat")
+        self.assertNotContains(response, "Recent Activity")
+        self.assertNotContains(response, "Branch / Version Source")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -69,6 +77,36 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
+        self.assertContains(response, "Jump to latest")
+        self.assertContains(response, "想問就問")
+
+    def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Parent node",
+            summary="Discuss the launch plan.",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        ConversationNode.objects.create(
+            workspace=workspace,
+            parent=node,
+            title="Existing child",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "History node")
+        self.assertContains(response, "Continue in new child")
+        self.assertContains(
+            response,
+            "This node already has child branches. Your message will be written into a newly created child branch, not this historical node.",
+        )
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
@@ -83,6 +121,33 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(workspace.name, "Research Space")
         self.assertEqual(workspace.slug, "research-space")
         self.assertIn(reverse("workspace_graph", args=[workspace.slug]), response.json()["redirect_url"])
+
+    def test_can_delete_workspace_via_api_and_redirect(self):
+        first = Workspace.objects.create(name="Main", slug="main")
+        second = Workspace.objects.create(name="Alt", slug="alt")
+
+        response = self.client.post(
+            reverse("delete_workspace", args=[first.slug]),
+            data=json.dumps({"confirm": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Workspace.objects.filter(pk=first.pk).exists())
+        self.assertTrue(Workspace.objects.filter(pk=second.pk).exists())
+        self.assertEqual(response.json()["redirect_url"], reverse("workspace_graph", args=[second.slug]))
+
+    def test_delete_workspace_requires_confirmation(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        response = self.client.post(
+            reverse("delete_workspace", args=[workspace.slug]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Workspace.objects.filter(pk=workspace.pk).exists())
 
     def test_can_create_root_node_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -126,7 +191,7 @@ class WorkspaceGraphViewTests(TestCase):
                 {
                     "title": "Conversation B",
                     "provider": "gemini",
-                    "model_name": "gemini-2.0-flash",
+                    "model_name": "gemini-2.5-flash",
                 }
             ),
             content_type="application/json",
@@ -158,7 +223,7 @@ class WorkspaceGraphViewTests(TestCase):
                 {
                     "title": "Branch node",
                     "provider": "gemini",
-                    "model_name": "gemini-2.0-flash",
+                    "model_name": "gemini-2.5-flash",
                     "parent_id": parent.id,
                 }
             ),
@@ -170,6 +235,73 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    def test_can_delete_node_subtree_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        root = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Branch",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        grandchild = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=branch,
+            title="Grandchild",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        sibling = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Sibling",
+            summary="",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.5-flash",
+        )
+
+        response = self.client.post(
+            reverse("delete_workspace_node", args=[workspace.slug, branch.id]),
+            data=json.dumps({"confirm": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ConversationNode.objects.filter(pk=branch.pk).exists())
+        self.assertFalse(ConversationNode.objects.filter(pk=grandchild.pk).exists())
+        self.assertTrue(ConversationNode.objects.filter(pk=root.pk).exists())
+        self.assertTrue(ConversationNode.objects.filter(pk=sibling.pk).exists())
+        self.assertEqual(set(response.json()["deleted_node_ids"]), {branch.id, grandchild.id})
+        self.assertEqual(response.json()["deleted_count"], 2)
+
+    def test_delete_node_requires_confirmation(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.post(
+            reverse("delete_workspace_node", args=[workspace.slug, node.id]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(ConversationNode.objects.filter(pk=node.pk).exists())
 
     def test_can_create_edited_variant_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -215,6 +347,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(edited.parent, original.parent)
         self.assertEqual(edited.messages.first().content, "Edited prompt")
         self.assertEqual(original.messages.first().content, "Original prompt")
+        self.assertIn(
+            reverse("workspace_node_chat", args=[workspace.slug, edited.id]),
+            response.json()["node_chat_url"],
+        )
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -246,7 +382,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.json()["node"]["position"], {"x": 420, "y": 260})
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
-    def test_can_stream_node_message_append_via_api(self):
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_can_stream_node_message_append_via_api(self, mock_stream_text):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
             workspace=workspace,
@@ -255,6 +392,7 @@ class WorkspaceGraphViewTests(TestCase):
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
         )
+        mock_stream_text.return_value = iter(["Streamed ", "reply"])
 
         response = self.client.post(
             reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -274,6 +412,53 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertIn("event: node", streamed)
         self.assertEqual(ConversationNode.objects.count(), 1)
         self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
+        self.assertEqual(
+            NodeMessage.objects.get(node=node, role=NodeMessage.Role.ASSISTANT).content,
+            "Streamed reply",
+        )
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_streaming_from_non_leaf_node_creates_new_child_branch(self, mock_stream_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        ConversationNode.objects.create(
+            workspace=workspace,
+            parent=node,
+            title="Existing child",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        mock_stream_text.return_value = iter(["Branch ", "reply"])
+
+        response = self.client.post(
+            reverse("stream_node_message", args=[workspace.slug, node.id]),
+            data=json.dumps(
+                {
+                    "prompt": "Continue from the historical node.",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        streamed = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn('"created_new_branch": true', streamed)
+        self.assertEqual(ConversationNode.objects.filter(workspace=workspace).count(), 3)
+        self.assertEqual(NodeMessage.objects.filter(node=node).count(), 0)
+        new_child = ConversationNode.objects.filter(workspace=workspace, parent=node).latest("created_at")
+        self.assertEqual(NodeMessage.objects.filter(node=new_child).count(), 2)
+        self.assertEqual(
+            NodeMessage.objects.get(node=new_child, role=NodeMessage.Role.ASSISTANT).content,
+            "Branch reply",
+        )
 
     def test_branch_local_context_uses_selected_lineage_only(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -316,7 +501,7 @@ class WorkspaceGraphViewTests(TestCase):
             title="Branch B",
             summary="",
             provider=ConversationNode.Provider.GEMINI,
-            model_name="gemini-2.0-flash",
+            model_name="gemini-2.5-flash",
         )
         NodeMessage.objects.create(
             node=sibling_branch,
@@ -366,6 +551,26 @@ class WorkspaceGraphViewTests(TestCase):
             "Real provider output",
         )
         mock_generate_text.assert_called_once()
+
+    @patch("tree_ui.services.providers.registry._get_provider")
+    def test_legacy_gemini_model_alias_is_upgraded_for_generation(self, mock_get_provider):
+        provider = Mock()
+        provider.generate.return_value = GenerationResult(
+            text="Aliased provider output",
+            provider="gemini",
+            model_name="gemini-2.5-flash",
+        )
+        mock_get_provider.return_value = provider
+
+        result = registry_generate_text(
+            provider_name=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.0-flash",
+            messages=[],
+            system_instruction="Test instruction",
+        )
+
+        self.assertEqual(result.model_name, "gemini-2.5-flash")
+        self.assertEqual(provider.generate.call_args.kwargs["model_name"], "gemini-2.5-flash")
 
     def test_create_edited_variant_preserves_original_node(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

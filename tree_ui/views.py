@@ -6,15 +6,16 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from tree_ui.models import ConversationNode, Workspace
+from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     append_messages_to_node_with_reply,
+    create_continuation_child,
     create_node,
-    generate_assistant_reply,
-    iter_text_chunks,
     resolve_message_append_inputs,
     resolve_node_creation_inputs,
+    stream_assistant_reply,
 )
 from tree_ui.services.node_positioning import resolve_node_position_inputs
 from tree_ui.services.workspace_service import (
@@ -77,6 +78,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
     )
     lineage = _build_lineage(node)
     child_nodes = node.children.order_by("created_at")
+    edited_variants = node.edited_variants.order_by("created_at")
 
     return render(
         request,
@@ -100,11 +102,38 @@ def workspace_node_chat(request, slug: str, node_id: int):
                     "title": child.title,
                     "summary": child.summary,
                     "provider": child.provider,
-                    "model_name": child.model_name,
+                    "model_name": resolve_model_name(
+                        provider=child.provider,
+                        model_name=child.model_name,
+                    ),
                     "url": reverse("workspace_node_chat", args=[workspace.slug, child.id]),
                 }
                 for child in child_nodes
             ],
+            "edited_source": (
+                {
+                    "id": node.edited_from.id,
+                    "title": node.edited_from.title,
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, node.edited_from.id]),
+                }
+                if node.edited_from_id
+                else None
+            ),
+            "edited_variants": [
+                {
+                    "id": variant.id,
+                    "title": variant.title,
+                    "summary": variant.summary,
+                    "provider": variant.provider,
+                    "model_name": resolve_model_name(
+                        provider=variant.provider,
+                        model_name=variant.model_name,
+                    ),
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, variant.id]),
+                }
+                for variant in edited_variants
+            ],
+            "can_append_in_place": not child_nodes.exists(),
         },
     )
 
@@ -131,12 +160,40 @@ def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
+def _parse_json_payload(request) -> dict:
+    try:
+        return json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON payload.") from exc
+
+
+def _require_delete_confirmation(payload: dict) -> None:
+    if payload.get("confirm") is not True:
+        raise ValueError("Deletion requires explicit confirmation.")
+
+
+def _collect_subtree_node_ids(*, workspace: Workspace, root_node_id: int) -> list[int]:
+    rows = workspace.nodes.values_list("id", "parent_id")
+    child_map: dict[int | None, list[int]] = {}
+    for node_id, parent_id in rows:
+        child_map.setdefault(parent_id, []).append(node_id)
+
+    subtree_ids: list[int] = []
+    stack = [root_node_id]
+    while stack:
+        current_id = stack.pop()
+        subtree_ids.append(current_id)
+        stack.extend(child_map.get(current_id, []))
+
+    return subtree_ids
+
+
 @require_POST
 def create_workspace_view(request):
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     try:
         workspace = create_workspace(
@@ -161,6 +218,36 @@ def create_workspace_view(request):
 
 
 @require_POST
+def delete_workspace_view(request, slug: str):
+    workspace = get_object_or_404(Workspace, slug=slug)
+
+    try:
+        payload = _parse_json_payload(request)
+        _require_delete_confirmation(payload)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    next_workspace = list_workspaces().exclude(pk=workspace.pk).first()
+    deleted_workspace_name = workspace.name
+    deleted_workspace_slug = workspace.slug
+    workspace.delete()
+
+    return JsonResponse(
+        {
+            "deleted_workspace": {
+                "name": deleted_workspace_name,
+                "slug": deleted_workspace_slug,
+            },
+            "redirect_url": (
+                reverse("workspace_graph", args=[next_workspace.slug])
+                if next_workspace
+                else reverse("workspace_home")
+            ),
+        }
+    )
+
+
+@require_POST
 def create_workspace_node(request, slug: str):
     try:
         workspace, parent, payload = _parse_node_request(request, slug)
@@ -181,7 +268,40 @@ def create_workspace_node(request, slug: str):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    return JsonResponse({"node": serialize_node(node)}, status=201)
+    return JsonResponse(
+        {
+            "node": serialize_node(node),
+            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
+        },
+        status=201,
+    )
+
+
+@require_POST
+def delete_workspace_node(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+
+    try:
+        payload = _parse_json_payload(request)
+        _require_delete_confirmation(payload)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    deleted_node_title = node.title
+    deleted_node_ids = _collect_subtree_node_ids(workspace=workspace, root_node_id=node.id)
+    node.delete()
+
+    return JsonResponse(
+        {
+            "deleted_node": {
+                "id": node_id,
+                "title": deleted_node_title,
+            },
+            "deleted_node_ids": deleted_node_ids,
+            "deleted_count": len(deleted_node_ids),
+        }
+    )
 
 
 @require_POST
@@ -193,9 +313,9 @@ def create_edited_node_variant(request, slug: str, node_id: int):
         workspace=workspace,
     )
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     try:
         node = create_edited_variant(
@@ -206,7 +326,13 @@ def create_edited_node_variant(request, slug: str, node_id: int):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    return JsonResponse({"node": serialize_node(node)}, status=201)
+    return JsonResponse(
+        {
+            "node": serialize_node(node),
+            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
+        },
+        status=201,
+    )
 
 
 @require_POST
@@ -258,33 +384,57 @@ def stream_node_message(request, slug: str, node_id: int):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
+    target_node = node
+    created_new_branch = False
+    if node.children.exists():
+        target_node = create_continuation_child(
+            source_node=node,
+            title=resolved_inputs["summary"],
+        )
+        created_new_branch = True
+
     def event_stream():
         try:
-            assistant_reply = generate_assistant_reply(
-                parent=node,
-                provider=node.provider,
-                model_name=node.model_name,
-                prompt=resolved_inputs["prompt"],
-            )
+            assistant_chunks: list[str] = []
             yield _sse_event(
                 "preview",
                 {
-                    "node_id": node.id,
-                    "title": node.title,
-                    "provider": node.provider,
-                    "model_name": node.model_name,
+                    "node_id": target_node.id,
+                    "title": target_node.title,
+                    "provider": target_node.provider,
+                    "model_name": resolve_model_name(
+                        provider=target_node.provider,
+                        model_name=target_node.model_name,
+                    ),
                     "summary": resolved_inputs["summary"],
                     "prompt": resolved_inputs["prompt"],
+                    "created_new_branch": created_new_branch,
+                    "source_node_id": node.id,
+                    "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, target_node.id]),
                 },
             )
-            for chunk in iter_text_chunks(assistant_reply):
+            for chunk in stream_assistant_reply(
+                parent=target_node,
+                provider=target_node.provider,
+                model_name=target_node.model_name,
+                prompt=resolved_inputs["prompt"],
+            ):
+                assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
             updated_node = append_messages_to_node_with_reply(
-                node=node,
+                node=target_node,
                 prompt=resolved_inputs["prompt"],
-                assistant_reply=assistant_reply,
+                assistant_reply="".join(assistant_chunks),
             )
-            yield _sse_event("node", {"node": serialize_node(updated_node)})
+            yield _sse_event(
+                "node",
+                {
+                    "node": serialize_node(updated_node),
+                    "created_new_branch": created_new_branch,
+                    "source_node_id": node.id,
+                    "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, updated_node.id]),
+                },
+            )
             yield _sse_event("done", {})
         except Exception as exc:
             yield _sse_event("error", {"message": str(exc)})

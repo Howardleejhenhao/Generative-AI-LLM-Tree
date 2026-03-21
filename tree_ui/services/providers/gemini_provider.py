@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import json
+from typing import Iterator
 from urllib import error, parse, request
 
 from tree_ui.services.context_builder import ContextMessage
-from tree_ui.services.providers.base import BaseProvider, GenerationResult, ProviderError
+from tree_ui.services.providers.base import (
+    BaseProvider,
+    GenerationResult,
+    ProviderError,
+    iter_sse_events,
+)
 
 
 def _build_contents(messages: list[ContextMessage]) -> list[dict]:
@@ -36,11 +42,44 @@ def _extract_text(response_data: dict) -> str:
     return combined
 
 
+def _build_payload(
+    *,
+    messages: list[ContextMessage],
+    system_instruction: str,
+) -> dict:
+    return {
+        "system_instruction": {
+            "parts": [{"text": system_instruction}],
+        },
+        "contents": _build_contents(messages),
+    }
+
+
+def _extract_stream_delta(response_data: dict) -> str:
+    if "error" in response_data:
+        message = response_data["error"].get("message") or "Gemini streaming request failed."
+        raise ProviderError(message)
+
+    fragments: list[str] = []
+    for candidate in response_data.get("candidates", []):
+        content = candidate.get("content", {})
+        for part in content.get("parts", []):
+            text = part.get("text")
+            if isinstance(text, str) and text:
+                fragments.append(text)
+
+    return "".join(fragments)
+
+
 class GeminiProvider(BaseProvider):
     provider_name = "gemini"
     endpoint_template = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
         "{model_name}:generateContent?key={api_key}"
+    )
+    streaming_endpoint_template = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        "{model_name}:streamGenerateContent?alt=sse&key={api_key}"
     )
 
     def __init__(self, *, api_key: str, timeout_seconds: int):
@@ -57,18 +96,32 @@ class GeminiProvider(BaseProvider):
         if not self.api_key:
             raise ProviderError("Gemini API key is not configured.")
 
-        payload = {
-            "system_instruction": {
-                "parts": [{"text": system_instruction}],
-            },
-            "contents": _build_contents(messages),
-        }
+        payload = _build_payload(
+            messages=messages,
+            system_instruction=system_instruction,
+        )
         response_data = self._post_json(payload, model_name=model_name)
         return GenerationResult(
             text=_extract_text(response_data),
             provider=self.provider_name,
             model_name=model_name,
         )
+
+    def generate_stream(
+        self,
+        *,
+        model_name: str,
+        messages: list[ContextMessage],
+        system_instruction: str,
+    ) -> Iterator[str]:
+        if not self.api_key:
+            raise ProviderError("Gemini API key is not configured.")
+
+        payload = _build_payload(
+            messages=messages,
+            system_instruction=system_instruction,
+        )
+        yield from self._post_sse(payload, model_name=model_name)
 
     def _post_json(self, payload: dict, *, model_name: str) -> dict:
         endpoint = self.endpoint_template.format(
@@ -91,3 +144,36 @@ class GeminiProvider(BaseProvider):
             raise ProviderError(f"Gemini request failed: {exc.code} {body}") from exc
         except error.URLError as exc:
             raise ProviderError(f"Gemini connection failed: {exc.reason}") from exc
+
+    def _post_sse(self, payload: dict, *, model_name: str) -> Iterator[str]:
+        endpoint = self.streaming_endpoint_template.format(
+            model_name=parse.quote(model_name, safe=""),
+            api_key=parse.quote(self.api_key, safe=""),
+        )
+        http_request = request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+            },
+            method="POST",
+        )
+
+        emitted_delta = False
+        try:
+            with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
+                for event in iter_sse_events(response):
+                    delta = _extract_stream_delta(event["data"])
+                    if not delta:
+                        continue
+                    emitted_delta = True
+                    yield delta
+        except error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="ignore")
+            raise ProviderError(f"Gemini request failed: {exc.code} {body}") from exc
+        except error.URLError as exc:
+            raise ProviderError(f"Gemini connection failed: {exc.reason}") from exc
+
+        if not emitted_delta:
+            raise ProviderError("Gemini stream did not contain text output.")

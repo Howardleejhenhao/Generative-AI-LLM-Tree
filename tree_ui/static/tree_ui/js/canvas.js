@@ -3,6 +3,12 @@ const NODE_FOOTPRINT_WIDTH = 320;
 const NODE_FOOTPRINT_HEIGHT = 180;
 const NODE_MIDPOINT_Y = 70;
 const DRAG_THRESHOLD = 6;
+const DOUBLE_CLICK_MS = 320;
+
+let lastNodeClick = {
+  nodeId: null,
+  timestamp: 0,
+};
 
 export function getNodeBounds(node) {
   return {
@@ -13,7 +19,7 @@ export function getNodeBounds(node) {
   };
 }
 
-function drawEdge(svg, fromNode, toNode) {
+function drawEdge(svg, fromNode, toNode, isActive = false) {
   const startX = fromNode.position.x + NODE_WIDTH;
   const startY = fromNode.position.y + NODE_MIDPOINT_Y;
   const endX = toNode.position.x;
@@ -26,6 +32,7 @@ function drawEdge(svg, fromNode, toNode) {
     `M ${startX} ${startY} C ${startX + curveOffset} ${startY}, ${endX - curveOffset} ${endY}, ${endX} ${endY}`,
   );
   path.setAttribute("class", "graph-edge");
+  path.dataset.active = String(isActive);
   svg.appendChild(path);
 }
 
@@ -68,7 +75,15 @@ function applyNodePosition(card, node) {
 }
 
 export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
-  const { onSelect, onPositionCommit, onMetricsChange, getViewportScale } = handlers;
+  const {
+    activeLineageIds = new Set(),
+    matchedNodeIds = new Set(),
+    onSelect,
+    onOpenChat,
+    onPositionCommit,
+    onMetricsChange,
+    getViewportScale,
+  } = handlers;
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
   const nodeLayer = document.getElementById("graph-nodes");
@@ -95,7 +110,12 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
       const parentNode = nodesById.get(String(node.parent_id));
       if (parentNode) {
-        drawEdge(edgeLayer, parentNode, node);
+        drawEdge(
+          edgeLayer,
+          parentNode,
+          node,
+          activeLineageIds.has(String(parentNode.id)) && activeLineageIds.has(String(node.id)),
+        );
       }
     }
   }
@@ -119,9 +139,21 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     button.className = "graph-node";
     button.dataset.provider = node.provider;
     button.dataset.selected = String(String(node.id) === String(selectedNodeId));
-    button.dataset.suppressClick = "false";
+    button.dataset.lineage = String(activeLineageIds.has(String(node.id)));
+    button.dataset.match = String(matchedNodeIds.has(String(node.id)));
     button.dataset.dragging = "false";
     applyNodePosition(button, node);
+
+    const topLine = document.createElement("span");
+    topLine.className = "graph-node-topline";
+
+    const providerBadge = document.createElement("span");
+    providerBadge.className = "graph-node-provider";
+    providerBadge.textContent = node.provider;
+
+    const messageCount = document.createElement("span");
+    messageCount.className = "graph-node-count";
+    messageCount.textContent = `${node.messages.length} ${node.messages.length === 1 ? "msg" : "msgs"}`;
 
     const title = document.createElement("span");
     title.className = "graph-node-title";
@@ -129,24 +161,30 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
     const meta = document.createElement("span");
     meta.className = "graph-node-meta";
-    meta.textContent = `${node.provider} / ${node.model_name}`;
+    meta.textContent = node.model_name;
 
     const summary = document.createElement("span");
     summary.className = "graph-node-summary";
     summary.textContent = node.summary || "No summary";
 
-    button.append(title, meta, summary);
+    const footer = document.createElement("span");
+    footer.className = "graph-node-footer";
+
+    const state = document.createElement("span");
+    state.className = "graph-node-state";
+    if (node.edited_from_id) {
+      state.textContent = `Edited from ${node.edited_from_id}`;
+    } else if (node.parent_id) {
+      state.textContent = `Child of ${node.parent_id}`;
+    } else {
+      state.textContent = "Root conversation";
+    }
+
+    topLine.append(providerBadge, messageCount);
+    footer.append(state);
+    button.append(topLine, title, meta, summary, footer);
 
     let dragState = null;
-
-    button.addEventListener("click", (event) => {
-      if (button.dataset.suppressClick === "true") {
-        event.preventDefault();
-        button.dataset.suppressClick = "false";
-        return;
-      }
-      onSelect?.(node.id);
-    });
 
     button.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) {
@@ -162,7 +200,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         moved: false,
       };
       button.setPointerCapture(event.pointerId);
-      event.preventDefault();
     });
 
     button.addEventListener("pointermove", (event) => {
@@ -180,7 +217,6 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         dragState.moved = true;
         stage.dataset.nodeDragging = "true";
         button.dataset.dragging = "true";
-        button.dataset.suppressClick = "true";
       }
 
       const scale = Math.max(getViewportScale?.() || 1, 0.01);
@@ -203,6 +239,24 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
 
       if (button.hasPointerCapture(pointerId)) {
         button.releasePointerCapture(pointerId);
+      }
+
+      if (!didMove) {
+        const now = Date.now();
+        const isRepeatClick = lastNodeClick.nodeId === node.id && (now - lastNodeClick.timestamp) <= DOUBLE_CLICK_MS;
+        lastNodeClick = {
+          nodeId: node.id,
+          timestamp: now,
+        };
+        onSelect?.(node.id);
+        if (isRepeatClick) {
+          onOpenChat?.(node.id);
+          lastNodeClick = {
+            nodeId: null,
+            timestamp: 0,
+          };
+        }
+        return;
       }
 
       if (didMove) {
