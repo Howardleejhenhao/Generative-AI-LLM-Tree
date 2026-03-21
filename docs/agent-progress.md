@@ -384,6 +384,49 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-21 23:00
+
+### Session Goal
+- Remove the now-redundant `Open chat` pill from the graph workspace.
+- Keep node entry minimal by relying on double-click and keyboard navigation instead of another visible button.
+
+### Planned Tasks
+- remove the `Open chat` workspace control from the selected-node strip
+- simplify the related CSS and JS state that only existed for that button
+- keep double-click and `C` shortcut behavior intact
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the current workspace template, CSS, JS, and tests were reviewed after confirming double-click node entry is the preferred interaction.
+- Removed the `Open chat` pill from the workspace selection strip so graph navigation now stays visually minimal.
+- Switched node opening behavior to a cross-render double-click detector because the first click re-renders the canvas and breaks a native DOM `dblclick` listener.
+- Kept keyboard `C` navigation intact while moving the node chat URL source to a hidden template element instead of a visible button.
+- Updated tests to reflect the removed workspace chat pill and verified the change with `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph no longer shows the `Open chat` pill, and node chat entry now works through double-click or `C`.
+
+### Next Recommended Step
+- Decide whether the selected-node strip itself should be simplified further now that node entry is handled directly on the canvas.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

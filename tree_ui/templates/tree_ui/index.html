@@ -82,20 +82,9 @@
             <strong id="workspace-selection-title">No node selected</strong>
             <p id="workspace-selection-summary">Select a node or start a root.</p>
           </div>
-          <div class="workspace-selection-actions">
-            <div class="workspace-selection-flags">
-              <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
-              <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
-            </div>
-            <a
-              class="detail-link-button"
-              id="open-chat-link"
-              href="#"
-              data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}"
-              hidden
-            >
-              Open chat
-            </a>
+          <div class="workspace-selection-flags">
+            <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
+            <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
           </div>
         </div>
         <p class="workspace-search-feedback" id="workspace-search-feedback"><kbd>/</kbd> search</p>
@@ -208,6 +197,7 @@
     </div>
   </section>
 
+  <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
   <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
     <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
     <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">

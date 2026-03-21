@@ -44,8 +44,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Canvas")
         self.assertContains(response, "Research lane")
         self.assertContains(response, "Search")
-        self.assertContains(response, "Open chat")
         self.assertNotContains(response, "Node Detail")
+        self.assertNotContains(response, "Open chat")
         self.assertNotContains(response, "Recent Activity")
         self.assertNotContains(response, "Branch / Version Source")
 

@@ -25,7 +25,7 @@ const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
 const zoomResetButton = document.getElementById("graph-zoom-reset");
 const zoomLevel = document.getElementById("graph-zoom-level");
-const openChatLink = document.getElementById("open-chat-link");
+const nodeChatUrlTemplate = document.getElementById("node-chat-url-template");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
@@ -245,7 +245,7 @@ function updateWorkspaceSummary() {
 }
 
 function getNodeChatUrl(nodeId) {
-  return openChatLink.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
+  return nodeChatUrlTemplate.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
 }
 
 function openNodeChat(nodeId) {
@@ -337,7 +337,6 @@ function updateFormState() {
 
 function showEmptyNodeState() {
   activeLineageIds = new Set();
-  openChatLink.hidden = true;
   updateWorkspaceSummary();
 }
 
@@ -353,8 +352,6 @@ function updateSelection(nodeId) {
   }
 
   activeLineageIds = new Set(getLineageIds(node));
-  openChatLink.hidden = false;
-  openChatLink.href = getNodeChatUrl(node.id);
   updateFormState();
   updateWorkspaceSummary();
   renderGraphCanvas();
@@ -429,7 +426,7 @@ function handleWorkspaceKeydown(event) {
     return;
   }
 
-  if ((event.key === "c" || event.key === "C") && !openChatLink.hidden && openChatLink.href) {
+  if ((event.key === "c" || event.key === "C") && getSelectedNode()) {
     openNodeChat(getSelectedNode()?.id);
     event.preventDefault();
   }
