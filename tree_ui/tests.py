@@ -103,7 +103,12 @@ class WorkspaceGraphViewTests(TestCase):
         response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "This node already has child branches. Sending here will open a new child branch.")
+        self.assertContains(response, "History node")
+        self.assertContains(response, "Continue in new child")
+        self.assertContains(
+            response,
+            "This node already has child branches. Your message will be written into a newly created child branch, not this historical node.",
+        )
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(

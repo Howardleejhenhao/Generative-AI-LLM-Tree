@@ -566,6 +566,50 @@
 ### Known Issues / Blockers / Tech Debt
 - The current non-leaf flow redirects only after the streamed reply completes; if desired, it could be refined later into an immediate branch handoff before streaming begins.
 
+## Session 2026-03-21 23:41
+
+### Session Goal
+- Make non-leaf chat pages look explicitly like historical checkpoints instead of ordinary in-place chat sessions.
+- Turn the composer on non-leaf nodes into a clearer “continue in child” action surface.
+
+### Planned Tasks
+- inspect the current node chat template and composer styling
+- add stronger non-leaf visual treatment and explicit branching language
+- keep leaf-node chat pages visually unchanged
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the node chat template, stylesheet, and recent continuation-rule changes were reviewed before adjusting the non-leaf presentation.
+- Added a visible `History node` status badge in the chat header for non-leaf nodes.
+- Changed the non-leaf composer into a clearer branch action surface with a `Continue in new child` kicker, a `Continue in child` submit label, and more explicit copy explaining that the historical node itself will not be mutated.
+- Added a subtle historical-node marker above the transcript and warmer composer styling so non-leaf pages are visually distinct from ordinary leaf-node chats.
+- Bumped the shared stylesheet and node-chat script asset versions so the revised historical-node presentation is forced through browser cache.
+- Updated template coverage for the new non-leaf presentation and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- Non-leaf chat pages now read as historical checkpoints with explicit branch-continuation language instead of looking like ordinary append-in-place chat screens.
+
+### Next Recommended Step
+- Decide whether to further simplify leaf-node chat pages now that non-leaf pages carry a stronger alternate mode treatment.
+
+### Known Issues / Blockers / Tech Debt
+- The non-leaf flow still redirects only after streaming completes; that interaction could be made even clearer later with an earlier handoff into the child chat page.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
