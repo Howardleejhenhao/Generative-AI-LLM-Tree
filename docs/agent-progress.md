@@ -155,15 +155,15 @@
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
-  - none yet in this session
+  - `921eb18` - `fix: upgrade deprecated gemini model defaults`
 - Push status:
-  - not pushed yet in this session
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The deprecated Gemini model issue is fixed in code for both new nodes and previously saved nodes that still carry the old alias.
 
 ### Next Recommended Step
-- Commit and push the Gemini model upgrade fix, then re-test the browser flow against the real Gemini key.
+- Re-test the browser flow against the real Gemini key and confirm that existing Gemini nodes now run without the 404 deprecation error.
 
 ### Known Issues / Blockers / Tech Debt
 - Existing database rows may still store deprecated Gemini model strings, but the backend now maps them to supported replacements at runtime instead of failing.
