@@ -12,11 +12,9 @@
   </section>
 
   <section class="workspace-toolbar workspace-toolbar-compact">
-    <div class="workspace-switcher">
-      <div class="workspace-toolbar-heading">
-        <h2>Workspaces</h2>
-      </div>
-      <div class="workspace-list">
+    <div class="workspace-switcher workspace-switcher-inline">
+      <p class="workspace-inline-label">Workspaces</p>
+      <div class="workspace-list workspace-list-inline">
         {% for workspace in workspace_list %}
           <a class="workspace-pill{% if workspace.is_current %} workspace-pill-current{% endif %}" href="{% url 'workspace_graph' workspace.slug %}">
             {{ workspace.name }}
@@ -24,17 +22,14 @@
         {% endfor %}
       </div>
     </div>
-    <form class="workspace-create-form" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
+    <form class="workspace-create-form workspace-create-form-inline" id="workspace-create-form" data-create-workspace-url="{% url 'create_workspace' %}">
       {% csrf_token %}
       <p class="workspace-create-kicker">Create Workspace</p>
-      <h2>New workspace</h2>
-      <div class="workspace-create-row">
-        <label class="form-field workspace-create-field">
-          <span>Name</span>
-          <input id="workspace-name-input" type="text" maxlength="120" placeholder="Workspace name">
-        </label>
-        <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
-      </div>
+      <label class="form-field workspace-create-field workspace-create-field-inline">
+        <span class="sr-only">Workspace name</span>
+        <input id="workspace-name-input" type="text" maxlength="120" placeholder="New workspace">
+      </label>
+      <button class="workspace-create-button" id="workspace-create-button" type="submit">Create workspace</button>
       <p class="form-feedback workspace-feedback" id="workspace-create-feedback" role="status" aria-live="polite"></p>
     </form>
   </section>
