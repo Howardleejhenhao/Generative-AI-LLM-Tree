@@ -927,6 +927,47 @@
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
 
+## Session 2026-03-22 00:41
+
+### Session Goal
+- Finish the remaining workspace-header polish by collapsing the top `Workspaces / New workspace` area into a single lighter tool row.
+- Keep workspace switching and creation fully intact while reducing the feeling of two stacked cards.
+
+### Planned Tasks
+- reshape the top workspace toolbar into one unified inline control strip
+- compact the create-workspace form into a utility-style input/button row
+- update the stylesheet version and verify the polish with local checks/tests
+
+### Work Completed
+- Session started; current branch state, progress-log context, and the current workspace toolbar template/CSS were reviewed before editing.
+- Collapsed the top `Workspaces / Create Workspace` area into a single inline toolbar rather than two separate control cards.
+- Turned workspace creation into a utility-style input/button row so the section reads more like a tool strip than a landing panel.
+- Added responsive rules so the compressed toolbar still falls back cleanly to a vertical stack on narrow screens.
+- Bumped the stylesheet version and verified the polish with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `aab6277` - `style: compress workspace toolbar layout`
+- Push status:
+  - pending docs commit and push for this session
+
+### Current Status
+- The top workspace controls now read as a single compact toolbar.
+
+### Next Recommended Step
+- Do one browser pass to confirm the toolbar spacing feels finished, then decide if any further polish is still needed.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal
