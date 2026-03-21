@@ -44,6 +44,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Jump to canvas")
         self.assertContains(response, "Research lane")
         self.assertContains(response, "Find node")
+        self.assertContains(response, "Branch / Version Source")
 
     def test_workspace_node_chat_page_renders_transcript_and_composer(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -76,8 +77,11 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Lineage")
         self.assertContains(response, "Child Branches")
+        self.assertContains(response, "Versioning")
+        self.assertContains(response, "Edit Into Variant")
         self.assertContains(response, "Hide context")
         self.assertContains(response, "Jump to latest")
+        self.assertContains(response, "Show editor")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
@@ -224,6 +228,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(edited.parent, original.parent)
         self.assertEqual(edited.messages.first().content, "Edited prompt")
         self.assertEqual(original.messages.first().content, "Original prompt")
+        self.assertIn(
+            reverse("workspace_node_chat", args=[workspace.slug, edited.id]),
+            response.json()["node_chat_url"],
+        )
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -255,7 +263,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.json()["node"]["position"], {"x": 420, "y": 260})
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
-    def test_can_stream_node_message_append_via_api(self):
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_can_stream_node_message_append_via_api(self, mock_stream_text):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
             workspace=workspace,
@@ -264,6 +273,7 @@ class WorkspaceGraphViewTests(TestCase):
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
         )
+        mock_stream_text.return_value = iter(["Streamed ", "reply"])
 
         response = self.client.post(
             reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -283,6 +293,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertIn("event: node", streamed)
         self.assertEqual(ConversationNode.objects.count(), 1)
         self.assertEqual(NodeMessage.objects.filter(node=node).count(), 2)
+        self.assertEqual(
+            NodeMessage.objects.get(node=node, role=NodeMessage.Role.ASSISTANT).content,
+            "Streamed reply",
+        )
 
     def test_branch_local_context_uses_selected_lineage_only(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

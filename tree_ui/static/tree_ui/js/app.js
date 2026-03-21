@@ -181,6 +181,14 @@ function getLastMessage(node) {
   return node.messages[node.messages.length - 1];
 }
 
+function getNodeTitleById(nodeId) {
+  if (!nodeId) {
+    return "";
+  }
+
+  return nodesById.get(String(nodeId))?.title || `Node ${nodeId}`;
+}
+
 function getNodeMode(node) {
   if (!node) {
     return "Waiting for selection";
@@ -204,8 +212,12 @@ function getSelectionSummaryText(node) {
 
   const messageCount = node.messages.length;
   const messageText = `${messageCount} ${messageCount === 1 ? "message" : "messages"} in this container.`;
-  const lineageText = node.parent_id ? ` Branched from node ${node.parent_id}.` : " Top-level conversation.";
-  const editText = node.edited_from_id ? ` Variant derived from node ${node.edited_from_id}.` : "";
+  const lineageText = node.parent_id
+    ? ` Branched from "${getNodeTitleById(node.parent_id)}".`
+    : " Top-level conversation.";
+  const editText = node.edited_from_id
+    ? ` Variant derived from "${getNodeTitleById(node.edited_from_id)}".`
+    : "";
 
   return `${messageText}${lineageText}${editText}`;
 }
@@ -428,7 +440,11 @@ function updateSelection(nodeId) {
   openChatLink.hidden = false;
   openChatLink.href = getNodeChatUrl(node.id);
   nodeModel.textContent = node.model_name;
-  nodeParent.textContent = node.parent_id ? `Node ${node.parent_id}` : "Root";
+  nodeParent.textContent = node.edited_from_id
+    ? `Edited from "${getNodeTitleById(node.edited_from_id)}"`
+    : node.parent_id
+      ? getNodeTitleById(node.parent_id)
+      : "Root";
   nodeSummary.textContent = node.summary || "Open this node to continue the conversation.";
   nodeModeLabel.textContent = getNodeMode(node);
   nodeFocusCopy.textContent = getSelectionSummaryText(node);

@@ -62,6 +62,32 @@
           {% endfor %}
         </div>
       </section>
+
+      <section class="chat-context-card">
+        <div class="chat-context-header">
+          <h2>Versioning</h2>
+        </div>
+        {% if edited_source %}
+          <a class="chat-branch-card" href="{{ edited_source.url }}">
+            <strong>Edited from</strong>
+            <span>Return to source node</span>
+            <p>{{ edited_source.title }}</p>
+          </a>
+        {% else %}
+          <p class="chat-empty-copy">This node is the original version in its edit lineage.</p>
+        {% endif %}
+        <div class="chat-branch-list">
+          {% for variant in edited_variants %}
+            <a class="chat-branch-card" href="{{ variant.url }}">
+              <strong>{{ variant.title }}</strong>
+              <span>{{ variant.provider|title }} / {{ variant.model_name }}</span>
+              <p>{{ variant.summary }}</p>
+            </a>
+          {% empty %}
+            <p class="chat-empty-copy">No edited variants have been created from this node yet.</p>
+          {% endfor %}
+        </div>
+      </section>
     </aside>
 
     <section class="chat-thread-panel chat-thread-panel-minimal">
@@ -95,6 +121,34 @@
           <p class="chat-composer-note">Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send. Press <kbd>D</kbd> to toggle context.</p>
         </form>
       </div>
+      <section class="action-box">
+        <div class="chat-context-header">
+          <div>
+            <h2>Edit Into Variant</h2>
+            <p class="edit-note">Create a version-safe node from the current transcript and jump into the new branch.</p>
+          </div>
+          <button class="ghost-link" id="chat-variant-toggle" type="button" aria-expanded="false" aria-controls="chat-variant-form">
+            Show editor
+          </button>
+        </div>
+        <form
+          class="composer-form"
+          id="chat-variant-form"
+          data-node-edit-url="{% url 'create_edited_node_variant' workspace.slug node_payload.id %}"
+          hidden
+        >
+          {% csrf_token %}
+          <label class="form-field">
+            <span>Variant Title</span>
+            <input id="chat-variant-title-input" name="title" type="text" maxlength="160" value="{{ node_payload.title }} (Edited)">
+          </label>
+          <div class="editor-list" id="chat-variant-message-list"></div>
+          <div class="chat-composer-actions">
+            <p class="form-feedback" id="chat-variant-feedback" role="status" aria-live="polite"></p>
+            <button class="secondary-button" id="chat-variant-submit-button" type="submit">Create edited variant</button>
+          </div>
+        </form>
+      </section>
     </section>
   </section>
 

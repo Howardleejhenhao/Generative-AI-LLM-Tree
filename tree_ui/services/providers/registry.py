@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Iterator
+
 from django.conf import settings
 
 from tree_ui.models import ConversationNode
@@ -34,6 +36,21 @@ def generate_text(
 ) -> GenerationResult:
     provider = _get_provider(provider_name)
     return provider.generate(
+        model_name=model_name,
+        messages=messages,
+        system_instruction=system_instruction,
+    )
+
+
+def stream_text(
+    *,
+    provider_name: str,
+    model_name: str,
+    messages: list[ContextMessage],
+    system_instruction: str,
+) -> Iterator[str]:
+    provider = _get_provider(provider_name)
+    return provider.generate_stream(
         model_name=model_name,
         messages=messages,
         system_instruction=system_instruction,

@@ -1,4 +1,5 @@
-import { renderChatTranscript } from "./node-panel.js";
+import { postJSON } from "./api.js";
+import { renderChatTranscript, renderMessageEditors } from "./node-panel.js";
 import { streamJSON } from "./streaming.js";
 
 const payload = JSON.parse(document.getElementById("node-chat-payload").textContent);
@@ -12,6 +13,12 @@ const form = document.getElementById("chat-form");
 const promptInput = document.getElementById("chat-prompt-input");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
+const variantToggle = document.getElementById("chat-variant-toggle");
+const variantForm = document.getElementById("chat-variant-form");
+const variantTitleInput = document.getElementById("chat-variant-title-input");
+const variantMessageList = document.getElementById("chat-variant-message-list");
+const variantFeedback = document.getElementById("chat-variant-feedback");
+const variantSubmitButton = document.getElementById("chat-variant-submit-button");
 const csrfToken = document.getElementById("chat-csrf-token").value;
 const PROMPT_MAX_HEIGHT = 176;
 
@@ -45,6 +52,12 @@ function setContextCollapsed(isCollapsed) {
   writeStoredContextState(isCollapsed);
 }
 
+function setVariantEditorOpen(isOpen) {
+  variantForm.hidden = !isOpen;
+  variantToggle.textContent = isOpen ? "Hide editor" : "Show editor";
+  variantToggle.setAttribute("aria-expanded", String(isOpen));
+}
+
 function isNearBottom() {
   return transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 80;
 }
@@ -65,6 +78,17 @@ function renderTranscript(extraMessages = []) {
     scrollToBottom();
   }
   updateJumpButton();
+}
+
+function renderVariantEditor() {
+  renderMessageEditors(variantMessageList, payload.messages);
+  const hasMessages = payload.messages.length > 0;
+  variantSubmitButton.disabled = !hasMessages;
+  if (!hasMessages) {
+    variantFeedback.textContent = "Add at least one message before creating a variant.";
+  } else if (variantFeedback.textContent === "Add at least one message before creating a variant.") {
+    variantFeedback.textContent = "";
+  }
 }
 
 async function handleSubmit(event) {
@@ -120,6 +144,7 @@ async function handleSubmit(event) {
           resizePromptInput();
           feedback.textContent = "Reply added to this node.";
           renderTranscript();
+          renderVariantEditor();
           scrollToBottom();
         },
         error(data) {
@@ -135,6 +160,41 @@ async function handleSubmit(event) {
   }
 }
 
+async function handleVariantSubmit(event) {
+  event.preventDefault();
+  if (!payload.messages.length) {
+    variantFeedback.textContent = "Add at least one message before creating a variant.";
+    return;
+  }
+
+  variantFeedback.textContent = "";
+  variantSubmitButton.disabled = true;
+
+  try {
+    const messages = Array.from(variantMessageList.querySelectorAll("textarea")).map(
+      (textarea, index) => ({
+        role: textarea.dataset.role,
+        content: textarea.value,
+        order_index: index,
+      }),
+    );
+    const result = await postJSON(
+      variantForm.dataset.nodeEditUrl,
+      {
+        title: variantTitleInput.value,
+        messages,
+      },
+      csrfToken,
+    );
+    variantFeedback.textContent = `Variant "${result.node.title}" created.`;
+    window.location.href = result.node_chat_url;
+  } catch (error) {
+    variantFeedback.textContent = error.message;
+  } finally {
+    variantSubmitButton.disabled = false;
+  }
+}
+
 function handlePromptKeydown(event) {
   if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
     form.requestSubmit();
@@ -143,7 +203,7 @@ function handlePromptKeydown(event) {
 }
 
 function handleWindowKeydown(event) {
-  const isTyping = event.target === promptInput;
+  const isTyping = event.target === promptInput || variantForm.contains(event.target);
 
   if (event.key === "d" || event.key === "D") {
     if (!isTyping) {
@@ -160,9 +220,15 @@ jumpButton.addEventListener("click", scrollToBottom);
 chatContextToggle.addEventListener("click", () => {
   setContextCollapsed(chatPage.dataset.contextCollapsed !== "true");
 });
+variantToggle.addEventListener("click", () => {
+  setVariantEditorOpen(variantForm.hidden);
+});
 window.addEventListener("keydown", handleWindowKeydown);
 form.addEventListener("submit", handleSubmit);
+variantForm.addEventListener("submit", handleVariantSubmit);
 setContextCollapsed(readStoredContextState());
+setVariantEditorOpen(false);
 resizePromptInput();
 renderTranscript();
+renderVariantEditor();
 scrollToBottom();

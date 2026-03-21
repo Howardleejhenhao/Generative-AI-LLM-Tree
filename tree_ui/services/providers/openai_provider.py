@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import json
+from typing import Iterator
 from urllib import error, request
 
 from tree_ui.services.context_builder import ContextMessage
-from tree_ui.services.providers.base import BaseProvider, GenerationResult, ProviderError
+from tree_ui.services.providers.base import (
+    BaseProvider,
+    GenerationResult,
+    ProviderError,
+    iter_sse_events,
+)
 
 
 def _extract_text(response_data: dict) -> str:
@@ -27,6 +33,46 @@ def _extract_text(response_data: dict) -> str:
     return combined
 
 
+def _build_payload(
+    *,
+    model_name: str,
+    messages: list[ContextMessage],
+    system_instruction: str,
+    stream: bool,
+) -> dict:
+    payload = {
+        "model": model_name,
+        "instructions": system_instruction,
+        "input": [
+            {
+                "role": message.role,
+                "content": message.content,
+            }
+            for message in messages
+        ],
+    }
+    if stream:
+        payload["stream"] = True
+    return payload
+
+
+def _extract_stream_delta(event_data: dict) -> str:
+    event_type = event_data.get("type", "")
+
+    if event_type == "response.output_text.delta":
+        return event_data.get("delta", "")
+
+    if event_type in {"error", "response.failed"}:
+        message = (
+            event_data.get("message")
+            or event_data.get("error", {}).get("message")
+            or "OpenAI streaming request failed."
+        )
+        raise ProviderError(message)
+
+    return ""
+
+
 class OpenAIProvider(BaseProvider):
     provider_name = "openai"
     endpoint = "https://api.openai.com/v1/responses"
@@ -45,23 +91,36 @@ class OpenAIProvider(BaseProvider):
         if not self.api_key:
             raise ProviderError("OpenAI API key is not configured.")
 
-        payload = {
-            "model": model_name,
-            "instructions": system_instruction,
-            "input": [
-                {
-                    "role": message.role,
-                    "content": message.content,
-                }
-                for message in messages
-            ],
-        }
+        payload = _build_payload(
+            model_name=model_name,
+            messages=messages,
+            system_instruction=system_instruction,
+            stream=False,
+        )
         response_data = self._post_json(payload)
         return GenerationResult(
             text=_extract_text(response_data),
             provider=self.provider_name,
             model_name=model_name,
         )
+
+    def generate_stream(
+        self,
+        *,
+        model_name: str,
+        messages: list[ContextMessage],
+        system_instruction: str,
+    ) -> Iterator[str]:
+        if not self.api_key:
+            raise ProviderError("OpenAI API key is not configured.")
+
+        payload = _build_payload(
+            model_name=model_name,
+            messages=messages,
+            system_instruction=system_instruction,
+            stream=True,
+        )
+        yield from self._post_sse(payload)
 
     def _post_json(self, payload: dict) -> dict:
         http_request = request.Request(
@@ -81,3 +140,33 @@ class OpenAIProvider(BaseProvider):
             raise ProviderError(f"OpenAI request failed: {exc.code} {body}") from exc
         except error.URLError as exc:
             raise ProviderError(f"OpenAI connection failed: {exc.reason}") from exc
+
+    def _post_sse(self, payload: dict) -> Iterator[str]:
+        http_request = request.Request(
+            self.endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+            },
+            method="POST",
+        )
+
+        emitted_delta = False
+        try:
+            with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
+                for event in iter_sse_events(response):
+                    delta = _extract_stream_delta(event["data"])
+                    if not delta:
+                        continue
+                    emitted_delta = True
+                    yield delta
+        except error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="ignore")
+            raise ProviderError(f"OpenAI request failed: {exc.code} {body}") from exc
+        except error.URLError as exc:
+            raise ProviderError(f"OpenAI connection failed: {exc.reason}") from exc
+
+        if not emitted_delta:
+            raise ProviderError("OpenAI stream did not contain text output.")

@@ -11,10 +11,9 @@ from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     append_messages_to_node_with_reply,
     create_node,
-    generate_assistant_reply,
-    iter_text_chunks,
     resolve_message_append_inputs,
     resolve_node_creation_inputs,
+    stream_assistant_reply,
 )
 from tree_ui.services.node_positioning import resolve_node_position_inputs
 from tree_ui.services.workspace_service import (
@@ -77,6 +76,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
     )
     lineage = _build_lineage(node)
     child_nodes = node.children.order_by("created_at")
+    edited_variants = node.edited_variants.order_by("created_at")
 
     return render(
         request,
@@ -104,6 +104,26 @@ def workspace_node_chat(request, slug: str, node_id: int):
                     "url": reverse("workspace_node_chat", args=[workspace.slug, child.id]),
                 }
                 for child in child_nodes
+            ],
+            "edited_source": (
+                {
+                    "id": node.edited_from.id,
+                    "title": node.edited_from.title,
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, node.edited_from.id]),
+                }
+                if node.edited_from_id
+                else None
+            ),
+            "edited_variants": [
+                {
+                    "id": variant.id,
+                    "title": variant.title,
+                    "summary": variant.summary,
+                    "provider": variant.provider,
+                    "model_name": variant.model_name,
+                    "url": reverse("workspace_node_chat", args=[workspace.slug, variant.id]),
+                }
+                for variant in edited_variants
             ],
         },
     )
@@ -181,7 +201,13 @@ def create_workspace_node(request, slug: str):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    return JsonResponse({"node": serialize_node(node)}, status=201)
+    return JsonResponse(
+        {
+            "node": serialize_node(node),
+            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
+        },
+        status=201,
+    )
 
 
 @require_POST
@@ -206,7 +232,13 @@ def create_edited_node_variant(request, slug: str, node_id: int):
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
-    return JsonResponse({"node": serialize_node(node)}, status=201)
+    return JsonResponse(
+        {
+            "node": serialize_node(node),
+            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
+        },
+        status=201,
+    )
 
 
 @require_POST
@@ -260,12 +292,7 @@ def stream_node_message(request, slug: str, node_id: int):
 
     def event_stream():
         try:
-            assistant_reply = generate_assistant_reply(
-                parent=node,
-                provider=node.provider,
-                model_name=node.model_name,
-                prompt=resolved_inputs["prompt"],
-            )
+            assistant_chunks: list[str] = []
             yield _sse_event(
                 "preview",
                 {
@@ -277,12 +304,18 @@ def stream_node_message(request, slug: str, node_id: int):
                     "prompt": resolved_inputs["prompt"],
                 },
             )
-            for chunk in iter_text_chunks(assistant_reply):
+            for chunk in stream_assistant_reply(
+                parent=node,
+                provider=node.provider,
+                model_name=node.model_name,
+                prompt=resolved_inputs["prompt"],
+            ):
+                assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
             updated_node = append_messages_to_node_with_reply(
                 node=node,
                 prompt=resolved_inputs["prompt"],
-                assistant_reply=assistant_reply,
+                assistant_reply="".join(assistant_chunks),
             )
             yield _sse_event("node", {"node": serialize_node(updated_node)})
             yield _sse_event("done", {})

@@ -11,7 +11,7 @@ from tree_ui.services.context_builder import (
     build_branch_lineage,
     build_generation_messages,
 )
-from tree_ui.services.providers import ProviderError, generate_text
+from tree_ui.services.providers import ProviderError, generate_text, stream_text
 
 DEFAULT_MODELS = {
     ConversationNode.Provider.OPENAI: "gpt-4.1-mini",
@@ -130,6 +130,39 @@ def iter_text_chunks(text: str, chunk_size: int = 24):
         yield text[index : index + chunk_size]
         if settings.LLM_STREAM_CHUNK_DELAY_SECONDS > 0:
             time.sleep(settings.LLM_STREAM_CHUNK_DELAY_SECONDS)
+
+
+def stream_assistant_reply(
+    *,
+    parent: ConversationNode | None,
+    provider: str,
+    model_name: str,
+    prompt: str,
+):
+    context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    emitted_chunk = False
+
+    try:
+        for chunk in stream_text(
+            provider_name=provider,
+            model_name=model_name,
+            messages=context_messages,
+            system_instruction=SYSTEM_INSTRUCTION,
+        ):
+            emitted_chunk = True
+            yield chunk
+    except ProviderError as exc:
+        if emitted_chunk:
+            raise
+
+        fallback_message = _build_fallback_assistant_message(
+            parent=parent,
+            provider=provider,
+            model_name=model_name,
+            prompt=prompt,
+            reason=str(exc),
+        )
+        yield from iter_text_chunks(fallback_message)
 
 
 def create_node(
