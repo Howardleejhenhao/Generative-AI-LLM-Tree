@@ -200,15 +200,15 @@
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
-  - none yet in this session
+  - `636fe95` - `fix: simplify node chat composer workflow`
 - Push status:
-  - not pushed yet in this session
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The focused node chat now clears the composer immediately on send and no longer shows the unused right-side context dock.
 
 ### Next Recommended Step
-- Commit and push the simplified chat UX, then review the browser behavior on desktop and mobile.
+- Review the browser behavior on desktop and mobile, then remove any now-unused server-side context plumbing if it stays unnecessary.
 
 ### Known Issues / Blockers / Tech Debt
 - The view still computes lineage and related context data server-side even though the right-side dock has been removed from the template.
