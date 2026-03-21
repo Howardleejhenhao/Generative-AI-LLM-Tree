@@ -100,17 +100,18 @@
 ### Git Workflow
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
+- Commits made before this log finalization:
   - `118b458` - `feat: stream provider replies and expand variant workflow`
+  - `d78fefa` - `docs: update progress log for streaming session`
 - Push status:
-  - pending at the time of this log update; push will follow immediately after the session documentation commit
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The repository now includes provider-driven streaming support in the backend transport layer and a stronger edited-variant workflow in the node-focused chat surface.
-- The remaining work on this branch is limited to finalizing session documentation and pushing the completed commits.
+- The remaining work on this branch is limited to this final session-log follow-up commit.
 
 ### Next Recommended Step
-- Push the finished branch and review the live browser behavior against real provider keys.
+- Review the live browser behavior against real provider keys.
 - After that, focus on production hardening around provider streaming edge cases and any next graph/version comparison refinements that show up during browser review.
 
 ### Known Issues / Blockers / Tech Debt
