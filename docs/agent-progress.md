@@ -729,8 +729,9 @@
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
   - `4ff3395` - `feat: finalize homepage hero copy`
+  - `bf67db9` - `docs: update agent progress log`
 - Push status:
-  - pending final push after progress-log update
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The homepage hero now reads as a minimal finished project intro instead of a landing section with a leftover CTA.
