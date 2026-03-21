@@ -291,8 +291,9 @@
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
   - `04b60f5` - `feat: simplify graph workspace layout`
+  - `3bf1ef8` - `docs: update progress log for workspace simplification`
 - Push status:
-  - pending final push
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The workspace page is now materially more minimal and graph-first, with the inspector removed and creation moved into a lighter dock.
