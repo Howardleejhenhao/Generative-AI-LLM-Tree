@@ -291,15 +291,15 @@
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
-  - none yet in this session
+  - `1bceea7` - `fix: restore stable centered node chat layout`
 - Push status:
-  - not pushed yet in this session
+  - pushed to `origin/feature/workspace-ui-polish`
 
 ### Current Status
 - The focused chat page is back on a stable single-form composer, and the conversation column is explicitly centered in CSS.
 
 ### Next Recommended Step
-- Commit and push the corrected node-chat layout, then confirm in the browser that the visual centering now matches expectations.
+- Confirm in the browser that the visual centering now matches expectations, then trim any unused server-side context assembly if the leaner chat view remains the preferred direction.
 
 ### Known Issues / Blockers / Tech Debt
 - The node-chat view still computes lineage and child-branch context on the server even though those blocks are no longer rendered in the template.
