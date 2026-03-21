@@ -712,23 +712,31 @@
 
 ### Work Completed
 - Session started; current branch status, homepage template, stylesheet, tests, and latest progress log entries were reviewed before editing.
+- Removed the top `Canvas` CTA from the homepage hero so the landing area no longer competes with the workspace itself.
+- Replaced the old `Conversation graph.` headline with `LLM tree` and added a single short description line explaining that the project is a branching chat workspace rendered as a graph.
+- Simplified the hero layout back to a single-column block and removed the now-unused hero CTA styles from the stylesheet.
+- Updated the homepage regression test to match the final hero copy.
+- Verified the cleanup with `python3 manage.py check` and `python3 manage.py test`.
 
 ### Files Changed
 - `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
 
 ### Git Workflow
 - Current branch at session start: `feature/workspace-ui-polish`
 - New branch created/switched: continuing on `feature/workspace-ui-polish`
 - Commits made:
-  - none yet in this session
+  - `4ff3395` - `feat: finalize homepage hero copy`
 - Push status:
-  - not pushed yet for this session
+  - pending final push after progress-log update
 
 ### Current Status
-- The final homepage cleanup is in progress.
+- The homepage hero now reads as a minimal finished project intro instead of a landing section with a leftover CTA.
 
 ### Next Recommended Step
-- Remove the remaining hero CTA, simplify the copy, then verify the homepage regression test.
+- Do one last visual pass for any remaining empty chrome on the graph workspace, then consider the product polish phase complete.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
