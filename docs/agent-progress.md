@@ -304,6 +304,46 @@
 ### Known Issues / Blockers / Tech Debt
 - The main graph page no longer exposes edited-variant creation directly; that flow now remains in the focused chat view only.
 
+## Session 2026-03-21 10:56
+
+### Session Goal
+- Remove the remaining empty workspace column so the graph surface fully occupies the available area.
+- Make the main canvas region stretch vertically in a more intentional full-workspace layout.
+
+### Planned Tasks
+- inspect the active workspace layout rules that still control the canvas width and height
+- replace the stale two-column workspace grid with a single full-width canvas layout
+- adjust the canvas panel and graph stage sizing so the workspace area fills the visible page more consistently
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the active workspace CSS and viewport/canvas sizing code were reviewed after the user reported empty unused area beside the graph.
+- Replaced the stale two-column workspace grid with a single full-width layout so the removed inspector no longer leaves an empty reserved column.
+- Converted the canvas panel into a full-height grid shell so the graph stage grows like the main workspace surface instead of feeling like a smaller box inside the page.
+- Retuned the graph stage and graph canvas sizing so the visible workspace area fills more of the page and keeps the canvas stretching to the available viewport.
+- Verified the layout-only change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The empty reserved workspace area has been removed and the graph surface now occupies the available width more directly.
+
+### Next Recommended Step
+- Review the live browser result and decide whether the next step should be an even more XMind-like quick-create affordance near the selected node.
+
+### Known Issues / Blockers / Tech Debt
+- The stylesheet still contains legacy workspace/detail-panel rules from earlier layouts, which makes later overrides easy to miss.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

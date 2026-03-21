@@ -1000,14 +1000,10 @@ body:has(.chat-page-immersive) .page-shell {
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.62fr);
-  gap: 18px;
-  min-height: calc(100vh - 288px);
-  align-items: stretch;
-}
-
-.workspace-shell[data-detail-panel-collapsed="true"] {
   grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-height: calc(100vh - 240px);
+  align-items: stretch;
 }
 
 .canvas-panel,
@@ -1017,6 +1013,11 @@ body:has(.chat-page-immersive) .page-shell {
 
 .canvas-panel {
   position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 16px;
+  min-height: calc(100vh - 240px);
+  padding: 0 0 20px;
   background: linear-gradient(180deg, rgba(255, 253, 250, 0.9), rgba(255, 244, 229, 0.74));
 }
 
@@ -1045,18 +1046,19 @@ body:has(.chat-page-immersive) .page-shell {
 
 .panel-header-workspace {
   align-items: center;
-  padding-bottom: 4px;
+  padding-bottom: 0;
 }
 
 .canvas-panel-heading {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .canvas-panel-actions {
   display: grid;
   gap: 12px;
+  align-self: center;
   justify-items: end;
 }
 
@@ -1125,11 +1127,12 @@ body:has(.chat-page-immersive) .page-shell {
 
 .graph-stage {
   position: relative;
-  min-height: clamp(720px, calc(100vh - 330px), 980px);
-  margin: 16px 24px 24px;
+  min-height: max(640px, calc(100vh - 360px));
+  height: 100%;
+  margin: 0 24px;
   overflow: hidden;
   border-radius: 20px;
-  border: 1px dashed rgba(74, 58, 40, 0.2);
+  border: 1px solid rgba(74, 58, 40, 0.16);
   background:
     linear-gradient(rgba(95, 79, 60, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(95, 79, 60, 0.06) 1px, transparent 1px),
@@ -1310,6 +1313,8 @@ body:has(.chat-page-immersive) .page-shell {
 .graph-canvas {
   position: absolute;
   inset: 0 auto auto 0;
+  min-width: 100%;
+  min-height: 100%;
   transform: translate(0, 0) scale(1);
   transform-origin: top left;
   will-change: transform;
