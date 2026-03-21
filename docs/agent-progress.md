@@ -344,6 +344,46 @@
 ### Known Issues / Blockers / Tech Debt
 - The stylesheet still contains legacy workspace/detail-panel rules from earlier layouts, which makes later overrides easy to miss.
 
+## Session 2026-03-21 22:58
+
+### Session Goal
+- Make entering a node conversation more direct from the graph workspace.
+- Add a double-click shortcut on nodes so chat navigation no longer depends on the small `Open chat` action.
+
+### Planned Tasks
+- inspect the current graph node event handling
+- wire a double-click action from node cards to the existing node chat URL
+- validate the frontend scripts and test suite
+- update the progress log with the result
+
+### Work Completed
+- Session started; the current workspace interaction flow and graph node event handling were reviewed after user feedback that opening chat is not obvious enough.
+- Added direct double-click navigation on graph nodes so a node can open its focused chat view without relying on the smaller `Open chat` action.
+- Kept the existing single-click selection flow and keyboard `C` shortcut while routing both through the same node-chat navigation helper.
+- Verified the interaction update with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph now supports double-click-to-open on nodes, making entry into node chat much more direct.
+
+### Next Recommended Step
+- Review whether the `Open chat` pill should stay visible as a secondary affordance or be removed now that direct node entry is available.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
 ## Session 2026-03-21 09:40
 
 ### Session Goal

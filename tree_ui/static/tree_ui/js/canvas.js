@@ -73,6 +73,7 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     activeLineageIds = new Set(),
     matchedNodeIds = new Set(),
     onSelect,
+    onOpenChat,
     onPositionCommit,
     onMetricsChange,
     getViewportScale,
@@ -187,6 +188,14 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
         return;
       }
       onSelect?.(node.id);
+    });
+
+    button.addEventListener("dblclick", (event) => {
+      if (button.dataset.dragging === "true" || button.dataset.suppressClick === "true") {
+        event.preventDefault();
+        return;
+      }
+      onOpenChat?.(node.id);
     });
 
     button.addEventListener("pointerdown", (event) => {

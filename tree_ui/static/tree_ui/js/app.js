@@ -248,6 +248,13 @@ function getNodeChatUrl(nodeId) {
   return openChatLink.dataset.nodeChatUrlTemplate.replace("999999", String(nodeId));
 }
 
+function openNodeChat(nodeId) {
+  if (!nodeId) {
+    return;
+  }
+  window.location.href = getNodeChatUrl(nodeId);
+}
+
 function getNodePositionUrl(nodeId) {
   return graphStatus.dataset.nodePositionUrlTemplate.replace("999999", String(nodeId));
 }
@@ -309,6 +316,7 @@ function renderGraphCanvas() {
     activeLineageIds,
     matchedNodeIds,
     onSelect: updateSelection,
+    onOpenChat: openNodeChat,
     onPositionCommit: handleNodePositionCommit,
     onMetricsChange: handleCanvasMetricsChange,
     getViewportScale: () => viewport.getScale(),
@@ -422,7 +430,7 @@ function handleWorkspaceKeydown(event) {
   }
 
   if ((event.key === "c" || event.key === "C") && !openChatLink.hidden && openChatLink.href) {
-    window.location.href = openChatLink.href;
+    openNodeChat(getSelectedNode()?.id);
     event.preventDefault();
   }
 }
