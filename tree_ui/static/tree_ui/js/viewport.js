@@ -40,7 +40,6 @@ export function createViewportController(options = {}) {
 
   const stage = document.getElementById("graph-stage");
   const canvas = document.getElementById("graph-canvas");
-  const hint = document.getElementById("graph-hint");
 
   const state = {
     panX: 0,
@@ -121,7 +120,6 @@ export function createViewportController(options = {}) {
     canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
     stage.dataset.dragging = String(state.dragging);
     stage.dataset.zoom = String(Math.round(state.zoom * 100));
-    hint.hidden = state.dragging;
     publishState();
   }
 

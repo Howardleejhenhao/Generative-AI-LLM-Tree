@@ -1,7 +1,7 @@
-import { postJSON } from "./api.js?v=20260322-single-confirm-delete";
-import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-single-confirm-delete";
-import { syncModelOptions } from "./model-options.js?v=20260322-single-confirm-delete";
-import { createViewportController } from "./viewport.js?v=20260322-single-confirm-delete";
+import { postJSON } from "./api.js?v=20260322-graph-hint-fix";
+import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-graph-hint-fix";
+import { syncModelOptions } from "./model-options.js?v=20260322-graph-hint-fix";
+import { createViewportController } from "./viewport.js?v=20260322-graph-hint-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
 const workspaceName = document.getElementById("workspace-name");
