@@ -218,48 +218,58 @@
         <form class="graph-action-form composer-form" id="node-form" data-node-create-url="{% url 'create_workspace_node' graph_payload.workspace.slug %}">
           {% csrf_token %}
           <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
-          <div class="graph-action-target">
-            <p class="panel-kicker">Create</p>
-            <strong id="form-target">Root</strong>
+          <div class="graph-action-main-row">
+            <div class="graph-action-target">
+              <p class="panel-kicker">Create</p>
+              <strong id="form-target">Root</strong>
+            </div>
+            <label class="graph-action-toggle" for="root-mode-toggle">
+              <input id="root-mode-toggle" type="checkbox">
+              <span>New root</span>
+            </label>
+            <label class="graph-action-field graph-action-field-title" for="node-title-input">
+              <span class="sr-only">Node title</span>
+              <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Node title">
+            </label>
+            <label class="graph-action-field" for="node-provider-input">
+              <span class="sr-only">Provider</span>
+              <select id="node-provider-input" name="provider" aria-label="Provider">
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </label>
+            <label class="graph-action-field graph-action-field-model" for="node-model-input">
+              <span class="sr-only">Model</span>
+              <select id="node-model-input" name="model_name" aria-label="Model"></select>
+            </label>
+            <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
           </div>
-          <label class="graph-action-toggle" for="root-mode-toggle">
-            <input id="root-mode-toggle" type="checkbox">
-            <span>New root</span>
-          </label>
-          <label class="graph-action-field graph-action-field-title" for="node-title-input">
-            <span class="sr-only">Node title</span>
-            <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Node title">
-          </label>
-          <label class="graph-action-field" for="node-provider-input">
-            <span class="sr-only">Provider</span>
-            <select id="node-provider-input" name="provider" aria-label="Provider">
-              <option value="openai">OpenAI</option>
-              <option value="gemini">Gemini</option>
-            </select>
-          </label>
-          <label class="graph-action-field graph-action-field-model" for="node-model-input">
-            <span class="sr-only">Model</span>
-            <select id="node-model-input" name="model_name" aria-label="Model"></select>
-          </label>
-          <label class="graph-action-field graph-action-field-title" for="node-system-prompt-input">
-            <span class="sr-only">System prompt</span>
-            <textarea id="node-system-prompt-input" name="system_prompt" rows="3" placeholder="Optional system prompt"></textarea>
-          </label>
-          <div class="graph-quick-create-row">
-            <label class="graph-action-field" for="node-temperature-input">
-              <span class="sr-only">Temperature</span>
-              <input id="node-temperature-input" name="temperature" type="number" min="0" max="2" step="0.1" placeholder="Temp">
-            </label>
-            <label class="graph-action-field" for="node-top-p-input">
-              <span class="sr-only">Top p</span>
-              <input id="node-top-p-input" name="top_p" type="number" min="0" max="1" step="0.05" placeholder="Top p">
-            </label>
-            <label class="graph-action-field" for="node-max-output-tokens-input">
-              <span class="sr-only">Max output tokens</span>
-              <input id="node-max-output-tokens-input" name="max_output_tokens" type="number" min="1" step="1" placeholder="Max tokens">
-            </label>
-          </div>
-          <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
+          <section class="graph-action-settings" aria-label="Node behavior settings">
+            <div class="graph-action-settings-copy">
+              <p class="panel-kicker">Behavior</p>
+              <p class="graph-action-settings-note">Optional controls for how this node responds.</p>
+            </div>
+            <div class="graph-action-settings-grid">
+              <label class="graph-action-field graph-action-field-prompt" for="node-system-prompt-input">
+                <span class="graph-action-field-label">System prompt</span>
+                <textarea id="node-system-prompt-input" name="system_prompt" rows="3" placeholder="Optional system prompt"></textarea>
+              </label>
+              <div class="graph-action-param-row">
+                <label class="graph-action-field" for="node-temperature-input">
+                  <span class="graph-action-field-label">Temperature</span>
+                  <input id="node-temperature-input" name="temperature" type="number" min="0" max="2" step="0.1" placeholder="0.7">
+                </label>
+                <label class="graph-action-field" for="node-top-p-input">
+                  <span class="graph-action-field-label">Top p</span>
+                  <input id="node-top-p-input" name="top_p" type="number" min="0" max="1" step="0.05" placeholder="1.0">
+                </label>
+                <label class="graph-action-field" for="node-max-output-tokens-input">
+                  <span class="graph-action-field-label">Max tokens</span>
+                  <input id="node-max-output-tokens-input" name="max_output_tokens" type="number" min="1" step="1" placeholder="512">
+                </label>
+              </div>
+            </div>
+          </section>
           <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
         </form>
         <div class="legend graph-action-legend">
