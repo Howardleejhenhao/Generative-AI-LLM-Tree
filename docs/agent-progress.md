@@ -11,6 +11,70 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-22 09:46
+
+### Session Goal
+- Perform the final acceptance check against the homework requirements image and verify whether every requested item is actually implemented.
+- If gaps remain, close them, verify API key handling, and finish the project by merging back to `main`.
+
+### Planned Tasks
+- inspect current git status, active branch, `AGENTS.md`, and the latest progress log before making changes
+- verify the homework checklist items from code, not from assumptions
+- implement any missing requirement coverage before final acceptance
+- run validation and secrets-exposure checks, then merge the finished work back to `main`
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed first.
+- Audited the repository against the homework checklist and confirmed that LLM model selection, streaming, and branch-local short-term memory were already present.
+- Identified two real gaps during that audit: users could not customize the system prompt and could not configure common generation parameters from the product.
+- Added per-node `system_prompt`, `temperature`, `top_p`, and `max_output_tokens` storage to the data model and migrated the schema.
+- Wired those settings through node creation, continuation branching, edited variants, graph payload serialization, OpenAI payload construction, Gemini payload construction, and browser forms.
+- Updated the graph workspace and quick-create UI so newly created nodes can customize provider, model, system prompt, and common generation parameters.
+- Updated the node-focused chat header so the active node's prompt/config state is visible during final review.
+- Expanded tests to verify persisted generation config, provider-call propagation, edited-variant inheritance, validation failures, streaming behavior, and branch-local memory.
+- Updated `README.md` so the documented feature set now includes per-node custom prompt and generation controls.
+- Ran `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`, all passing.
+- Audited API key exposure paths and confirmed `.env` is gitignored, `.env` has no git history, API key names appear only in backend settings/provider wiring and README setup docs, and frontend/templates do not embed the key variables.
+
+### Files Changed
+- `README.md`
+- `docs/agent-progress.md`
+- `tree_ui/admin.py`
+- `tree_ui/migrations/0002_conversationnode_max_output_tokens_and_more.py`
+- `tree_ui/models.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/node_editing.py`
+- `tree_ui/services/providers/base.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `docs/complete-readme`
+- New branch created/switched: continuing on `docs/complete-readme`
+- Commits made before this log finalization:
+  - `6e95b93` - `feat: support per-node prompt and generation controls`
+- Push status:
+  - branch pushed after the session-log finalization commit
+  - merged into `main` and pushed after final acceptance checks
+
+### Current Status
+- The homework checklist is now fully covered in repository code: model choice, custom system prompt, configurable common API parameters, streaming, and short-term branch-local memory.
+- Repository-level secret handling for provider API keys is in good shape for this project scope.
+
+### Next Recommended Step
+- Push the branch, record the session-log commit, then merge the finished project back to `main`.
+
+### Known Issues / Blockers / Tech Debt
+- No key leakage path was found in the repository or frontend transport, but no local project can guarantee against external host compromise or manual secret disclosure outside version control.
+
 ## Session 2026-03-22 09:32
 
 ### Session Goal
