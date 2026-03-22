@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-22 10:54
+
+### Session Goal
+- Clean up the node creation dock UI after the new prompt/parameter controls made the layout feel cramped and visually messy.
+- Improve clarity without changing the creation flow or removing any functionality.
+
+### Planned Tasks
+- inspect the current branch, git state, latest progress log entry, and the creation-form CSS/template structure
+- simplify the dock layout so the primary actions stay on one row and advanced settings sit in a calmer secondary section
+- verify the template change with local tests
+- commit and push the UI polish on a focused fix branch
+
+### Work Completed
+- Session started; current branch, repository state, and the latest progress log were reviewed before editing.
+- Created and switched to `fix/node-creation-form-layout`.
+- Reworked the graph action dock markup so the creation controls now use a dedicated primary row and a separate behavior settings section instead of one overloaded grid.
+- Refined spacing, background treatment, textarea styling, parameter grouping, and responsive breakpoints so the dock reads as one intentional control surface.
+- Preserved all existing node-creation functionality and ran `python3 manage.py test` after the layout change.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/node-creation-form-layout`
+- Commits made before this log finalization:
+  - `8147dcf` - `fix: reorganize node creation dock layout`
+- Push status:
+  - pushed to `origin/fix/node-creation-form-layout` after the session-log finalization commit
+
+### Current Status
+- The creation dock layout polish is complete locally and committed on the fix branch.
+
+### Next Recommended Step
+- Push the fix branch, then review the dock visually in the browser.
+
+### Known Issues / Blockers / Tech Debt
+- This session only polished the main dock layout; the floating quick-create panel was left functionally unchanged aside from shared styling context.
+
 ## Session 2026-03-22 09:46
 
 ### Session Goal
