@@ -65,6 +65,10 @@ def create_edited_variant(
             summary=_build_summary_from_messages(validated_messages),
             provider=original_node.provider,
             model_name=original_node.model_name,
+            system_prompt=original_node.system_prompt,
+            temperature=original_node.temperature,
+            top_p=original_node.top_p,
+            max_output_tokens=original_node.max_output_tokens,
             position_x=original_node.position_x + 60,
             position_y=original_node.position_y + 140 + (variant_count * 60),
         )

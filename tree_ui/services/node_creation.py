@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from django.conf import settings
 from django.db import transaction
 
 from tree_ui.models import ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import (
-    SYSTEM_INSTRUCTION,
+    build_system_instruction,
     build_branch_lineage,
     build_generation_messages,
 )
@@ -27,6 +28,57 @@ def _build_node_title(title: str) -> str:
     if clean_title:
         return clean_title
     return "Untitled conversation"
+
+
+def _normalize_system_prompt(system_prompt: Any) -> str:
+    if system_prompt is None:
+        return ""
+    if not isinstance(system_prompt, str):
+        raise ValueError("System prompt must be a string.")
+    return system_prompt.strip()
+
+
+def _normalize_optional_float(
+    *,
+    value: Any,
+    field_label: str,
+    minimum: float,
+    maximum: float,
+) -> float | None:
+    if value in (None, ""):
+        return None
+
+    try:
+        normalized_value = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_label} must be a number.") from exc
+
+    if normalized_value < minimum or normalized_value > maximum:
+        raise ValueError(f"{field_label} must be between {minimum} and {maximum}.")
+
+    return round(normalized_value, 4)
+
+
+def _normalize_max_output_tokens(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+
+    if isinstance(value, float):
+        if not value.is_integer():
+            raise ValueError("Max output tokens must be an integer.")
+        normalized_value = int(value)
+    else:
+        if isinstance(value, str) and "." in value:
+            raise ValueError("Max output tokens must be an integer.")
+        try:
+            normalized_value = int(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Max output tokens must be an integer.") from exc
+
+    if normalized_value <= 0:
+        raise ValueError("Max output tokens must be greater than 0.")
+
+    return normalized_value
 
 
 def _build_fallback_assistant_message(
@@ -53,6 +105,10 @@ def generate_assistant_reply(
     provider: str,
     model_name: str,
     prompt: str,
+    system_prompt: str = "",
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_output_tokens: int | None = None,
 ) -> str:
     context_messages = build_generation_messages(parent=parent, prompt=prompt)
     try:
@@ -60,7 +116,10 @@ def generate_assistant_reply(
             provider_name=provider,
             model_name=model_name,
             messages=context_messages,
-            system_instruction=SYSTEM_INSTRUCTION,
+            system_instruction=build_system_instruction(system_prompt),
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         )
         return result.text
     except ProviderError as exc:
@@ -93,6 +152,10 @@ def resolve_node_creation_inputs(
     title: str,
     provider: str,
     model_name: str,
+    system_prompt: Any,
+    temperature: Any,
+    top_p: Any,
+    max_output_tokens: Any,
 ) -> dict:
     if provider not in ConversationNode.Provider.values:
         raise ValueError("Unsupported provider.")
@@ -105,6 +168,20 @@ def resolve_node_creation_inputs(
         "model_name": resolved_model,
         "title": _build_node_title(title),
         "summary": "Open this node to start the conversation.",
+        "system_prompt": _normalize_system_prompt(system_prompt),
+        "temperature": _normalize_optional_float(
+            value=temperature,
+            field_label="Temperature",
+            minimum=0.0,
+            maximum=2.0,
+        ),
+        "top_p": _normalize_optional_float(
+            value=top_p,
+            field_label="Top p",
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "max_output_tokens": _normalize_max_output_tokens(max_output_tokens),
         "position_x": position_x,
         "position_y": position_y,
     }
@@ -134,6 +211,10 @@ def stream_assistant_reply(
     provider: str,
     model_name: str,
     prompt: str,
+    system_prompt: str = "",
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_output_tokens: int | None = None,
 ):
     context_messages = build_generation_messages(parent=parent, prompt=prompt)
     emitted_chunk = False
@@ -143,7 +224,10 @@ def stream_assistant_reply(
             provider_name=provider,
             model_name=model_name,
             messages=context_messages,
-            system_instruction=SYSTEM_INSTRUCTION,
+            system_instruction=build_system_instruction(system_prompt),
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         ):
             emitted_chunk = True
             yield chunk
@@ -168,6 +252,10 @@ def create_node(
     title: str,
     provider: str,
     model_name: str,
+    system_prompt: Any = "",
+    temperature: Any = None,
+    top_p: Any = None,
+    max_output_tokens: Any = None,
 ) -> ConversationNode:
     resolved_inputs = resolve_node_creation_inputs(
         workspace=workspace,
@@ -175,6 +263,10 @@ def create_node(
         title=title,
         provider=provider,
         model_name=model_name,
+        system_prompt=system_prompt,
+        temperature=temperature,
+        top_p=top_p,
+        max_output_tokens=max_output_tokens,
     )
     return ConversationNode.objects.create(
         workspace=workspace,
@@ -183,6 +275,10 @@ def create_node(
         summary=resolved_inputs["summary"],
         provider=resolved_inputs["provider"],
         model_name=resolved_inputs["model_name"],
+        system_prompt=resolved_inputs["system_prompt"],
+        temperature=resolved_inputs["temperature"],
+        top_p=resolved_inputs["top_p"],
+        max_output_tokens=resolved_inputs["max_output_tokens"],
         position_x=resolved_inputs["position_x"],
         position_y=resolved_inputs["position_y"],
     )
@@ -199,6 +295,10 @@ def create_continuation_child(
         title=title,
         provider=source_node.provider,
         model_name=source_node.model_name,
+        system_prompt=source_node.system_prompt,
+        temperature=source_node.temperature,
+        top_p=source_node.top_p,
+        max_output_tokens=source_node.max_output_tokens,
     )
 
 
@@ -245,6 +345,10 @@ def append_messages_to_node(
         provider=node.provider,
         model_name=node.model_name,
         prompt=resolved_inputs["prompt"],
+        system_prompt=node.system_prompt,
+        temperature=node.temperature,
+        top_p=node.top_p,
+        max_output_tokens=node.max_output_tokens,
     )
     return append_messages_to_node_with_reply(
         node=node,

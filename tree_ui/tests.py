@@ -159,6 +159,10 @@ class WorkspaceGraphViewTests(TestCase):
                     "title": "Root node",
                     "provider": "openai",
                     "model_name": "gpt-4.1-mini",
+                    "system_prompt": "Answer tersely.",
+                    "temperature": 0.3,
+                    "top_p": 0.8,
+                    "max_output_tokens": 256,
                 }
             ),
             content_type="application/json",
@@ -169,8 +173,13 @@ class WorkspaceGraphViewTests(TestCase):
         node = ConversationNode.objects.get()
         self.assertIsNone(node.parent)
         self.assertEqual(node.provider, ConversationNode.Provider.OPENAI)
+        self.assertEqual(node.system_prompt, "Answer tersely.")
+        self.assertEqual(node.temperature, 0.3)
+        self.assertEqual(node.top_p, 0.8)
+        self.assertEqual(node.max_output_tokens, 256)
         self.assertEqual(NodeMessage.objects.filter(node=node).count(), 0)
         self.assertEqual(node.summary, "Open this node to start the conversation.")
+        self.assertEqual(response.json()["node"]["system_prompt"], "Answer tersely.")
 
     def test_can_create_multiple_root_nodes_in_one_workspace(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -235,6 +244,25 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(child.parent, parent)
         self.assertEqual(child.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(child.position_x, parent.position_x + 340)
+
+    def test_create_node_rejects_invalid_generation_config(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        response = self.client.post(
+            reverse("create_workspace_node", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "title": "Invalid config node",
+                    "provider": "openai",
+                    "model_name": "gpt-4.1-mini",
+                    "temperature": 3,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Temperature must be between 0.0 and 2.0.", response.content.decode("utf-8"))
 
     def test_can_delete_node_subtree_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -391,6 +419,10 @@ class WorkspaceGraphViewTests(TestCase):
             summary="",
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
+            system_prompt="Stay concise.",
+            temperature=0.4,
+            top_p=0.9,
+            max_output_tokens=300,
         )
         mock_stream_text.return_value = iter(["Streamed ", "reply"])
 
@@ -416,6 +448,10 @@ class WorkspaceGraphViewTests(TestCase):
             NodeMessage.objects.get(node=node, role=NodeMessage.Role.ASSISTANT).content,
             "Streamed reply",
         )
+        self.assertEqual(mock_stream_text.call_args.kwargs["temperature"], 0.4)
+        self.assertEqual(mock_stream_text.call_args.kwargs["top_p"], 0.9)
+        self.assertEqual(mock_stream_text.call_args.kwargs["max_output_tokens"], 300)
+        self.assertIn("Stay concise.", mock_stream_text.call_args.kwargs["system_instruction"])
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
@@ -534,6 +570,10 @@ class WorkspaceGraphViewTests(TestCase):
             summary="",
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
+            system_prompt="Always answer as a bullet list.",
+            temperature=0.2,
+            top_p=0.7,
+            max_output_tokens=120,
         )
         mock_generate_text.return_value = GenerationResult(
             text="Real provider output",
@@ -551,6 +591,13 @@ class WorkspaceGraphViewTests(TestCase):
             "Real provider output",
         )
         mock_generate_text.assert_called_once()
+        self.assertIn(
+            "Always answer as a bullet list.",
+            mock_generate_text.call_args.kwargs["system_instruction"],
+        )
+        self.assertEqual(mock_generate_text.call_args.kwargs["temperature"], 0.2)
+        self.assertEqual(mock_generate_text.call_args.kwargs["top_p"], 0.7)
+        self.assertEqual(mock_generate_text.call_args.kwargs["max_output_tokens"], 120)
 
     @patch("tree_ui.services.providers.registry._get_provider")
     def test_legacy_gemini_model_alias_is_upgraded_for_generation(self, mock_get_provider):
@@ -580,6 +627,10 @@ class WorkspaceGraphViewTests(TestCase):
             summary="Original",
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
+            system_prompt="Retain technical depth.",
+            temperature=0.5,
+            top_p=0.95,
+            max_output_tokens=512,
         )
         NodeMessage.objects.create(
             node=original,
@@ -603,3 +654,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(edited.edited_from, original)
         self.assertEqual(original.messages.get().content, "Original prompt")
         self.assertEqual(edited.messages.get().content, "Edited prompt")
+        self.assertEqual(edited.system_prompt, "Retain technical depth.")
+        self.assertEqual(edited.temperature, 0.5)
+        self.assertEqual(edited.top_p, 0.95)
+        self.assertEqual(edited.max_output_tokens, 512)

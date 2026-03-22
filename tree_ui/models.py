@@ -47,6 +47,10 @@ class ConversationNode(models.Model):
         default=Provider.OPENAI,
     )
     model_name = models.CharField(max_length=120)
+    system_prompt = models.TextField(blank=True)
+    temperature = models.FloatField(blank=True, null=True)
+    top_p = models.FloatField(blank=True, null=True)
+    max_output_tokens = models.PositiveIntegerField(blank=True, null=True)
     position_x = models.IntegerField(default=0)
     position_y = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

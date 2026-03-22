@@ -39,6 +39,9 @@ def _build_payload(
     messages: list[ContextMessage],
     system_instruction: str,
     stream: bool,
+    temperature: float | None,
+    top_p: float | None,
+    max_output_tokens: int | None,
 ) -> dict:
     payload = {
         "model": model_name,
@@ -53,6 +56,12 @@ def _build_payload(
     }
     if stream:
         payload["stream"] = True
+    if temperature is not None:
+        payload["temperature"] = temperature
+    if top_p is not None:
+        payload["top_p"] = top_p
+    if max_output_tokens is not None:
+        payload["max_output_tokens"] = max_output_tokens
     return payload
 
 
@@ -87,6 +96,9 @@ class OpenAIProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> GenerationResult:
         if not self.api_key:
             raise ProviderError("OpenAI API key is not configured.")
@@ -96,6 +108,9 @@ class OpenAIProvider(BaseProvider):
             messages=messages,
             system_instruction=system_instruction,
             stream=False,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         )
         response_data = self._post_json(payload)
         return GenerationResult(
@@ -110,6 +125,9 @@ class OpenAIProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> Iterator[str]:
         if not self.api_key:
             raise ProviderError("OpenAI API key is not configured.")
@@ -119,6 +137,9 @@ class OpenAIProvider(BaseProvider):
             messages=messages,
             system_instruction=system_instruction,
             stream=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         )
         yield from self._post_sse(payload)
 

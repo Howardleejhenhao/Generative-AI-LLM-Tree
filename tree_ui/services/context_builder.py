@@ -11,6 +11,18 @@ SYSTEM_INSTRUCTION = (
 )
 
 
+def build_system_instruction(custom_system_prompt: str = "") -> str:
+    normalized_prompt = custom_system_prompt.strip()
+    if not normalized_prompt:
+        return SYSTEM_INSTRUCTION
+
+    return (
+        f"{SYSTEM_INSTRUCTION}\n\n"
+        "Additional node-specific system prompt:\n"
+        f"{normalized_prompt}"
+    )
+
+
 @dataclass(frozen=True)
 class ContextMessage:
     role: str

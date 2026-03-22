@@ -46,13 +46,26 @@ def _build_payload(
     *,
     messages: list[ContextMessage],
     system_instruction: str,
+    temperature: float | None,
+    top_p: float | None,
+    max_output_tokens: int | None,
 ) -> dict:
-    return {
+    payload = {
         "system_instruction": {
             "parts": [{"text": system_instruction}],
         },
         "contents": _build_contents(messages),
     }
+    generation_config = {}
+    if temperature is not None:
+        generation_config["temperature"] = temperature
+    if top_p is not None:
+        generation_config["topP"] = top_p
+    if max_output_tokens is not None:
+        generation_config["maxOutputTokens"] = max_output_tokens
+    if generation_config:
+        payload["generationConfig"] = generation_config
+    return payload
 
 
 def _extract_stream_delta(response_data: dict) -> str:
@@ -92,6 +105,9 @@ class GeminiProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> GenerationResult:
         if not self.api_key:
             raise ProviderError("Gemini API key is not configured.")
@@ -99,6 +115,9 @@ class GeminiProvider(BaseProvider):
         payload = _build_payload(
             messages=messages,
             system_instruction=system_instruction,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         )
         response_data = self._post_json(payload, model_name=model_name)
         return GenerationResult(
@@ -113,6 +132,9 @@ class GeminiProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> Iterator[str]:
         if not self.api_key:
             raise ProviderError("Gemini API key is not configured.")
@@ -120,6 +142,9 @@ class GeminiProvider(BaseProvider):
         payload = _build_payload(
             messages=messages,
             system_instruction=system_instruction,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
         )
         yield from self._post_sse(payload, model_name=model_name)
 

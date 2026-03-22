@@ -39,6 +39,10 @@ const workspaceCreateFeedback = document.getElementById("workspace-create-feedba
 const nodeTitleInput = document.getElementById("node-title-input");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
+const systemPromptInput = document.getElementById("node-system-prompt-input");
+const temperatureInput = document.getElementById("node-temperature-input");
+const topPInput = document.getElementById("node-top-p-input");
+const maxOutputTokensInput = document.getElementById("node-max-output-tokens-input");
 const submitButton = document.getElementById("node-submit-button");
 const quickStartButtons = Array.from(document.querySelectorAll(".quick-start-button"));
 const rootModeToggle = document.getElementById("root-mode-toggle");
@@ -49,6 +53,10 @@ const quickCreateLabel = document.getElementById("graph-quick-create-label");
 const quickTitleInput = document.getElementById("quick-node-title-input");
 const quickProviderInput = document.getElementById("quick-node-provider-input");
 const quickModelInput = document.getElementById("quick-node-model-input");
+const quickSystemPromptInput = document.getElementById("quick-node-system-prompt-input");
+const quickTemperatureInput = document.getElementById("quick-node-temperature-input");
+const quickTopPInput = document.getElementById("quick-node-top-p-input");
+const quickMaxOutputTokensInput = document.getElementById("quick-node-max-output-tokens-input");
 const quickSubmitButton = document.getElementById("quick-node-submit-button");
 const quickCancelButton = document.getElementById("graph-quick-create-cancel");
 const quickFeedback = document.getElementById("quick-node-feedback");
@@ -369,7 +377,7 @@ function updateQuickCreatePosition() {
   const nodeHeight = (bounds.maxY - bounds.minY) * zoom;
   const preferredLeft = screenLeft + nodeWidth + 12;
   const panelWidth = quickCreate.dataset.open === "true" ? 320 : 58;
-  const panelHeight = quickCreate.dataset.open === "true" ? 236 : 58;
+  const panelHeight = quickCreate.dataset.open === "true" ? 420 : 58;
   const safeLeft = preferredLeft + panelWidth > stageWidth - 16
     ? Math.max(16, screenLeft - panelWidth - 10)
     : preferredLeft;
@@ -388,6 +396,10 @@ function syncQuickCreateDefaults() {
   if (modelOptionsMatchDock()) {
     quickModelInput.value = modelInput.value;
   }
+  quickSystemPromptInput.value = systemPromptInput.value;
+  quickTemperatureInput.value = temperatureInput.value;
+  quickTopPInput.value = topPInput.value;
+  quickMaxOutputTokensInput.value = maxOutputTokensInput.value;
 }
 
 function modelOptionsMatchDock() {
@@ -396,6 +408,32 @@ function modelOptionsMatchDock() {
 
 function isRootModeEnabled() {
   return rootModeToggle.checked;
+}
+
+function readOptionalNumberValue(input, parser = Number) {
+  const rawValue = input.value.trim();
+  if (!rawValue) {
+    return null;
+  }
+  return parser(rawValue);
+}
+
+function readOptionalIntegerValue(input) {
+  return readOptionalNumberValue(input, Number);
+}
+
+function buildNodeConfigPayload({
+  systemPromptValue,
+  temperatureValue,
+  topPValue,
+  maxOutputTokensValue,
+}) {
+  return {
+    system_prompt: systemPromptValue.value.trim(),
+    temperature: readOptionalNumberValue(temperatureValue),
+    top_p: readOptionalNumberValue(topPValue),
+    max_output_tokens: readOptionalIntegerValue(maxOutputTokensValue),
+  };
 }
 
 function mergeNode(nextNode) {
@@ -617,7 +655,16 @@ async function handleWorkspaceCreateSubmit(event) {
   }
 }
 
-async function createNodeRequest({ parentId, title, provider, modelName }) {
+async function createNodeRequest({
+  parentId,
+  title,
+  provider,
+  modelName,
+  systemPrompt,
+  temperature,
+  topP,
+  maxOutputTokens,
+}) {
   return postJSON(
     nodeForm.dataset.nodeCreateUrl,
     {
@@ -625,6 +672,10 @@ async function createNodeRequest({ parentId, title, provider, modelName }) {
       title,
       provider,
       model_name: modelName,
+      system_prompt: systemPrompt,
+      temperature,
+      top_p: topP,
+      max_output_tokens: maxOutputTokens,
     },
     csrfToken,
   );
@@ -641,10 +692,21 @@ async function handleNodeSubmit(event) {
       title: nodeTitleInput.value,
       provider: providerInput.value,
       modelName: modelInput.value,
+      ...buildNodeConfigPayload({
+        systemPromptValue: systemPromptInput,
+        temperatureValue: temperatureInput,
+        topPValue: topPInput,
+        maxOutputTokensValue: maxOutputTokensInput,
+      }),
     });
     mergeNode(result.node);
     updateSearchState();
     nodeTitleInput.value = "";
+    systemPromptInput.value = "";
+    temperatureInput.value = "";
+    topPInput.value = "";
+    maxOutputTokensInput.value = "";
+    syncQuickCreateDefaults();
     feedback.textContent = `Added ${result.node.title}.`;
     updateSelection(result.node.id);
     viewport.centerOnBounds(getNodeBounds(result.node));
@@ -769,9 +831,19 @@ async function handleQuickCreateSubmit(event) {
       title: quickTitleInput.value,
       provider: quickProviderInput.value,
       modelName: quickModelInput.value,
+      ...buildNodeConfigPayload({
+        systemPromptValue: quickSystemPromptInput,
+        temperatureValue: quickTemperatureInput,
+        topPValue: quickTopPInput,
+        maxOutputTokensValue: quickMaxOutputTokensInput,
+      }),
     });
     mergeNode(result.node);
     quickTitleInput.value = "";
+    quickSystemPromptInput.value = "";
+    quickTemperatureInput.value = "";
+    quickTopPInput.value = "";
+    quickMaxOutputTokensInput.value = "";
     setQuickCreateOpen(false);
     updateSearchState();
     feedback.textContent = `Added ${result.node.title}.`;
@@ -787,6 +859,10 @@ async function handleQuickCreateSubmit(event) {
 providerInput.addEventListener("change", () => syncModelOptions(providerInput, modelInput));
 providerInput.addEventListener("change", syncQuickCreateDefaults);
 modelInput.addEventListener("change", syncQuickCreateDefaults);
+systemPromptInput.addEventListener("input", syncQuickCreateDefaults);
+temperatureInput.addEventListener("input", syncQuickCreateDefaults);
+topPInput.addEventListener("input", syncQuickCreateDefaults);
+maxOutputTokensInput.addEventListener("input", syncQuickCreateDefaults);
 quickProviderInput.addEventListener("change", () => syncModelOptions(quickProviderInput, quickModelInput));
 rootModeToggle.addEventListener("change", updateFormState);
 nodeForm.addEventListener("submit", handleNodeSubmit);

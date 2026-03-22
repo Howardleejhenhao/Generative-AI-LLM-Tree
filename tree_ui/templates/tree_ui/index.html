@@ -139,6 +139,24 @@
                 <select id="quick-node-model-input" name="model_name" aria-label="Child node model"></select>
               </label>
             </div>
+            <label class="graph-quick-create-field" for="quick-node-system-prompt-input">
+              <span class="sr-only">Child node system prompt</span>
+              <textarea id="quick-node-system-prompt-input" name="system_prompt" rows="3" placeholder="Optional system prompt"></textarea>
+            </label>
+            <div class="graph-quick-create-row">
+              <label class="graph-quick-create-field" for="quick-node-temperature-input">
+                <span class="sr-only">Temperature</span>
+                <input id="quick-node-temperature-input" name="temperature" type="number" min="0" max="2" step="0.1" placeholder="Temp">
+              </label>
+              <label class="graph-quick-create-field" for="quick-node-top-p-input">
+                <span class="sr-only">Top p</span>
+                <input id="quick-node-top-p-input" name="top_p" type="number" min="0" max="1" step="0.05" placeholder="Top p">
+              </label>
+              <label class="graph-quick-create-field" for="quick-node-max-output-tokens-input">
+                <span class="sr-only">Max output tokens</span>
+                <input id="quick-node-max-output-tokens-input" name="max_output_tokens" type="number" min="1" step="1" placeholder="Max tokens">
+              </label>
+            </div>
             <div class="graph-quick-create-actions">
               <button class="primary-button graph-quick-create-submit" id="quick-node-submit-button" type="submit">Add child</button>
               <button class="detail-toggle-button detail-toggle-button-quiet graph-quick-create-cancel" id="graph-quick-create-cancel" type="button">Close</button>
@@ -223,6 +241,24 @@
             <span class="sr-only">Model</span>
             <select id="node-model-input" name="model_name" aria-label="Model"></select>
           </label>
+          <label class="graph-action-field graph-action-field-title" for="node-system-prompt-input">
+            <span class="sr-only">System prompt</span>
+            <textarea id="node-system-prompt-input" name="system_prompt" rows="3" placeholder="Optional system prompt"></textarea>
+          </label>
+          <div class="graph-quick-create-row">
+            <label class="graph-action-field" for="node-temperature-input">
+              <span class="sr-only">Temperature</span>
+              <input id="node-temperature-input" name="temperature" type="number" min="0" max="2" step="0.1" placeholder="Temp">
+            </label>
+            <label class="graph-action-field" for="node-top-p-input">
+              <span class="sr-only">Top p</span>
+              <input id="node-top-p-input" name="top_p" type="number" min="0" max="1" step="0.05" placeholder="Top p">
+            </label>
+            <label class="graph-action-field" for="node-max-output-tokens-input">
+              <span class="sr-only">Max output tokens</span>
+              <input id="node-max-output-tokens-input" name="max_output_tokens" type="number" min="1" step="1" placeholder="Max tokens">
+            </label>
+          </div>
           <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
           <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
         </form>

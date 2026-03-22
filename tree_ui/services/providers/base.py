@@ -29,6 +29,9 @@ class BaseProvider:
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> GenerationResult:
         raise NotImplementedError
 
@@ -38,6 +41,9 @@ class BaseProvider:
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
     ) -> Iterator[str]:
         raise NotImplementedError
 

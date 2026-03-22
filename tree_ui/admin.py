@@ -11,9 +11,9 @@ class NodeMessageInline(admin.TabularInline):
 
 @admin.register(ConversationNode)
 class ConversationNodeAdmin(admin.ModelAdmin):
-    list_display = ("title", "workspace", "provider", "model_name", "parent")
+    list_display = ("title", "workspace", "provider", "model_name", "temperature", "parent")
     list_filter = ("provider", "workspace")
-    search_fields = ("title", "summary", "model_name")
+    search_fields = ("title", "summary", "model_name", "system_prompt")
     inlines = [NodeMessageInline]
 
 

@@ -34,6 +34,9 @@ def generate_text(
     model_name: str,
     messages: list[ContextMessage],
     system_instruction: str,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_output_tokens: int | None = None,
 ) -> GenerationResult:
     provider = _get_provider(provider_name)
     resolved_model_name = resolve_model_name(provider=provider_name, model_name=model_name)
@@ -41,6 +44,9 @@ def generate_text(
         model_name=resolved_model_name,
         messages=messages,
         system_instruction=system_instruction,
+        temperature=temperature,
+        top_p=top_p,
+        max_output_tokens=max_output_tokens,
     )
 
 
@@ -50,6 +56,9 @@ def stream_text(
     model_name: str,
     messages: list[ContextMessage],
     system_instruction: str,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_output_tokens: int | None = None,
 ) -> Iterator[str]:
     provider = _get_provider(provider_name)
     resolved_model_name = resolve_model_name(provider=provider_name, model_name=model_name)
@@ -57,4 +66,7 @@ def stream_text(
         model_name=resolved_model_name,
         messages=messages,
         system_instruction=system_instruction,
+        temperature=temperature,
+        top_p=top_p,
+        max_output_tokens=max_output_tokens,
     )

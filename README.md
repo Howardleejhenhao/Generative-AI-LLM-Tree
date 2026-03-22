@@ -11,7 +11,7 @@ The project is intentionally built with Django Templates plus modular JavaScript
 - Stores conversation nodes with ordered message lists instead of forcing a single prompt/response pair
 - Supports branching from any existing node
 - Supports version-safe edited variants of older nodes
-- Lets each new node choose its provider and model independently
+- Lets each new node choose its provider, model, system prompt, and common generation parameters independently
 - Streams assistant replies to the browser over SSE
 - Preserves branch-local context by building prompts only from the selected lineage
 - Persists manual node positions so graph layouts remain stable
@@ -43,6 +43,7 @@ The project is intentionally built with Django Templates plus modular JavaScript
 
 - OpenAI and Gemini provider abstraction behind shared service interfaces
 - Per-node provider and model selection
+- Per-node custom system prompt plus configurable `temperature`, `top_p`, and `max_output_tokens`
 - Backend SSE streaming from upstream provider streams
 - Legacy Gemini model alias resolution for older saved nodes
 - Clearly labeled fallback responses when provider keys are missing or upstream streaming fails before any tokens arrive
@@ -59,7 +60,7 @@ A conversation node is a graph node. It stores:
 
 - a parent reference for branching
 - an optional `edited_from` reference for version-safe edited variants
-- provider and model metadata
+- provider, model, and generation metadata
 - persisted graph position
 - a short title and summary
 - an ordered list of messages
@@ -194,7 +195,7 @@ Legacy Gemini names such as `gemini-2.0-flash` are transparently mapped to curre
 
 1. Open the app and land in the current workspace graph.
 2. Create a workspace if you want a separate conversation canvas.
-3. Create a root node and choose a provider/model.
+3. Create a root node and choose a provider/model, optional system prompt, and optional generation controls.
 4. Open the node's chat page and send a prompt.
 5. Watch the assistant reply stream into the UI.
 6. Return to the graph and branch from any existing node.

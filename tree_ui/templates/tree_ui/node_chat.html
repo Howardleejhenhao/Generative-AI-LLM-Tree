@@ -10,6 +10,15 @@
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
         <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
+        <p class="chat-shell-meta">
+          {% if node_payload.system_prompt %}Custom system prompt{% else %}Default system prompt{% endif %}
+          {% if node_payload.temperature is not None %} · temp {{ node_payload.temperature }}{% endif %}
+          {% if node_payload.top_p is not None %} · top p {{ node_payload.top_p }}{% endif %}
+          {% if node_payload.max_output_tokens is not None %} · max {{ node_payload.max_output_tokens }} tokens{% endif %}
+        </p>
+        {% if node_payload.system_prompt %}
+          <p class="chat-shell-meta">{{ node_payload.system_prompt }}</p>
+        {% endif %}
         {% if not can_append_in_place %}
           <span class="chat-shell-mode">History node</span>
         {% endif %}

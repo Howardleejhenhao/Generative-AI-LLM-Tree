@@ -257,6 +257,10 @@ def create_workspace_node(request, slug: str):
             title=payload.get("title", ""),
             provider=payload.get("provider", ConversationNode.Provider.OPENAI),
             model_name=payload.get("model_name", ""),
+            system_prompt=payload.get("system_prompt", ""),
+            temperature=payload.get("temperature"),
+            top_p=payload.get("top_p"),
+            max_output_tokens=payload.get("max_output_tokens"),
         )
         node = create_node(
             workspace=workspace,
@@ -264,6 +268,10 @@ def create_workspace_node(request, slug: str):
             title=resolved_inputs["title"],
             provider=resolved_inputs["provider"],
             model_name=resolved_inputs["model_name"],
+            system_prompt=resolved_inputs["system_prompt"],
+            temperature=resolved_inputs["temperature"],
+            top_p=resolved_inputs["top_p"],
+            max_output_tokens=resolved_inputs["max_output_tokens"],
         )
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
@@ -418,6 +426,10 @@ def stream_node_message(request, slug: str, node_id: int):
                 provider=target_node.provider,
                 model_name=target_node.model_name,
                 prompt=resolved_inputs["prompt"],
+                system_prompt=target_node.system_prompt,
+                temperature=target_node.temperature,
+                top_p=target_node.top_p,
+                max_output_tokens=target_node.max_output_tokens,
             ):
                 assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
