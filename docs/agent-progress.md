@@ -11,6 +11,46 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-22 09:32
+
+### Session Goal
+- Finish the project wrap-up documentation by replacing the thin README with a complete, accurate project guide.
+- Keep the README aligned with the implemented repository state instead of aspirational requirements.
+
+### Planned Tasks
+- inspect current git status, active branch, `AGENTS.md`, the latest progress log, and the current `README.md`
+- verify the real startup flow, environment variables, data model, and implemented user workflows from code
+- rewrite `README.md` with setup, architecture, usage, and verification guidance
+- validate the documentation update, then record the session outcome with commit and push details
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, the latest progress log, and the existing `README.md` were reviewed before editing.
+- Created and switched to `docs/complete-readme` for this docs-focused wrap-up task.
+- Verified the actual implementation from repository code, including Docker Compose startup, `.env` configuration, SQLite defaults, data models, graph routes, node-chat routes, provider defaults, branch-local context construction, edited variants, and SSE streaming endpoints.
+- Rewrote `README.md` into a full project guide covering feature scope, core concepts, architecture, setup, environment variables, workflow, HTTP surface, validation commands, and current limits.
+- Validated the repository after the documentation update with `python3 manage.py check`.
+
+### Files Changed
+- `README.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `docs/complete-readme`
+- Commits made before this log finalization:
+  - `457614c` - `docs: complete project readme`
+- Push status:
+  - pushed to `origin/docs/complete-readme` after the session-log finalization commit
+
+### Current Status
+- The README now reflects the implemented repository much more completely and can serve as the primary project handoff document.
+
+### Next Recommended Step
+- Commit and push the README completion branch, then merge it after review.
+
+### Known Issues / Blockers / Tech Debt
+- The README describes the current implementation accurately, but live browser validation against real provider keys is still the main remaining confidence check for streaming edge cases.
+
 ## Session 2026-03-20 11:22
 
 ### Session Goal
