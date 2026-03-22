@@ -242,7 +242,6 @@
               <span class="sr-only">Model</span>
               <select id="node-model-input" name="model_name" aria-label="Model"></select>
             </label>
-            <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
           </div>
           <section class="graph-action-settings" aria-label="Node behavior settings">
             <div class="graph-action-settings-copy">
@@ -269,8 +268,11 @@
                 </label>
               </div>
             </div>
+            <div class="graph-action-footer">
+              <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
+              <button class="primary-button graph-action-submit" id="node-submit-button" type="submit">Add root</button>
+            </div>
           </section>
-          <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
         </form>
         <div class="legend graph-action-legend">
           <span class="legend-pill legend-pill-openai">OpenAI branch</span>

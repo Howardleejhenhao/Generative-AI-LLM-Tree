@@ -28,6 +28,7 @@
 - Created and switched to `fix/node-creation-form-layout`.
 - Reworked the graph action dock markup so the creation controls now use a dedicated primary row and a separate behavior settings section instead of one overloaded grid.
 - Refined spacing, background treatment, textarea styling, parameter grouping, and responsive breakpoints so the dock reads as one intentional control surface.
+- Followed up on layout review by moving the submit button from the top row into the bottom footer of the behavior section so the action sits after the optional configuration controls.
 - Preserved all existing node-creation functionality and ran `python3 manage.py test` after the layout change.
 
 ### Files Changed
@@ -45,6 +46,7 @@
 
 ### Current Status
 - The creation dock layout polish is complete locally and committed on the fix branch.
+- The follow-up button placement adjustment is also complete locally on the same fix branch.
 
 ### Next Recommended Step
 - Push the fix branch, then review the dock visually in the browser.

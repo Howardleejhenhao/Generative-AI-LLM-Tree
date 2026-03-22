@@ -270,6 +270,14 @@
   gap: 12px;
 }
 
+.graph-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
 .graph-action-toggle {
   display: inline-flex;
   align-items: center;
@@ -339,8 +347,8 @@
 }
 
 .graph-action-form .form-feedback {
-  grid-column: 1 / -1;
   color: var(--muted);
+  margin: 0;
 }
 
 .graph-action-legend {
@@ -365,6 +373,11 @@
 
   .graph-action-param-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .graph-action-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
