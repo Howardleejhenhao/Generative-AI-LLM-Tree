@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-24 13:50
+
+### Session Goal
+- Simplify the empty graph state so it only shows a single `No root yet.` message.
+- Remove the extra quick-start preset copy from the empty workspace view.
+
+### Planned Tasks
+- inspect the current branch, git state, latest progress log entry, and the empty-state template
+- remove the empty-state preset cards and secondary copy from the graph canvas
+- update regression tests for the new empty-state wording
+- verify the change locally
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed.
+- Created and switched to `fix/empty-root-state-copy`.
+- Simplified the empty graph state so it now shows only `No root yet.` with no extra preset cards or supporting copy.
+- Updated the workspace graph view regression test so the empty state now asserts the new message and confirms the old preset labels are absent.
+- Verified the change with `python3 manage.py test tree_ui.tests.WorkspaceGraphViewTests.test_workspace_page_renders_graph_shell`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/empty-root-state-copy`
+- Commits made before this log finalization:
+  - `ac58529` - `fix: simplify empty graph state copy`
+- Push status:
+  - will push to `origin/fix/empty-root-state-copy` after the session-log finalization commit
+
+### Current Status
+- The empty graph state copy cleanup is complete locally on the fix branch.
+
+### Next Recommended Step
+- Push the fix branch, then visually verify the updated empty state in the browser if additional UI review is needed.
+
+### Known Issues / Blockers / Tech Debt
+- The old quick-start CSS/JS hooks remain in place, but they are inert because no quick-start buttons are rendered.
+
 ## Session 2026-03-22 10:54
 
 ### Session Goal
