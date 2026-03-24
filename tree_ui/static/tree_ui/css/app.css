@@ -1016,10 +1016,94 @@ body:has(.chat-page-immersive) .page-shell {
   padding: 14px 16px;
   border-radius: 22px;
   line-height: 1.62;
-  white-space: pre-wrap;
+  white-space: normal;
   overflow-wrap: anywhere;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 14px 28px rgba(49, 37, 22, 0.08);
+}
+
+.markdown-content {
+  overflow-wrap: anywhere;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content p,
+.markdown-content ul,
+.markdown-content ol,
+.markdown-content blockquote,
+.markdown-content pre,
+.markdown-content hr,
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 0 0 0.9em;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  line-height: 1.3;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.3em;
+}
+
+.markdown-content li + li {
+  margin-top: 0.35em;
+}
+
+.markdown-content blockquote {
+  padding-left: 0.95em;
+  border-left: 3px solid rgba(74, 58, 40, 0.22);
+  color: var(--muted);
+}
+
+.markdown-content code {
+  padding: 0.14em 0.38em;
+  border-radius: 8px;
+  background: rgba(54, 57, 75, 0.08);
+  font-family: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.94em;
+}
+
+.markdown-content pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(54, 57, 75, 0.08);
+}
+
+.markdown-content pre code {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.markdown-content a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid rgba(74, 58, 40, 0.14);
 }
 
 .chat-message[data-role="assistant"] .chat-message-role {
@@ -1864,6 +1948,7 @@ body:has(.chat-page-immersive) .page-shell {
 .graph-node-summary,
 .node-metadata dd,
 .message-card p,
+.message-card-body,
 .action-box p {
   margin: 0;
   line-height: 1.55;

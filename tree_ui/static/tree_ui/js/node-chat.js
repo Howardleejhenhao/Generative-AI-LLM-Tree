@@ -1,4 +1,4 @@
-import { renderChatTranscript } from "./node-panel.js";
+import { renderChatTranscript } from "./node-panel.js?v=20260324-markdown-rendering";
 import { streamJSON } from "./streaming.js";
 
 const payload = JSON.parse(document.getElementById("node-chat-payload").textContent);

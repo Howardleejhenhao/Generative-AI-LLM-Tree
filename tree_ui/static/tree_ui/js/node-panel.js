@@ -1,3 +1,5 @@
+import { setMarkdownContent } from "./markdown.js?v=20260324-markdown-rendering";
+
 export function renderNodeDetails(container, messages) {
   container.innerHTML = "";
 
@@ -22,8 +24,9 @@ export function renderNodeDetails(container, messages) {
     order.textContent = `#${message.order_index}`;
     header.append(role, order);
 
-    const body = document.createElement("p");
-    body.textContent = message.content;
+    const body = document.createElement("div");
+    body.className = "message-card-body";
+    setMarkdownContent(body, message.content);
 
     article.append(header, body);
     container.appendChild(article);
@@ -85,7 +88,7 @@ export function renderChatTranscript(container, messages) {
 
     const body = document.createElement("div");
     body.className = "chat-message-body";
-    body.textContent = message.content;
+    setMarkdownContent(body, message.content);
 
     article.append(label, body);
     container.appendChild(article);
