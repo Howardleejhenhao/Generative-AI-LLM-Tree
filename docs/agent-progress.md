@@ -11,6 +11,51 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-24 13:57
+
+### Session Goal
+- Add Markdown rendering support for LLM replies so assistant output no longer appears as raw Markdown syntax.
+- Make the rendered output work in both the node chat transcript and the message detail views, including streaming updates.
+
+### Planned Tasks
+- inspect the current branch, git state, latest progress log entry, and the message rendering code paths
+- add a safe frontend Markdown renderer for chat/message content
+- wire the renderer into transcript/detail rendering and add matching styles
+- verify the implementation locally, then document and push the session
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed.
+- Created and switched to `fix/markdown-message-rendering`.
+- Added a new frontend Markdown renderer module that safely escapes raw content and supports headings, lists, block quotes, inline code, fenced code blocks, emphasis, strike-through, links, and paragraph line breaks.
+- Wired Markdown rendering into the node chat transcript and the shared message/detail renderer so streamed assistant output and persisted chat messages are both formatted instead of shown as raw Markdown syntax.
+- Updated the node chat module import/version path and added matching CSS for rendered Markdown blocks, inline code, code fences, links, and block quotes.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/markdown.js`, `node --check tree_ui/static/tree_ui/js/node-panel.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `node --input-type=module -e 'import { renderMarkdown } from "./tree_ui/static/tree_ui/js/markdown.js"; ...'`, and `python3 manage.py test tree_ui.tests.WorkspaceGraphViewTests.test_workspace_node_chat_page_renders_transcript_and_composer`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/markdown.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/markdown-message-rendering`
+- Commits made before this log finalization:
+  - `121f2ca` - `feat: render markdown in chat messages`
+- Push status:
+  - will push to `origin/fix/markdown-message-rendering` after the session-log finalization commit
+
+### Current Status
+- Markdown rendering support is complete locally on the fix branch for the node chat experience and shared message renderer.
+
+### Next Recommended Step
+- Push the fix branch and visually confirm a streamed assistant reply that includes Markdown renders correctly in the browser.
+
+### Known Issues / Blockers / Tech Debt
+- The Markdown renderer is intentionally lightweight and safe, but it is not a full CommonMark implementation.
+
 ## Session 2026-03-24 13:50
 
 ### Session Goal
