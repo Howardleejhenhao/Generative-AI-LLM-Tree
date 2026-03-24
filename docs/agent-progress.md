@@ -11,6 +11,81 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-03-24 21:37
+
+### Session Goal
+- Remove all extra git branches so only `main` remains locally and on `origin`.
+
+### Planned Tasks
+- review current git status, active branch, `AGENTS.md`, and the latest progress log entry
+- inspect local and remote branches and confirm whether any unmerged commits would be lost
+- delete all non-`main` branches and record the cleanup result
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed first.
+- Checked all local and remote non-`main` branches against `main` and confirmed there were no branch-only commits that still needed preservation.
+- Deleted the extra local branches: `docs/complete-readme`, `feature/delete-node-workspace-confirmation`, `feature/workspace-ui-polish`, `fix/empty-root-state-copy`, `fix/markdown-message-rendering`, and `fix/node-creation-form-layout`.
+- Deleted the extra remote branches from `origin`: `docs/complete-readme`, `feature/delete-node-workspace-confirmation`, `feature/workspace-ui-polish`, `fix/markdown-message-rendering`, and `fix/node-creation-form-layout`.
+- Verified that only local `main` and `origin/main` remain.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none
+- Commits made:
+  - none
+- Push status:
+  - no new commit pushed; remote branch deletion completed on `origin`
+
+### Current Status
+- Repository branch cleanup is complete; only `main` remains locally and on `origin`.
+
+### Next Recommended Step
+- Continue working directly from `main`, or create a fresh feature/fix branch only when new work starts.
+
+### Known Issues / Blockers / Tech Debt
+- none
+
+## Session 2026-03-24 14:33
+
+### Session Goal
+- Inspect the current implementation to answer repository-specific questions about branch-local context propagation and the database choice.
+- Confirm the actual request flow for creating a new node with a different model/provider.
+
+### Planned Tasks
+- review current git status, active branch, `AGENTS.md`, and the latest progress log entry
+- inspect the Django models, context builder, node creation flow, provider registry, and settings
+- answer the user with code-backed explanations instead of requirement-level assumptions
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the latest progress log were reviewed first.
+- Confirmed that conversation history is not inferred by the database layer; the backend explicitly walks the selected node lineage through `parent` links and concatenates ordered `NodeMessage` rows before sending the prompt to either provider.
+- Confirmed that provider/model switching only changes which provider adapter formats and sends the already-built context payload; it does not change the lineage reconstruction rule.
+- Confirmed that the default database is SQLite through Django settings and that the schema uses `Workspace`, `ConversationNode`, and `NodeMessage` tables to persist the graph and per-node transcript data.
+- Prepared a code-referenced explanation for the user. No product behavior was changed in this session.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none; question-answering session with progress-log update only
+- Commits made:
+  - none
+- Push status:
+  - not pushed; no implementation change was made
+
+### Current Status
+- The current repository behavior for branch-local memory, provider switching, and database persistence has been confirmed from code.
+
+### Next Recommended Step
+- If needed, add a small architecture note to `README.md` or the UI help text explaining that lineage context is rebuilt server-side from parent links and ordered messages.
+
+### Known Issues / Blockers / Tech Debt
+- There is no dedicated architecture diagram or inline developer doc explaining the lineage-to-provider request flow, so questions like this currently require reading service code.
+
 ## Session 2026-03-24 13:57
 
 ### Session Goal
