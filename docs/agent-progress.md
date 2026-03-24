@@ -40,14 +40,16 @@
 - New branch created/switched: `fix/empty-root-state-copy`
 - Commits made before this log finalization:
   - `ac58529` - `fix: simplify empty graph state copy`
+  - `bf3877c` - `docs: update progress log for empty state copy`
 - Push status:
-  - will push to `origin/fix/empty-root-state-copy` after the session-log finalization commit
+  - merged back into local `main` with a fast-forward merge
+  - will push to `origin/main` after the merge-status finalization commit
 
 ### Current Status
-- The empty graph state copy cleanup is complete locally on the fix branch.
+- The empty graph state copy cleanup is complete and already merged into local `main`.
 
 ### Next Recommended Step
-- Push the fix branch, then visually verify the updated empty state in the browser if additional UI review is needed.
+- Push `main` so the merged empty-state cleanup is reflected on the remote branch.
 
 ### Known Issues / Blockers / Tech Debt
 - The old quick-start CSS/JS hooks remain in place, but they are inert because no quick-start buttons are rendered.
