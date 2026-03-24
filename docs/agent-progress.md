@@ -30,6 +30,8 @@
 - Wired Markdown rendering into the node chat transcript and the shared message/detail renderer so streamed assistant output and persisted chat messages are both formatted instead of shown as raw Markdown syntax.
 - Updated the node chat module import/version path and added matching CSS for rendered Markdown blocks, inline code, code fences, links, and block quotes.
 - Verified the change with `node --check tree_ui/static/tree_ui/js/markdown.js`, `node --check tree_ui/static/tree_ui/js/node-panel.js`, `node --check tree_ui/static/tree_ui/js/node-chat.js`, `node --input-type=module -e 'import { renderMarkdown } from "./tree_ui/static/tree_ui/js/markdown.js"; ...'`, and `python3 manage.py test tree_ui.tests.WorkspaceGraphViewTests.test_workspace_node_chat_page_renders_transcript_and_composer`.
+- Followed up on the chat composer UX by overriding the global textarea minimum height for the node chat prompt so the default input box is noticeably shorter while still auto-expanding as the user types.
+- Re-ran `python3 manage.py test tree_ui.tests.WorkspaceGraphViewTests.test_workspace_node_chat_page_renders_transcript_and_composer` after the composer height adjustment.
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -44,6 +46,7 @@
 - New branch created/switched: `fix/markdown-message-rendering`
 - Commits made before this log finalization:
   - `121f2ca` - `feat: render markdown in chat messages`
+  - `b8cbf5e` - `fix: reduce chat input default height`
 - Push status:
   - will push to `origin/fix/markdown-message-rendering` after the session-log finalization commit
 
