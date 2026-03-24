@@ -46,15 +46,19 @@
 - New branch created/switched: `fix/markdown-message-rendering`
 - Commits made before this log finalization:
   - `121f2ca` - `feat: render markdown in chat messages`
+  - `c2a462f` - `docs: update progress log for markdown rendering`
   - `b8cbf5e` - `fix: reduce chat input default height`
+  - `7da78df` - `docs: update progress log for chat input height`
 - Push status:
-  - will push to `origin/fix/markdown-message-rendering` after the session-log finalization commit
+  - pushed to `origin/fix/markdown-message-rendering`
+  - merged back into local `main` with a fast-forward merge
+  - will push to `origin/main` after the merge-status finalization commit
 
 ### Current Status
-- Markdown rendering support is complete locally on the fix branch for the node chat experience and shared message renderer.
+- Markdown rendering support and the chat input height follow-up are complete and already merged into local `main`.
 
 ### Next Recommended Step
-- Push the fix branch and visually confirm a streamed assistant reply that includes Markdown renders correctly in the browser.
+- Push `main` so the merged Markdown/chat-input updates are reflected on the remote default branch.
 
 ### Known Issues / Blockers / Tech Debt
 - The Markdown renderer is intentionally lightweight and safe, but it is not a full CommonMark implementation.
