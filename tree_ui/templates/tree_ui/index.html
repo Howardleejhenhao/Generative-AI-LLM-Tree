@@ -167,46 +167,7 @@
         <div class="graph-canvas" id="graph-canvas">
           <div class="graph-empty" id="graph-empty"{% if graph_payload.nodes %} hidden{% endif %}>
             <div class="graph-empty-copy-block">
-              <strong>No nodes yet.</strong>
-              <p>Start with a root.</p>
-            </div>
-            <div class="graph-empty-presets">
-              <button
-                class="quick-start-button"
-                type="button"
-                data-title="Research lane"
-                data-provider="openai"
-                data-model-name="gpt-4.1-mini"
-                data-root-mode="true"
-              >
-                <span class="quick-start-label">Research lane</span>
-                <span class="quick-start-meta">OpenAI / gpt-4.1-mini</span>
-                <span class="quick-start-copy">Start a general-purpose exploration branch.</span>
-              </button>
-              <button
-                class="quick-start-button"
-                type="button"
-                data-title="Model comparison"
-                data-provider="gemini"
-                data-model-name="gemini-2.5-flash"
-                data-root-mode="true"
-              >
-                <span class="quick-start-label">Model comparison</span>
-                <span class="quick-start-meta">Gemini / gemini-2.5-flash</span>
-                <span class="quick-start-copy">Spin up a separate branch for side-by-side output comparison.</span>
-              </button>
-              <button
-                class="quick-start-button"
-                type="button"
-                data-title="Branch review"
-                data-provider="openai"
-                data-model-name="gpt-4.1"
-                data-root-mode="true"
-              >
-                <span class="quick-start-label">Branch review</span>
-                <span class="quick-start-meta">OpenAI / gpt-4.1</span>
-                <span class="quick-start-copy">Create a root conversation intended for critique and iteration.</span>
-              </button>
+              <strong>No root yet.</strong>
             </div>
           </div>
           <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
