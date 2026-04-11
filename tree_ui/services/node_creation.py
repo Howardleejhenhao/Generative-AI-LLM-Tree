@@ -13,6 +13,7 @@ from tree_ui.services.context_builder import (
     build_generation_messages,
 )
 from tree_ui.services.model_catalog import resolve_model_name
+from tree_ui.services.memory_service import format_memories_for_prompt, retrieve_memories_for_generation
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
 
 
@@ -111,12 +112,23 @@ def generate_assistant_reply(
     max_output_tokens: int | None = None,
 ) -> str:
     context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    memory_text = ""
+    if parent is not None:
+        memory_text = format_memories_for_prompt(
+            retrieve_memories_for_generation(
+                workspace=parent.workspace,
+                parent=parent,
+            )
+        )
     try:
         result = generate_text(
             provider_name=provider,
             model_name=model_name,
             messages=context_messages,
-            system_instruction=build_system_instruction(system_prompt),
+            system_instruction=build_system_instruction(
+                system_prompt,
+                retrieved_memory_text=memory_text,
+            ),
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
@@ -218,13 +230,24 @@ def stream_assistant_reply(
 ):
     context_messages = build_generation_messages(parent=parent, prompt=prompt)
     emitted_chunk = False
+    memory_text = ""
+    if parent is not None:
+        memory_text = format_memories_for_prompt(
+            retrieve_memories_for_generation(
+                workspace=parent.workspace,
+                parent=parent,
+            )
+        )
 
     try:
         for chunk in stream_text(
             provider_name=provider,
             model_name=model_name,
             messages=context_messages,
-            system_instruction=build_system_instruction(system_prompt),
+            system_instruction=build_system_instruction(
+                system_prompt,
+                retrieved_memory_text=memory_text,
+            ),
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,

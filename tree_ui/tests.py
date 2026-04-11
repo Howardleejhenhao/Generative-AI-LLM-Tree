@@ -87,6 +87,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
+        self.assertContains(response, "Memory Inspector")
+        self.assertContains(response, "Save memory")
+        self.assertContains(response, "Workspace Memory")
+        self.assertContains(response, "Branch Memory")
 
     def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -387,6 +391,46 @@ class WorkspaceGraphViewTests(TestCase):
             reverse("workspace_node_chat", args=[workspace.slug, edited.id]),
             response.json()["node_chat_url"],
         )
+
+    def test_can_create_memory_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Memory node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        message = NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Remember that the demo should stay under 3 minutes.",
+            order_index=0,
+        )
+
+        response = self.client.post(
+            reverse("create_workspace_memory", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "context_node_id": node.id,
+                    "scope": ConversationMemory.Scope.BRANCH,
+                    "memory_type": ConversationMemory.MemoryType.SUMMARY,
+                    "title": "Demo limit",
+                    "branch_anchor_id": node.id,
+                    "source_node_id": node.id,
+                    "source_message_id": message.id,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        memory = ConversationMemory.objects.get()
+        self.assertEqual(memory.scope, ConversationMemory.Scope.BRANCH)
+        self.assertEqual(memory.branch_anchor, node)
+        self.assertEqual(memory.source_message, message)
+        self.assertTrue(memory.is_pinned)
+        self.assertEqual(response.json()["memory_payload"]["branch_memories"][0]["id"], memory.id)
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -777,3 +821,37 @@ class MemoryFoundationTests(TestCase):
         self.assertIn("Retrieved long-term memory:", formatted)
         self.assertIn("[workspace/artifact] Canonical outline:", formatted)
         self.assertIn("The final deliverable needs a 3-minute demo.", formatted)
+
+    @patch("tree_ui.services.node_creation.generate_text")
+    def test_append_messages_to_node_includes_retrieved_memory_in_system_instruction(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Memory-aware node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+            system_prompt="Stay concise.",
+        )
+        create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.PREFERENCE,
+            title="Language",
+            content="Answer in Traditional Chinese.",
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text="Provider output",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        append_messages_to_node(
+            node=node,
+            prompt="Summarize the next step.",
+        )
+
+        system_instruction = mock_generate_text.call_args.kwargs["system_instruction"]
+        self.assertIn("Long-term memory retrieved separately from the current branch transcript:", system_instruction)
+        self.assertIn("Retrieved long-term memory:", system_instruction)
+        self.assertIn("Answer in Traditional Chinese.", system_instruction)

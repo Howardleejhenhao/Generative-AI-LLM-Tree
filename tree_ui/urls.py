@@ -12,6 +12,11 @@ urlpatterns = [
     ),
     path("api/workspaces/", views.create_workspace_view, name="create_workspace"),
     path(
+        "api/workspaces/<slug:slug>/memories/",
+        views.create_workspace_memory_view,
+        name="create_workspace_memory",
+    ),
+    path(
         "api/workspaces/<slug:slug>/delete/",
         views.delete_workspace_view,
         name="delete_workspace",

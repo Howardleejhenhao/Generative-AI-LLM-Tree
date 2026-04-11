@@ -11,16 +11,36 @@ SYSTEM_INSTRUCTION = (
 )
 
 
-def build_system_instruction(custom_system_prompt: str = "") -> str:
+def build_system_instruction(
+    custom_system_prompt: str = "",
+    *,
+    retrieved_memory_text: str = "",
+) -> str:
     normalized_prompt = custom_system_prompt.strip()
-    if not normalized_prompt:
-        return SYSTEM_INSTRUCTION
+    normalized_memory = retrieved_memory_text.strip()
 
-    return (
-        f"{SYSTEM_INSTRUCTION}\n\n"
-        "Additional node-specific system prompt:\n"
-        f"{normalized_prompt}"
+    sections = [SYSTEM_INSTRUCTION]
+
+    if normalized_memory:
+        sections.extend(
+            [
+                "",
+                "Long-term memory retrieved separately from the current branch transcript:",
+                normalized_memory,
+            ]
+        )
+
+    if not normalized_prompt:
+        return "\n".join(sections)
+
+    sections.extend(
+        [
+            "",
+            "Additional node-specific system prompt:",
+            normalized_prompt,
+        ]
     )
+    return "\n".join(sections)
 
 
 @dataclass(frozen=True)

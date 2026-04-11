@@ -11,6 +11,78 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-11 21:10
+
+### Session Goal
+- Turn the v2 memory foundation into the first user-visible memory workflow.
+- Add a memory inspector and save/pin flow that the human can inspect in the UI.
+
+### Planned Tasks
+- inspect the current node-chat UI and API boundaries for the first visible memory surface
+- add node-chat memory inspector UI and memory creation API support
+- connect retrieved long-term memory into generation instructions while keeping it visibly separate from branch-local transcript context
+- add regression coverage, update progress log, and push the slice once stable
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The system now has a visible v2 feature the user can inspect directly in the browser: memory preview, saved memories, and message-to-memory flow.
+
+### Work Completed
+- Inspected the current node-chat page and selected it as the first stable place to expose long-term memory UI.
+- Added a node-chat memory inspector sidebar with:
+  - a retrieved-memory preview block
+  - a manual memory creation form
+  - workspace-memory and branch-memory lists
+  - message-level `Use as memory` actions that load transcript content into the save form
+- Added a new memory creation API endpoint so the frontend can save manual notes and pinned message-derived memories.
+- Added server-side memory payload building for the node-chat view so the UI can render current workspace, branch, and retrieved memory state.
+- Connected retrieved long-term memory into generation system instructions while keeping it explicitly separated from branch-local transcript context.
+- Added regression coverage for:
+  - node-chat memory UI visibility
+  - memory creation API behavior
+  - generation instructions including retrieved long-term memory
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/context_builder.py tree_ui/services/node_creation.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; UI memory slice is ready to commit
+
+### Current Status
+- The v2 memory foundation is now visible and inspectable in the node-chat UI.
+- The user can review actual memory content in the browser instead of only backend structures.
+
+### Next Recommended Step
+- After human review, refine the memory sidebar UX and decide whether the next slice should add memory deletion/editing, graph-side memory visibility, or auto/semi-auto extraction.
+
+### Known Issues / Blockers / Tech Debt
+- Memory editing/deletion is not implemented yet.
+- The first visible memory UI lives on the node-chat page; graph-side memory inspector work is still pending.
+
 ## Session 2026-04-11 21:05
 
 ### Session Goal

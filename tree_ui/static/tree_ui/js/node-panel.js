@@ -66,7 +66,8 @@ export function renderMessageEditors(container, messages) {
   }
 }
 
-export function renderChatTranscript(container, messages) {
+export function renderChatTranscript(container, messages, options = {}) {
+  const { renderActions } = options;
   container.innerHTML = "";
 
   if (!messages.length) {
@@ -91,6 +92,14 @@ export function renderChatTranscript(container, messages) {
     setMarkdownContent(body, message.content);
 
     article.append(label, body);
+
+    if (typeof renderActions === "function") {
+      const actions = renderActions(message);
+      if (actions) {
+        article.append(actions);
+      }
+    }
+
     container.appendChild(article);
   }
 }

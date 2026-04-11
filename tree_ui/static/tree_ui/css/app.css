@@ -947,6 +947,14 @@ body:has(.chat-page-immersive) .page-shell {
   overflow: hidden;
 }
 
+.chat-memory-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
 .chat-thread-panel-history .chat-content-shell::before {
   content: "Historical node";
   position: absolute;
@@ -997,6 +1005,25 @@ body:has(.chat-page-immersive) .page-shell {
   display: grid;
   gap: 8px;
   align-items: start;
+}
+
+.chat-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
+.chat-message-action {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .chat-page-minimal .chat-message-role {
@@ -1268,6 +1295,10 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-sidebar {
   display: grid;
   gap: 20px;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 4px 18px 0;
 }
 
 .chat-sidebar-card {
@@ -1315,6 +1346,43 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-empty-copy {
   margin: 0;
   line-height: 1.55;
+}
+
+.memory-list {
+  gap: 10px;
+}
+
+.memory-card {
+  gap: 8px;
+}
+
+.memory-card-body {
+  color: var(--text);
+}
+
+.memory-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.memory-source-chip {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(74, 58, 40, 0.08);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+#retrieved-memory-preview {
+  white-space: pre-wrap;
 }
 
 .workspace-shell {
@@ -2857,6 +2925,15 @@ kbd {
 
   .chat-composer-row {
     grid-template-columns: 1fr;
+  }
+
+  .chat-memory-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-sidebar {
+    overflow: visible;
+    padding-right: 0;
   }
 }
 
