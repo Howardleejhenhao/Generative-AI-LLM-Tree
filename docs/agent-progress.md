@@ -11,6 +11,54 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-11 20:53
+
+### Session Goal
+- Re-open implementation work from `main` and determine the next concrete product gap that still blocks a stronger MVP.
+- Inspect the graph workspace and node chat experience against the documented requirements, then implement the highest-value missing or weak behavior.
+
+### Planned Tasks
+- review current repository state, `AGENTS.md`, latest progress log entry, and active git branch before editing
+- inspect the graph workspace template/JavaScript and node chat flow for requirement gaps
+- create or switch to a focused feature/fix branch before implementation changes
+- implement the selected improvement, add or update regression coverage, and verify locally
+- finalize this session in the progress log with files changed, git results, and next step
+
+### Work Completed
+- Session started; repository state, `AGENTS.md`, and the latest progress log were reviewed before new implementation work.
+- Created and switched to `feature/graph-node-inspector`.
+- Inspected the graph workspace implementation and identified that the main graph page had no real node inspector, even though the product requirements call for selected-node inspection inside the graph-first UI.
+- Added a dedicated node detail panel to the workspace page with selected-node metadata, branch/version source, generation settings, a message preview rendered from the selected node, and an `Open chat` action without leaving the graph context blind.
+- Added a collapsible inspector flow with a `Node Detail` peek button and an `I` keyboard shortcut so the graph can stay primary while the detail panel remains accessible.
+- Wired the workspace frontend to update the inspector as node selection changes and removed a latent confirmation-dialog error path that referenced an undefined control.
+- Updated the workspace graph regression test to cover the new inspector surface.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py test tree_ui.tests.WorkspaceGraphViewTests.test_workspace_page_renders_graph_shell tree_ui.tests.WorkspaceGraphViewTests.test_workspace_node_chat_page_renders_transcript_and_composer`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/graph-node-inspector`
+- Commits made:
+  - `b3e2945` - `feat: add workspace node inspector panel`
+- Push status:
+  - feature commit created locally on `feature/graph-node-inspector`; session-log finalization commit and branch push are next
+
+### Current Status
+- The graph workspace now includes a real selected-node inspector panel instead of only a lightweight selection summary.
+- Regression coverage passes after the inspector addition.
+
+### Next Recommended Step
+- Push `feature/graph-node-inspector` after this progress-log finalization commit, then review the new inspector visually in the browser and decide whether the next slice should deepen inline editing on the graph page or refine node-chat ergonomics further.
+
+### Known Issues / Blockers / Tech Debt
+- The workspace inspector is read-only; editing old nodes still requires the existing dedicated edit/re-branch flow rather than inline graph-side editing.
+
 ## Session 2026-03-24 21:37
 
 ### Session Goal
