@@ -5,8 +5,13 @@ from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
-from tree_ui.models import ConversationNode, NodeMessage, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import build_generation_messages
+from tree_ui.services.memory_service import (
+    create_memory,
+    format_memories_for_prompt,
+    retrieve_memories_for_generation,
+)
 from tree_ui.services.node_creation import append_messages_to_node
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers.base import GenerationResult
@@ -661,3 +666,114 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(edited.temperature, 0.5)
         self.assertEqual(edited.top_p, 0.95)
         self.assertEqual(edited.max_output_tokens, 512)
+
+
+class MemoryFoundationTests(TestCase):
+    def test_can_create_workspace_memory(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.FACT,
+            title="Company preference",
+            content="Always answer in Traditional Chinese.",
+            is_pinned=True,
+        )
+
+        self.assertEqual(memory.workspace, workspace)
+        self.assertEqual(memory.scope, ConversationMemory.Scope.WORKSPACE)
+        self.assertIsNone(memory.branch_anchor)
+        self.assertTrue(memory.is_pinned)
+
+    def test_branch_memory_requires_anchor(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        with self.assertRaisesMessage(ValueError, "Branch memories require a branch anchor node."):
+            create_memory(
+                workspace=workspace,
+                scope=ConversationMemory.Scope.BRANCH,
+                memory_type=ConversationMemory.MemoryType.SUMMARY,
+                content="Branch-only plan.",
+            )
+
+    def test_retrieval_keeps_workspace_and_selected_branch_scope_separate_from_siblings(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        root = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        selected_branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Selected branch",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        sibling_branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Sibling branch",
+            summary="",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.5-flash",
+        )
+
+        workspace_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.PREFERENCE,
+            title="Workspace default",
+            content="The user prefers concise answers.",
+            is_pinned=True,
+        )
+        branch_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Branch summary",
+            content="This branch is evaluating launch risks.",
+            branch_anchor=selected_branch,
+        )
+        create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            memory_type=ConversationMemory.MemoryType.TASK,
+            title="Sibling task",
+            content="Only relevant to the sibling branch.",
+            branch_anchor=sibling_branch,
+        )
+
+        retrieved = retrieve_memories_for_generation(
+            workspace=workspace,
+            parent=selected_branch,
+        )
+
+        self.assertEqual(
+            {(item.id, item.scope) for item in retrieved},
+            {
+                (workspace_memory.id, ConversationMemory.Scope.WORKSPACE),
+                (branch_memory.id, ConversationMemory.Scope.BRANCH),
+            },
+        )
+
+    def test_format_memories_for_prompt_produces_explicit_memory_block(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.ARTIFACT,
+            title="Canonical outline",
+            content="The final deliverable needs a 3-minute demo.",
+        )
+
+        retrieved = retrieve_memories_for_generation(workspace=workspace, parent=None)
+        formatted = format_memories_for_prompt(retrieved)
+
+        self.assertIn("Retrieved long-term memory:", formatted)
+        self.assertIn("[workspace/artifact] Canonical outline:", formatted)
+        self.assertIn("The final deliverable needs a 3-minute demo.", formatted)

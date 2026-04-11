@@ -11,6 +11,78 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-11 21:05
+
+### Session Goal
+- Start the v2 milestone from the first priority area: long-term memory foundation.
+- Add the core data-model and service boundaries needed for workspace memory and branch memory without breaking the existing branch-local short-term context rule.
+
+### Planned Tasks
+- review current repository state, `AGENTS.md`, latest progress log entry, and active git branch before editing
+- create or switch to a dedicated v2 memory branch
+- add foundational Django models and service helpers for workspace-scoped and branch-scoped memories
+- add migrations and regression coverage for the new v2 memory layer
+- update this progress log with v2-specific status, git results, and next recommended step
+
+### Milestone Area
+- Memory
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- This slice is foundational rather than immediately visual; it prepares later visible memory save/retrieval and inspector flows.
+
+### Work Completed
+- Session started; `AGENTS.md`, repository state, and the latest progress log were reviewed.
+- Confirmed the v2 addendum priority order and selected `memory data model foundation` as the first v2 slice.
+- Switched from `main` to `feature/v2-memory-foundation`.
+- Added a new `ConversationMemory` model to represent long-term memory separately from branch-local short-term transcript context.
+- Implemented the initial memory service layer for:
+  - creating validated workspace-scoped memories
+  - creating validated branch-scoped memories anchored to a node in the same workspace
+  - retrieving workspace + current-lineage branch memories for future generation use
+  - formatting retrieved memories into an explicit long-term-memory block for later prompt/debug visibility
+- Added the `0003_conversationmemory` migration.
+- Added focused regression coverage to verify:
+  - workspace memory creation
+  - branch memory anchor validation
+  - sibling branch memories are excluded from retrieval
+  - retrieved long-term memory remains an explicit separate block
+- Verified the slice with `python3 manage.py test tree_ui.tests.MemoryFoundationTests tree_ui.tests.WorkspaceGraphViewTests.test_branch_local_context_uses_selected_lineage_only` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/services/memory_service.py`
+- `tree_ui/migrations/0003_conversationmemory.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/graph-node-inspector`
+- New branch created/switched: `feature/v2-memory-foundation` from `main`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; commit and push are next
+
+### Current Status
+- v2 work has started.
+- The implementation target for this session is the memory foundation layer, not the older UI polish stream.
+- The codebase now has a dedicated long-term memory model/service layer, but no user-facing memory save/retrieval UI yet.
+
+### Next Recommended Step
+- Build the next v2 memory slice on top of this foundation:
+  - memory save / pin flow
+  - visible memory retrieval surface or inspector
+  - prompt integration that keeps short-term lineage and long-term memory visibly separate
+
+### Known Issues / Blockers / Tech Debt
+- The current slice is foundational only; retrieved memories are not yet surfaced in the UI or injected into live generation requests.
+
 ## Session 2026-03-24 21:37
 
 ### Session Goal
