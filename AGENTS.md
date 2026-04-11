@@ -614,4 +614,916 @@ When the progress log file is first created, initialize it with content like:
 - Actual repository contents are still unknown to the agent until the next working session begins.
 ```
 
+````
+
+---
+
+# V2 Milestone Addendum
+
+This section is an additive extension to the existing project rules above.
+
+The coding agent must treat all previous sections as still active unless this v2 addendum provides a more specific instruction for the new milestone.
+
+The existing AGENTS.md contents above are intentionally preserved.
+This addendum extends the project into a more advanced milestone without deleting the original project identity.
+
+---
+
+## V2 Project Overview
+
+### New milestone identity
+
+The project must now be treated as:
+
+**LLM-Tree v2: a multimodal memory agent workspace built on top of a branching conversation graph**
+
+The v2 goal is not only to show branching chat.
+The v2 goal is to turn the graph into a practical AI workspace where each node may act like an agent checkpoint with:
+
+- branch-local short-term memory
+- retrievable long-term memory
+- multimodal inputs
+- automatic model routing
+- tool use
+- MCP-compatible integration path
+- demo-ready observability and traceability
+
+### High-level product statement
+
+LLM-Tree v2 should feel like:
+
+**a branching multimodal agent workspace with persistent memory, visible routing, and tool-assisted reasoning**
+
+It must not feel like a normal chatbot with a graph drawn around it.
+
+### Product identity rule
+
+The graph remains the primary product identity.
+
+Do not drift into a purely linear chat product.
+Do not treat the graph as secondary decoration.
+
+All new v2 features should strengthen the graph-first concept:
+
+- memory should be aware of workspace vs branch scope
+- multimodal input should be attachable to nodes and branches
+- routing should be explainable per generation path
+- tools should be visible in the reasoning workflow
+- comparison should make sense across nodes or branches
+
+---
+
+## V2 Milestone Goals
+
+This milestone must implement or clearly prepare the following major capabilities:
+
+1. long-term memory
+2. multimodal support
+3. auto routing between models
+4. tool use and MCP
+5. useful graph-native extensions
+6. GitHub Project v2 organization
+7. E3P-ready deliverables
+
+These are required milestone targets, not loose optional ideas.
+
+---
+
+## V2 Product Requirements
+
+### 1. Long-term memory
+
+The system must support long-term memory in addition to the existing branch-local short-term memory.
+
+#### Memory design principles
+
+- The current short-term memory rule must remain unchanged
+- Short-term memory must still only follow the selected lineage
+- Long-term memory must be a separate retrieval layer
+- Long-term memory must not silently replace the branch-local context rule
+- Sibling branch transcript content must not be injected into prompts unless it has been explicitly saved as memory
+
+#### Non-negotiable short-term rule
+
+The system must continue to treat short-term context as:
+
+`root -> ... -> selected node -> new prompt`
+
+This rule must remain valid even after long-term memory is added.
+
+#### Required long-term memory scopes
+
+The system must support two long-term memory scopes:
+
+##### Workspace memory
+Shared across the whole workspace.
+
+Suitable for:
+- user preferences
+- stable project context
+- recurring instructions
+- persistent facts
+- reusable artifacts
+
+##### Branch memory
+Relevant only to one branch or one branch lineage.
+
+Suitable for:
+- local assumptions
+- branch-specific conclusions
+- temporary plans
+- branch-only discoveries
+- branch-specific summaries
+
+#### Required long-term memory capabilities
+
+The system must support:
+
+- saving memory from conversation content
+- manually pinning a message or extracted content into memory
+- automatic or semi-automatic memory extraction when appropriate
+- retrieving relevant memories before generation
+- making retrieved memory visible enough for debugging and demo use
+- preserving the difference between:
+  - short-term branch context
+  - long-term retrieved memory
+
+#### Recommended memory types
+
+The schema may evolve, but should support clear memory categories such as:
+
+- `fact`
+- `preference`
+- `summary`
+- `task`
+- `artifact`
+
+#### Required user-facing memory behavior
+
+The user should be able to understand:
+
+- what memory exists
+- where it came from
+- whether it belongs to workspace scope or branch scope
+- which memories were retrieved for a given answer
+
+Long-term memory must be a visible system component, not a hidden claim.
+
+#### Memory implementation direction
+
+The preferred design is to store explicit memory records.
+Do not approximate long-term memory by stuffing the whole database into prompts.
+
+---
+
+### 2. Multimodal support
+
+The system must support multimodal input.
+
+For this milestone, the explicit delivery priority is:
+
+**image-first multimodal support**
+
+#### Scope control rule
+
+Focus first on:
+
+- image upload
+- image display or indication
+- image-aware generation
+- image-aware routing
+- image-based branching workflows
+
+Do not expand v2 scope aggressively into audio, video, or large general file-processing pipelines unless image-first delivery is already stable.
+
+#### Required multimodal capabilities
+
+The system must support:
+
+- attaching image files to node or node-chat interactions
+- storing image attachment metadata
+- showing that a node/message has attachments
+- allowing supported models/providers to reason about the attached image
+- preserving attachment relevance across the correct node/branch flow
+- keeping enough metadata visible for debugging and demo use
+
+#### Required multimodal UX expectations
+
+The user should be able to do flows such as:
+
+- create an image-anchored analysis node
+- branch from an image-analysis node using different models
+- compare responses across multiple branches for the same image
+- continue reasoning about the same visual context in child branches
+
+#### Data-structure direction
+
+For the first stable version, prefer a clean attachment layer such as a `NodeAttachment`-style model rather than forcing all message content into a highly complex unified multimodal JSON schema immediately.
+
+The implementation may evolve later, but v2 should prioritize stable delivery over premature abstraction complexity.
+
+---
+
+### 3. Auto routing between models
+
+The system must support automatic routing between models.
+
+However, the routing system must be transparent and controllable.
+
+#### Routing philosophy
+
+Auto routing is an intelligence layer.
+It is not allowed to become opaque automation that removes user control.
+
+#### Required routing modes
+
+The system must support at least:
+
+- `manual`
+- `auto-fast`
+- `auto-balanced`
+- `auto-quality`
+
+#### Required routing inputs
+
+The routing layer may consider signals such as:
+
+- whether the request includes image input
+- estimated prompt size or complexity
+- whether tool usage is expected
+- whether a shorter or longer answer is better
+- provider/model capability availability
+- user-selected speed vs quality mode
+
+#### Required routing outputs
+
+For routed generations, the system must record and preferably surface:
+
+- chosen provider
+- chosen model
+- routing mode
+- high-level reason for the routing decision
+
+Examples of valid reason styles:
+
+- image input detected, so a vision-capable model was selected
+- short text-only request in fast mode
+- tool-required path preferred a model/provider better suited for orchestration
+- high-quality mode preferred a higher-capability model
+
+#### Required override rule
+
+Manual selection must remain available.
+Users must still be able to explicitly choose provider/model in appropriate flows.
+
+#### Required observability rule
+
+If routing is enabled, the decision must be inspectable later.
+Do not make the decision disappear after generation.
+
+---
+
+### 4. Tool use and MCP
+
+The system must support tool use and prepare for MCP-compatible integration.
+
+#### Required architecture order
+
+The implementation order must be:
+
+1. internal tool contract / registry
+2. internal tool invocation flow
+3. visible tool traces
+4. MCP-compatible adapter layer
+
+Do not jump straight into a vague “supports MCP” claim without having usable internal tool orchestration first.
+
+#### Required internal tool types
+
+The system should implement useful internal tools such as:
+
+- workspace memory search
+- branch memory lookup
+- node or branch summary
+- branch comparison
+- attachment lookup
+- workspace knowledge lookup
+- routing explanation lookup
+
+The exact first set may evolve, but the system must include real tools, not placeholder labels.
+
+#### Required tool invocation behavior
+
+The agent/tool orchestration layer should be able to:
+
+- decide whether a tool is needed
+- call the tool
+- obtain the tool result
+- synthesize a final answer using tool output
+- surface enough of that process for debug/demo use
+
+#### Required tool trace visibility
+
+The UI or inspectable metadata must make it possible to understand:
+
+- which tool was used
+- whether the call succeeded
+- what the tool returned at a high level
+- how the final answer relied on that result
+
+Do not hide all tool activity entirely inside backend logs.
+
+#### MCP requirement for this milestone
+
+For v2, it is acceptable if MCP support is implemented as:
+
+- a clear MCP-compatible abstraction
+- one or a few demonstrable integration points
+- a clean path for future expansion
+
+It is **not** necessary to connect many external servers immediately.
+It **is** necessary to design the architecture so MCP is a real direction, not a buzzword.
+
+---
+
+### 5. Additional useful graph-native functions
+
+To make the project more creative and better aligned with the graph identity, v2 must include at least some useful graph-native enhancements beyond the headline four features.
+
+#### Recommended required enhancements
+
+##### Branch comparison
+The system should support comparison behavior between nodes or branches.
+
+Comparison may include:
+- summary differences
+- answer differences
+- provider/model differences
+- memory usage differences
+- routing differences
+- tool-usage differences
+
+##### Memory inspector
+The system should provide a place to inspect memory entries, including:
+- memory scope
+- memory type
+- memory source
+- saved content or summary
+- last retrieval or retrieval count if implemented
+
+##### Demo workspace or showcase scenario
+The system should maintain a demo-friendly scenario that helps demonstrate:
+- graph branching
+- image-first multimodal interaction
+- long-term memory retrieval
+- auto routing
+- tool use or MCP direction
+
+The purpose is to make the final 3–5 minute demo efficient and reliable.
+
+---
+
+## V2 Technical Constraints and Architecture
+
+### V2 architecture principle
+
+Do not rewrite the project into a different stack or a separate SPA.
+
+The current graph-first Django architecture remains the foundation.
+
+The v2 milestone should extend the system through clean new layers, not by discarding the original architecture.
+
+### Required architecture layers for v2
+
+The codebase should move toward the following conceptual layers:
+
+1. graph / workspace layer
+2. node / message / attachment layer
+3. short-term context layer
+4. long-term memory retrieval layer
+5. routing layer
+6. tool orchestration layer
+7. provider adapters
+8. MCP-compatible adapter layer
+9. generation trace / inspectability layer
+
+These do not have to become one-file-per-layer in a rigid way, but the responsibilities should remain clearly separated.
+
+### Backend implementation direction
+
+Prefer service-style modules for:
+
+- memory extraction
+- memory retrieval
+- multimodal attachment handling
+- routing decisions
+- tool orchestration
+- tool registry
+- MCP integration
+- generation tracing
+- comparison logic
+
+Do not scatter these concerns directly across views.
+
+### Frontend implementation direction
+
+The frontend must continue to follow the existing rule:
+
+- Django Templates for rendering
+- JavaScript for interactivity
+- modular JS files
+- no SPA rewrite
+
+The frontend should gradually support:
+
+- attachment-aware node chat
+- routing badges or routing detail
+- tool trace visibility
+- memory usage visibility
+- branch comparison surfaces
+- compact but inspectable advanced metadata
+
+### Security direction
+
+Continue using `.env` for secrets only.
+
+Additionally:
+
+- uploaded files must be handled safely
+- attachment metadata must not expose secrets or sensitive host paths
+- MCP or tool configuration must not hardcode secrets
+- demo materials must not expose API keys or private file paths
+
+---
+
+## Suggested V2 Data Model Direction
+
+The exact schema may evolve, but the implementation should roughly support the following additions.
+
+### MemoryRecord
+
+Represents one long-term memory item.
+
+Suggested fields may include:
+
+- id
+- workspace reference
+- optional branch-related node reference
+- source node reference
+- scope (`workspace`, `branch`)
+- memory type
+- title or label
+- content
+- extracted_summary if useful
+- pinned flag
+- auto_extracted flag
+- retrieval_count
+- created_at
+- updated_at
+
+### NodeAttachment
+
+Represents an uploaded file attached to a node or message.
+
+Suggested fields may include:
+
+- id
+- node reference
+- optional message reference
+- attachment kind
+- storage path or storage key
+- mime type
+- original filename
+- size
+- width / height if image
+- created_at
+
+### RoutingDecision
+
+Represents how a generation request selected provider/model.
+
+This may be a dedicated model or part of a generation-trace object.
+
+Suggested fields may include:
+
+- source node or generation reference
+- routing mode
+- chosen provider
+- chosen model
+- decision reason
+- created_at
+
+### ToolInvocation
+
+Represents one tool call executed during generation.
+
+Suggested fields may include:
+
+- source node or generation reference
+- tool name
+- tool type (`internal`, `mcp`)
+- invocation summary
+- result summary
+- success / failure state
+- created_at
+
+### GenerationTrace
+
+If helpful, a dedicated generation trace layer may store:
+
+- routing decision
+- retrieved memories
+- tool sequence
+- final provider/model used
+- attachment presence
+- final output summary
+
+Do not overengineer this if a lighter implementation is enough, but keep the design extensible.
+
+---
+
+## V2 UX Expectations
+
+The UI must now communicate more than just chat content.
+
+### Required v2 UX visibility
+
+The user should be able to inspect or understand:
+
+- whether long-term memory was used
+- which memories were retrieved
+- whether the request included attachments
+- whether routing was manual or automatic
+- which provider/model was actually used
+- whether tools were used
+- what happened at a high level during tool usage
+- how branches differ where comparison is enabled
+
+### UI philosophy for v2
+
+Keep the product visually clean.
+
+Do not bury the graph under many heavy side panels.
+
+Prefer:
+
+- graph-first surfaces
+- compact inspector metadata
+- expandable advanced traces
+- visible but lightweight chips/badges
+- demo-friendly clarity
+- comparison-first thinking where appropriate
+
+### Nice-to-have if easy
+
+- attachment thumbnails
+- memory chips
+- routing badges
+- tool badges
+- trace timeline
+- compare mode
+- demo mode toggle
+
+---
+
+## GitHub Project v2 Requirement
+
+This milestone must be organized through **GitHub Project v2**.
+
+### Required project-management behavior
+
+The coding agent must:
+
+- keep milestone work aligned to GitHub Project v2 organization
+- keep progress-log notes and project status aligned
+- use clear issue/task naming that maps to real feature slices
+- keep the implementation roadmap understandable from both code and project-management artifacts
+
+### Recommended GitHub Project v2 fields
+
+Use fields such as:
+
+- Status
+- Area
+- Priority
+- Milestone
+- Demo Ready
+- Risk
+- Deliverable Type
+
+### Required milestone areas
+
+Use or maintain areas such as:
+
+- Memory
+- Multimodal
+- Routing
+- Tools/MCP
+- UI/UX
+- Docs/Demo
+
+### Recommended views
+
+Maintain useful views such as:
+
+- Board by Status
+- Table by Area
+- Roadmap by Milestone
+- Demo Readiness view
+
+### Engineering-management rule
+
+The GitHub Project v2 setup should make the milestone look like a structured engineering effort.
+Do not treat it as a cosmetic afterthought.
+
+---
+
+## E3P Deliverables Requirement
+
+This milestone must prepare materials suitable for submission/upload.
+
+### Required deliverables
+
+The project must produce:
+
+1. **One-page system introduction**
+2. **System architecture diagram**
+3. **Demo video (3 - 5 min.)**
+
+### Deliverable requirements
+
+#### One-page system introduction
+This should clearly explain:
+
+- the problem
+- the solution idea
+- what makes LLM-Tree v2 different
+- the key features
+- the high-level workflow
+
+It should read like a polished system introduction page, not only a README excerpt.
+
+#### System architecture diagram
+This should clearly show major system parts such as:
+
+- browser UI
+- Django backend
+- workspace / node / message core
+- memory subsystem
+- routing and tool orchestration
+- provider adapters
+- MCP-compatible integration layer
+
+#### Demo video
+The demo should cover as much of the following as practical in 3–5 minutes:
+
+- graph-based branching workflow
+- multimodal image input
+- memory save and retrieval
+- auto routing
+- tool use / MCP direction
+- polished project organization and deliverable readiness
+
+### Recommended deliverable storage path
+
+Prefer an organized directory such as:
+
+- `docs/milestone-v2/`
+- `docs/milestone-v2/system-introduction.md`
+- `docs/milestone-v2/architecture-notes.md`
+- `docs/milestone-v2/demo-script.md`
+- `docs/milestone-v2/assets/`
+
+The exact filenames may evolve, but deliverable materials must stay structured and easy to maintain.
+
+---
+
+## V2 Session Workflow Addendum
+
+The original session workflow remains active.
+
+The following instructions refine it for the v2 milestone.
+
+### At the beginning of each v2 session
+
+The agent must determine:
+
+- which milestone area the session belongs to
+- whether the session is foundational or polish-oriented
+- whether the session affects architecture, product behavior, or deliverables
+- whether GitHub Project v2 status also needs an update
+- whether the session improves final demo readiness
+
+### Preferred implementation style
+
+The agent should work in **cohesive vertical slices**.
+
+A good session slice may include:
+
+- backend/service work
+- minimal frontend support
+- tests
+- progress-log update
+- project-management update if relevant
+- one meaningful commit
+- push after the slice is stable
+
+The goal is meaningful progress, not ceremonial micro-fragmentation.
+
+### At the end of each v2 session
+
+In addition to the original progress-log requirements, the agent should also record when relevant:
+
+- milestone area
+- whether GitHub Project v2 status was updated
+- whether deliverable documents were updated
+- whether demo readiness improved
+- whether the slice was foundational, functional, or polish/documentation work
+
+---
+
+## Git Workflow Addendum for V2
+
+The original git workflow rules remain active.
+
+This section refines commit size and branch planning.
+
+### Updated commit granularity rule
+
+The coding agent should prefer:
+
+**one meaningful implementation commit per cohesive feature slice**
+
+This means:
+
+- related backend, frontend, tests, and small docs changes for the same feature may stay in one commit
+- the agent does **not** need to split a tightly related feature into many small ceremonial commits
+- commit history must remain understandable, but not artificially fragmented
+
+### Good examples
+
+Prefer commit slices like:
+
+- `feat: add workspace and branch long-term memory foundation`
+- `feat: support image attachments in node chat`
+- `feat: add visible auto-routing decisions`
+- `feat: add internal tool orchestration and trace view`
+- `docs: add v2 system introduction and demo script`
+
+### Avoid
+
+- splitting one coherent feature into too many tiny commits only for appearance
+- mixing unrelated features into one large commit
+- keeping finished stable work only in local commits for too long
+
+### Updated push expectation
+
+- Push after a meaningful feature slice is complete
+- A single cohesive `commit + push` for a strong session is acceptable and often preferred
+- Still document branch, commit, and push results clearly in the progress log
+
+### Recommended v2 branch naming
+
+Use clear names such as:
+
+- `feature/v2-memory-foundation`
+- `feature/v2-memory-retrieval-ui`
+- `feature/v2-image-attachments`
+- `feature/v2-auto-routing`
+- `feature/v2-tool-orchestration`
+- `feature/v2-mcp-adapter`
+- `feature/v2-branch-compare`
+- `docs/v2-system-introduction`
+- `docs/v2-demo-materials`
+
+---
+
+## V2 Priority Order
+
+For the new milestone, prefer the following implementation order:
+
+1. memory data model foundation
+2. workspace memory and branch memory behavior
+3. memory save / pin / retrieval flow
+4. memory inspector surface
+5. image attachment support
+6. multimodal-aware provider flow
+7. auto routing layer
+8. routing visibility and routing trace metadata
+9. internal tool registry
+10. tool invocation flow and result synthesis
+11. tool trace visibility
+12. MCP-compatible adapter path
+13. branch comparison
+14. GitHub Project v2 organization refinement
+15. one-page system introduction
+16. architecture diagram and notes
+17. demo script and final demo polish
+
+This order may be adjusted if implementation dependencies strongly require it, but the milestone direction should remain stable.
+
+---
+
+## Additional Non-Negotiable Rules for V2
+
+- Do **not** break the existing branch-local short-term memory rule
+- Do **not** leak sibling-branch transcript content into prompts unless explicitly saved as memory
+- Do **not** replace transparent manual model selection with a hidden router
+- Do **not** overexpand multimodal scope before image-first support is stable
+- Do **not** claim MCP support unless there is a real architecture or integration path in code
+- Do **not** hide all tool behavior in backend-only logic
+- Do **not** rewrite the project into an SPA
+- Do **not** hardcode secrets, local machine paths, or temporary debug credentials
+- Do **not** over-fragment commits purely for ceremony
+- Do **not** replace the original progress-log workflow; extend it only where useful
+- Do **not** delete or rewrite the original contents of this AGENTS.md unless the human user explicitly asks
+
+---
+
+## Definition of Done for V2 Milestone
+
+The v2 milestone is considered functionally successful when:
+
+- the existing graph-first project remains runnable through Docker Compose
+- branch-local short-term memory still works correctly
+- long-term memory can be stored and retrieved
+- memory scope is distinguishable at least between workspace-level and branch-level behavior
+- the UI can handle at least image-first multimodal input
+- the system can execute manual mode and auto-routing modes
+- routing decisions are visible or inspectable
+- the system can use internal tools during generation
+- the codebase has a practical MCP-compatible integration path
+- tool usage is visible enough for demo and debugging
+- at least one graph-native enhancement such as branch comparison or memory inspector exists
+- GitHub Project v2 is used in a structured way for milestone management
+- the one-page system introduction is ready
+- the architecture diagram is ready
+- the demo flow is ready to be shown in 3–5 minutes
+- progress remains documented in the dedicated progress log file
+- git history remains organized and understandable without excessive fragmentation
+
+---
+
+## Final Guidance for V2
+
+Build a practical, creative, demo-ready v2 system.
+
+Favor:
+
+- visible intelligence over hidden magic
+- traceable memory over vague “smartness”
+- multimodal clarity over oversized scope
+- transparent routing over mysterious routing
+- usable tool orchestration over empty feature claims
+- strong demo readiness over unnecessary complexity
+
+The final result should feel like:
+
+**a branching multimodal agent workspace with memory, routing, and tool-assisted reasoning**
+
+not just a chat UI with a few extra options.
+
+---
+
+## Optional Progress Log Extension for V2 Sessions
+
+The original progress log template remains valid.
+
+For v2 sessions, the log may optionally add these sections when useful:
+
+```md
+### Milestone Area
+- Memory / Multimodal / Routing / Tools-MCP / UI-UX / Docs-Demo
+
+### GitHub Project V2 Update
+- updated / not updated
+- relevant field or status changes
+
+### Deliverables Impact
+- one-page intro updated / architecture notes updated / demo script updated / none
+
+### Demo Readiness Impact
+- what became easier to demo after this session
+````
+
+These sections extend the original log style.
+They should not replace the original required structure.
+
+---
+
+## Practical Execution Bias for Codex
+
+For this v2 milestone, when implementation details are not fully specified by the human user, the coding agent should prefer decisions that are:
+
+1. consistent with the graph-first product identity
+2. visible and demoable
+3. technically clean but not overengineered
+4. compatible with Django Templates + modular JavaScript
+5. aligned with the current repository architecture
+6. easy to explain in the one-page intro, architecture diagram, and demo video
+
+When in doubt, the agent should choose the option that reduces future ambiguity and reduces the amount of high-level product decision-making that needs to be re-opened later.
+
+The coding agent should act with strong ownership for v2 implementation direction while staying within the constraints defined in this file.
+
 ```
