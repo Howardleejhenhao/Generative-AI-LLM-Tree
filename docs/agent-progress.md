@@ -46,15 +46,16 @@
 - New branch created/switched: `feature/graph-node-inspector`
 - Commits made:
   - `b3e2945` - `feat: add workspace node inspector panel`
+  - `7e66ab9` - `docs: update progress log for node inspector`
 - Push status:
-  - feature commit created locally on `feature/graph-node-inspector`; session-log finalization commit and branch push are next
+  - pushed to `origin/feature/graph-node-inspector`
 
 ### Current Status
 - The graph workspace now includes a real selected-node inspector panel instead of only a lightweight selection summary.
-- Regression coverage passes after the inspector addition.
+- Regression coverage passes after the inspector addition, and the branch is available on `origin` for review.
 
 ### Next Recommended Step
-- Push `feature/graph-node-inspector` after this progress-log finalization commit, then review the new inspector visually in the browser and decide whether the next slice should deepen inline editing on the graph page or refine node-chat ergonomics further.
+- Review the new inspector visually in the browser and decide whether the next slice should deepen inline editing on the graph page or refine node-chat ergonomics further.
 
 ### Known Issues / Blockers / Tech Debt
 - The workspace inspector is read-only; editing old nodes still requires the existing dedicated edit/re-branch flow rather than inline graph-side editing.
