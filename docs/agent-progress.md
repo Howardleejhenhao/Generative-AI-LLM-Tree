@@ -51,6 +51,12 @@
   - memory creation API behavior
   - generation instructions including retrieved long-term memory
 - Verified the slice with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/context_builder.py tree_ui/services/node_creation.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+- Followed up on human review by simplifying the node-chat memory UI structure and styling:
+  - collapsed the sidebar into a single plain panel
+  - reduced headings and helper copy
+  - separated the crowded form row into a cleaner layout
+  - toned down memory cards and message action buttons
+  - kept the existing memory behavior unchanged while making the UI easier to scan
 
 ### Files Changed
 - `docs/agent-progress.md`
@@ -76,6 +82,7 @@
 - The v2 memory foundation is now visible and inspectable in the node-chat UI.
 - The user can review actual memory content in the browser instead of only backend structures.
 - The branch contains both the foundational memory schema slice and the first visible memory UI slice.
+- The memory UI has been simplified after first visual feedback and is ready for another round of human review.
 
 ### Next Recommended Step
 - After human review, refine the memory sidebar UX and decide whether the next slice should add memory deletion/editing, graph-side memory visibility, or auto/semi-auto extraction.

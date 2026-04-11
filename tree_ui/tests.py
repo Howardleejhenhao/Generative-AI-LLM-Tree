@@ -87,10 +87,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
-        self.assertContains(response, "Memory Inspector")
-        self.assertContains(response, "Save memory")
-        self.assertContains(response, "Workspace Memory")
-        self.assertContains(response, "Branch Memory")
+        self.assertContains(response, "Memory")
+        self.assertContains(response, "Retrieved")
+        self.assertContains(response, "Workspace")
+        self.assertContains(response, "Branch")
 
     def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

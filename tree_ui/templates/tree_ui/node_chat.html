@@ -73,85 +73,69 @@
           </div>
         </div>
         <aside class="chat-sidebar chat-memory-sidebar">
-          <section class="chat-sidebar-card">
-            <div class="chat-panel-header">
-              <div>
-                <p class="panel-kicker">Long-term Memory</p>
-                <h2>Memory Inspector</h2>
-              </div>
-            </div>
-            <p class="lineage-note">Workspace memory is shared globally. Branch memory only follows the current lineage.</p>
-            <dl class="node-metadata chat-node-metadata">
-              <div>
-                <dt>Generation Retrieval Preview</dt>
-                <dd id="retrieved-memory-preview">No long-term memories are retrieved for this node yet.</dd>
-              </div>
-            </dl>
-          </section>
-          <section class="chat-sidebar-card">
-            <div class="chat-panel-header">
-              <div>
-                <p class="panel-kicker">Save Memory</p>
-                <h2>Create or pin</h2>
-              </div>
-            </div>
-            <form id="memory-form" data-create-memory-url="{% url 'create_workspace_memory' workspace.slug %}" class="composer-form">
-              {% csrf_token %}
-              <div class="chat-composer-row">
-                <label class="form-field">
-                  <span>Scope</span>
-                  <select id="memory-scope-input" name="scope">
-                    {% for item in memory_scope_choices %}
-                      <option value="{{ item.value }}">{{ item.label }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-                <label class="form-field">
-                  <span>Type</span>
-                  <select id="memory-type-input" name="memory_type">
-                    {% for item in memory_type_choices %}
-                      <option value="{{ item.value }}">{{ item.label }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
+          <section class="chat-memory-panel">
+            <header class="chat-memory-header">
+              <h2>Memory</h2>
+              <p>Workspace is shared. Branch stays on this lineage.</p>
+            </header>
+
+            <section class="chat-memory-section">
+              <h3>Retrieved</h3>
+              <div class="chat-memory-preview" id="retrieved-memory-preview">No long-term memories are retrieved for this node yet.</div>
+            </section>
+
+            <section class="chat-memory-section">
+              <h3>Save</h3>
+              <form id="memory-form" data-create-memory-url="{% url 'create_workspace_memory' workspace.slug %}" class="memory-form">
+                {% csrf_token %}
+                <div class="memory-form-row">
+                  <label class="form-field">
+                    <span>Scope</span>
+                    <select id="memory-scope-input" name="scope">
+                      {% for item in memory_scope_choices %}
+                        <option value="{{ item.value }}">{{ item.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <label class="form-field">
+                    <span>Type</span>
+                    <select id="memory-type-input" name="memory_type">
+                      {% for item in memory_type_choices %}
+                        <option value="{{ item.value }}">{{ item.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                </div>
                 <label class="form-field">
                   <span>Title</span>
                   <input id="memory-title-input" name="title" type="text" maxlength="160" placeholder="Optional label">
                 </label>
-              </div>
-              <label class="form-field">
-                <span>Content</span>
-                <textarea id="memory-content-input" name="content" rows="4" placeholder="Save a durable fact, preference, summary, task, or artifact"></textarea>
-              </label>
-              <div class="memory-source-row">
-                <p class="memory-source-chip" id="memory-source-chip">Manual note</p>
-                <button class="detail-toggle-button detail-toggle-button-quiet" id="memory-source-clear" type="button" hidden>
-                  Clear source
-                </button>
-              </div>
-              <div class="chat-composer-actions">
-                <p class="form-feedback" id="memory-feedback" role="status" aria-live="polite"></p>
-                <button class="primary-button" id="memory-submit-button" type="submit">Save memory</button>
-              </div>
-            </form>
-          </section>
-          <section class="chat-sidebar-card">
-            <div class="chat-panel-header">
-              <div>
-                <p class="panel-kicker">Workspace Memory</p>
-                <h2 id="workspace-memory-title">Shared across this workspace</h2>
-              </div>
-            </div>
-            <div class="chat-branch-list memory-list" id="workspace-memory-list"></div>
-          </section>
-          <section class="chat-sidebar-card">
-            <div class="chat-panel-header">
-              <div>
-                <p class="panel-kicker">Branch Memory</p>
-                <h2 id="branch-memory-title">Visible only on this lineage</h2>
-              </div>
-            </div>
-            <div class="chat-branch-list memory-list" id="branch-memory-list"></div>
+                <label class="form-field">
+                  <span>Content</span>
+                  <textarea id="memory-content-input" name="content" rows="4" placeholder="Write the memory"></textarea>
+                </label>
+                <div class="memory-source-row">
+                  <p class="memory-source-chip" id="memory-source-chip">Manual note</p>
+                  <button class="detail-toggle-button detail-toggle-button-quiet" id="memory-source-clear" type="button" hidden>
+                    Clear
+                  </button>
+                </div>
+                <div class="memory-form-actions">
+                  <p class="form-feedback" id="memory-feedback" role="status" aria-live="polite"></p>
+                  <button class="primary-button" id="memory-submit-button" type="submit">Save</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="chat-memory-section">
+              <h3 id="workspace-memory-title">Workspace</h3>
+              <div class="chat-branch-list memory-list" id="workspace-memory-list"></div>
+            </section>
+
+            <section class="chat-memory-section">
+              <h3 id="branch-memory-title">Branch</h3>
+              <div class="chat-branch-list memory-list" id="branch-memory-list"></div>
+            </section>
           </section>
         </aside>
       </div>
