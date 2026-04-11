@@ -34,8 +34,9 @@
 }
 
 .workspace-shell {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   min-height: calc(100vh - 230px);
+  gap: 18px;
 }
 
 .canvas-panel {
@@ -1319,8 +1320,8 @@ body:has(.chat-page-immersive) .page-shell {
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 18px;
   min-height: calc(100vh - 240px);
   align-items: stretch;
 }
@@ -1341,9 +1342,13 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .detail-panel {
+  display: grid;
+  align-content: start;
+  gap: 0;
   padding: 24px;
   background: var(--panel);
   color: #f8f1e8;
+  overflow: auto;
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
@@ -1443,11 +1448,24 @@ body:has(.chat-page-immersive) .page-shell {
   box-shadow: none;
 }
 
+.detail-link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
 .detail-panel-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: 10px;
+}
+
+.detail-panel-copy {
+  display: grid;
+  gap: 6px;
 }
 
 .canvas-panel-action-row {
@@ -1991,6 +2009,8 @@ body:has(.chat-page-immersive) .page-shell {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
   color: #f8f1e8;
+  font: inherit;
+  cursor: pointer;
 }
 
 .node-metadata {
@@ -2822,6 +2842,10 @@ kbd {
   .chat-layout,
   .workspace-shell {
     grid-template-columns: 1fr;
+  }
+
+  .detail-panel {
+    min-height: 0;
   }
 
   .workspace-stage-bar,

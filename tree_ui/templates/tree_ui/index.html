@@ -34,7 +34,7 @@
     </form>
   </section>
 
-  <section class="workspace-shell" id="workspace-shell">
+  <section class="workspace-shell" id="workspace-shell" data-detail-panel-collapsed="false">
     <div class="canvas-panel">
       <div class="panel-header panel-header-workspace">
         <div class="canvas-panel-heading">
@@ -99,6 +99,9 @@
         <div class="workspace-search-results" id="workspace-search-results" hidden></div>
       </div>
       <div class="graph-stage" id="graph-stage">
+        <button class="detail-peek-button" id="detail-peek-button" type="button">
+          Node Detail
+        </button>
         <div class="graph-controls" aria-label="Graph zoom controls">
           <p class="graph-controls-label">Zoom</p>
           <div class="graph-controls-row">
@@ -241,6 +244,71 @@
         </div>
       </section>
     </div>
+    <aside class="detail-panel" id="detail-panel" aria-label="Node detail panel">
+      <div class="panel-header">
+        <div class="detail-panel-copy">
+          <p class="panel-kicker">Node Detail</p>
+          <h2 id="detail-panel-title">No node selected</h2>
+        </div>
+        <div class="detail-panel-actions">
+          <button
+            class="detail-toggle-button detail-toggle-button-quiet"
+            id="detail-panel-toggle"
+            type="button"
+            aria-expanded="true"
+            aria-controls="detail-panel"
+          >
+            Hide panel
+          </button>
+          <button class="detail-link-button" id="detail-open-chat-button" type="button" disabled>
+            Open chat
+          </button>
+        </div>
+      </div>
+      <section class="detail-focus-card detail-focus-card-minimal">
+        <div class="detail-focus-copy">
+          <h3 id="detail-focus-title">No node selected</h3>
+          <p id="detail-focus-summary">Select a node on the graph to inspect its messages and branch metadata.</p>
+        </div>
+        <div class="detail-focus-metrics detail-focus-metrics-minimal">
+          <div>
+            <span>Provider</span>
+            <strong id="detail-provider-model">-</strong>
+          </div>
+          <div>
+            <span>Messages</span>
+            <strong id="detail-message-count">0</strong>
+          </div>
+          <div>
+            <span>Depth</span>
+            <strong id="detail-depth">0</strong>
+          </div>
+          <div>
+            <span>Mode</span>
+            <strong id="detail-node-mode">No selection</strong>
+          </div>
+        </div>
+      </section>
+      <dl class="node-metadata">
+        <div>
+          <dt>Branch / Version Source</dt>
+          <dd id="detail-branch-source">Select a node to see where this branch comes from.</dd>
+        </div>
+        <div>
+          <dt>System Prompt</dt>
+          <dd id="detail-system-prompt">Default system prompt</dd>
+        </div>
+        <div>
+          <dt>Generation Settings</dt>
+          <dd id="detail-generation-settings">Default generation parameters.</dd>
+        </div>
+      </dl>
+      <section class="action-box action-box-preview">
+        <h3>Message Preview</h3>
+        <p>Selected node messages appear here so you can inspect the current branch without leaving the graph.</p>
+      </section>
+      <div class="message-list" id="node-detail-messages"></div>
+    </aside>
   </section>
 
   <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
@@ -279,6 +347,7 @@
           <h3>Build</h3>
           <dl class="workspace-help-list">
             <div><dt><kbd>C</kbd></dt><dd>Open selected node chat</dd></div>
+            <div><dt><kbd>I</kbd></dt><dd>Toggle the node detail panel</dd></div>
             <div><dt><kbd>Click</kbd></dt><dd>Select a node</dd></div>
             <div><dt><kbd>Drag</kbd></dt><dd>Move a node and persist its layout</dd></div>
           </dl>
@@ -310,5 +379,5 @@
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-graph-hint-fix"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260411-node-inspector"></script>
 {% endblock %}

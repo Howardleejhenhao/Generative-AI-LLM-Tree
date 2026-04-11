@@ -1,9 +1,11 @@
 import { postJSON } from "./api.js?v=20260322-graph-hint-fix";
 import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260322-graph-hint-fix";
 import { syncModelOptions } from "./model-options.js?v=20260322-graph-hint-fix";
+import { renderNodeDetails } from "./node-panel.js?v=20260324-markdown-rendering";
 import { createViewportController } from "./viewport.js?v=20260322-graph-hint-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
+const workspaceShell = document.getElementById("workspace-shell");
 const workspaceName = document.getElementById("workspace-name");
 const workspaceNodePill = document.getElementById("workspace-node-pill");
 const workspaceSearchInput = document.getElementById("workspace-search-input");
@@ -21,6 +23,21 @@ const workspaceHelpBackdrop = document.getElementById("workspace-help-backdrop")
 const workspaceHelpClose = document.getElementById("workspace-help-close");
 const workspaceDeleteButton = document.getElementById("workspace-delete-button");
 const nodeDeleteButton = document.getElementById("node-delete-button");
+const detailPeekButton = document.getElementById("detail-peek-button");
+const detailPanel = document.getElementById("detail-panel");
+const detailPanelToggle = document.getElementById("detail-panel-toggle");
+const detailOpenChatButton = document.getElementById("detail-open-chat-button");
+const detailPanelTitle = document.getElementById("detail-panel-title");
+const detailFocusTitle = document.getElementById("detail-focus-title");
+const detailFocusSummary = document.getElementById("detail-focus-summary");
+const detailProviderModel = document.getElementById("detail-provider-model");
+const detailMessageCount = document.getElementById("detail-message-count");
+const detailDepth = document.getElementById("detail-depth");
+const detailNodeMode = document.getElementById("detail-node-mode");
+const detailBranchSource = document.getElementById("detail-branch-source");
+const detailSystemPrompt = document.getElementById("detail-system-prompt");
+const detailGenerationSettings = document.getElementById("detail-generation-settings");
+const detailMessages = document.getElementById("node-detail-messages");
 const fitViewButton = document.getElementById("graph-fit-view");
 const zoomOutButton = document.getElementById("graph-zoom-out");
 const zoomInButton = document.getElementById("graph-zoom-in");
@@ -168,6 +185,60 @@ function getSelectionSummaryText(node) {
   return "Root conversation.";
 }
 
+function getNodeModeLabel(node) {
+  if (!node) {
+    return "No selection";
+  }
+
+  if (node.edited_from_id) {
+    return "Edited variant";
+  }
+  if (node.parent_id) {
+    return "Child branch";
+  }
+  return "Root conversation";
+}
+
+function getBranchSourceText(node) {
+  if (!node) {
+    return "Select a node to see where this branch comes from.";
+  }
+
+  const segments = [];
+
+  if (node.parent_id) {
+    segments.push(`Parent branch: ${getNodeTitleById(node.parent_id)}.`);
+  } else {
+    segments.push("This node starts a root conversation.");
+  }
+
+  if (node.edited_from_id) {
+    segments.push(`Edited from ${getNodeTitleById(node.edited_from_id)}.`);
+  }
+
+  return segments.join(" ");
+}
+
+function getGenerationSettingsText(node) {
+  if (!node) {
+    return "Default generation parameters.";
+  }
+
+  const settings = [];
+
+  if (node.temperature !== null && node.temperature !== undefined) {
+    settings.push(`temp ${node.temperature}`);
+  }
+  if (node.top_p !== null && node.top_p !== undefined) {
+    settings.push(`top p ${node.top_p}`);
+  }
+  if (node.max_output_tokens !== null && node.max_output_tokens !== undefined) {
+    settings.push(`max ${node.max_output_tokens} tokens`);
+  }
+
+  return settings.length ? settings.join(" · ") : "Default generation parameters.";
+}
+
 function isTypingTarget(element) {
   if (!element) {
     return false;
@@ -181,6 +252,18 @@ function setWorkspaceHelpOpen(isOpen) {
   workspaceHelpDialog.hidden = !isOpen;
   workspaceHelpDialog.setAttribute("aria-hidden", String(!isOpen));
   workspaceHelpToggle.setAttribute("aria-expanded", String(isOpen));
+}
+
+function isDetailPanelCollapsed() {
+  return workspaceShell.dataset.detailPanelCollapsed === "true";
+}
+
+function setDetailPanelCollapsed(collapsed) {
+  workspaceShell.dataset.detailPanelCollapsed = String(collapsed);
+  detailPanelToggle.setAttribute("aria-expanded", String(!collapsed));
+  detailPanelToggle.textContent = collapsed ? "Show panel" : "Hide panel";
+  detailPeekButton.hidden = !collapsed;
+  detailPanel.setAttribute("aria-hidden", String(collapsed));
 }
 
 function buildSearchMatches() {
@@ -259,6 +342,40 @@ function updateWorkspaceSummary() {
     : "New root";
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
   nodeDeleteButton.disabled = !selectedNode;
+}
+
+function updateDetailPanel() {
+  const selectedNode = getSelectedNode();
+  const lineageIds = getLineageIds(selectedNode);
+
+  if (!selectedNode) {
+    detailPanelTitle.textContent = "No node selected";
+    detailFocusTitle.textContent = "No node selected";
+    detailFocusSummary.textContent = "Select a node on the graph to inspect its messages and branch metadata.";
+    detailProviderModel.textContent = "-";
+    detailMessageCount.textContent = "0";
+    detailDepth.textContent = "0";
+    detailNodeMode.textContent = "No selection";
+    detailBranchSource.textContent = "Select a node to see where this branch comes from.";
+    detailSystemPrompt.textContent = "Default system prompt";
+    detailGenerationSettings.textContent = "Default generation parameters.";
+    detailOpenChatButton.disabled = true;
+    renderNodeDetails(detailMessages, []);
+    return;
+  }
+
+  detailPanelTitle.textContent = selectedNode.title;
+  detailFocusTitle.textContent = selectedNode.title;
+  detailFocusSummary.textContent = selectedNode.summary || "No summary yet for this node.";
+  detailProviderModel.textContent = `${getProviderLabel(selectedNode.provider)} / ${selectedNode.model_name}`;
+  detailMessageCount.textContent = String(selectedNode.messages.length);
+  detailDepth.textContent = String(lineageIds.length);
+  detailNodeMode.textContent = getNodeModeLabel(selectedNode);
+  detailBranchSource.textContent = getBranchSourceText(selectedNode);
+  detailSystemPrompt.textContent = selectedNode.system_prompt || "Default system prompt";
+  detailGenerationSettings.textContent = getGenerationSettingsText(selectedNode);
+  detailOpenChatButton.disabled = false;
+  renderNodeDetails(detailMessages, selectedNode.messages);
 }
 
 function getNodeChatUrl(nodeId) {
@@ -514,6 +631,7 @@ function showEmptyNodeState() {
   quickCreate.hidden = true;
   setQuickCreateOpen(false);
   updateWorkspaceSummary();
+  updateDetailPanel();
 }
 
 function updateSelection(nodeId) {
@@ -532,6 +650,7 @@ function updateSelection(nodeId) {
   syncQuickCreateDefaults();
   updateFormState();
   updateWorkspaceSummary();
+  updateDetailPanel();
   renderGraphCanvas();
   updateQuickCreatePosition();
 }
@@ -621,6 +740,12 @@ function handleWorkspaceKeydown(event) {
 
   if ((event.key === "c" || event.key === "C") && getSelectedNode()) {
     openNodeChat(getSelectedNode()?.id);
+    event.preventDefault();
+    return;
+  }
+
+  if (event.key === "i" || event.key === "I") {
+    setDetailPanelCollapsed(!isDetailPanelCollapsed());
     event.preventDefault();
   }
 }
@@ -804,7 +929,6 @@ async function handleConfirmationFinal() {
   } catch (error) {
     confirmDialogFeedback.textContent = error.message;
     confirmDialogCancel.disabled = false;
-    confirmDialogSecondary.disabled = false;
     confirmDialogConfirm.disabled = false;
   }
 }
@@ -875,6 +999,9 @@ workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceHelpBackdrop.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceDeleteButton.addEventListener("click", handleWorkspaceDelete);
 nodeDeleteButton.addEventListener("click", handleNodeDelete);
+detailPanelToggle.addEventListener("click", () => setDetailPanelCollapsed(!isDetailPanelCollapsed()));
+detailPeekButton.addEventListener("click", () => setDetailPanelCollapsed(false));
+detailOpenChatButton.addEventListener("click", () => openNodeChat(getSelectedNode()?.id));
 confirmDialogCancel.addEventListener("click", closeConfirmationDialog);
 confirmDialogBackdrop.addEventListener("click", closeConfirmationDialog);
 confirmDialogConfirm.addEventListener("click", handleConfirmationFinal);
@@ -891,7 +1018,9 @@ window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
 syncQuickCreateDefaults();
 setWorkspaceHelpOpen(false);
+setDetailPanelCollapsed(false);
 setConfirmDialogOpen(false);
 updateSearchState();
 updateSelection(selectedNodeId);
 updateWorkspaceSummary();
+updateDetailPanel();
