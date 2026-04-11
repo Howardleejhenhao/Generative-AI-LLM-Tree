@@ -65,14 +65,15 @@
 - Current branch at session start: `feature/graph-node-inspector`
 - New branch created/switched: `feature/v2-memory-foundation` from `main`
 - Commits made:
-  - none yet
+  - `3acea29` - `feat: add v2 memory foundation`
 - Push status:
-  - not pushed yet; commit and push are next
+  - pushed to `origin/feature/v2-memory-foundation`
 
 ### Current Status
 - v2 work has started.
 - The implementation target for this session is the memory foundation layer, not the older UI polish stream.
 - The codebase now has a dedicated long-term memory model/service layer, but no user-facing memory save/retrieval UI yet.
+- The first v2 feature branch is pushed and ready for follow-up slices.
 
 ### Next Recommended Step
 - Build the next v2 memory slice on top of this foundation:
