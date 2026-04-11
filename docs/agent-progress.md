@@ -68,13 +68,14 @@
 - Current branch at session start: `feature/v2-memory-foundation`
 - New branch created/switched: none
 - Commits made:
-  - none yet
+  - `e1c8a3b` - `feat: add v2 memory inspector UI`
 - Push status:
-  - not pushed yet; UI memory slice is ready to commit
+  - pushed to `origin/feature/v2-memory-foundation`
 
 ### Current Status
 - The v2 memory foundation is now visible and inspectable in the node-chat UI.
 - The user can review actual memory content in the browser instead of only backend structures.
+- The branch contains both the foundational memory schema slice and the first visible memory UI slice.
 
 ### Next Recommended Step
 - After human review, refine the memory sidebar UX and decide whether the next slice should add memory deletion/editing, graph-side memory visibility, or auto/semi-auto extraction.
