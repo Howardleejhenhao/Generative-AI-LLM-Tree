@@ -5,7 +5,6 @@ const nodePayload = JSON.parse(document.getElementById("node-memory-node-payload
 const memoryPayload = JSON.parse(document.getElementById("node-memory-memory-payload").textContent);
 
 const draftUrl = document.getElementById("node-memory-draft-url").dataset.draftUrl;
-const refreshWorkspaceMemoryUrl = document.getElementById("node-workspace-memory-refresh-url").dataset.refreshUrl;
 const memoryForm = document.getElementById("memory-form");
 const memoryScopeInput = document.getElementById("memory-scope-input");
 const memoryTypeInput = document.getElementById("memory-type-input");
@@ -20,7 +19,6 @@ const branchMemoryList = document.getElementById("branch-memory-list");
 const workspaceMemoryTitle = document.getElementById("workspace-memory-title");
 const branchMemoryTitle = document.getElementById("branch-memory-title");
 const retrievedMemoryPreview = document.getElementById("retrieved-memory-preview");
-const refreshWorkspaceMemoryButton = document.getElementById("workspace-memory-refresh");
 const csrfToken = document.querySelector("#memory-form input[name='csrfmiddlewaretoken']").value;
 
 function createMemoryCard(memory) {
@@ -89,21 +87,6 @@ async function generateDraft() {
   }
 }
 
-async function refreshWorkspaceMemory() {
-  refreshWorkspaceMemoryButton.disabled = true;
-
-  try {
-    const result = await postJSON(refreshWorkspaceMemoryUrl, {}, csrfToken);
-    memoryPayload.workspace_memories = result.memory_payload.workspace_memories;
-    memoryPayload.branch_memories = result.memory_payload.branch_memories;
-    memoryPayload.retrieved_memories = result.memory_payload.retrieved_memories;
-    memoryPayload.retrieved_memory_text = result.memory_payload.retrieved_memory_text;
-    renderMemoryPanels();
-  } finally {
-    refreshWorkspaceMemoryButton.disabled = false;
-  }
-}
-
 async function handleMemorySubmit(event) {
   event.preventDefault();
   memoryFeedback.textContent = "";
@@ -137,7 +120,6 @@ async function handleMemorySubmit(event) {
 
 memoryForm.addEventListener("submit", handleMemorySubmit);
 regenerateButton.addEventListener("click", generateDraft);
-refreshWorkspaceMemoryButton.addEventListener("click", refreshWorkspaceMemory);
 
 renderMemoryPanels();
-refreshWorkspaceMemory().then(generateDraft);
+generateDraft();

@@ -511,37 +511,6 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.json()["draft"]["title"], "Draft title")
         mock_generate_memory_draft_for_node.assert_called_once()
 
-    @patch("tree_ui.views.refresh_workspace_preference_memory")
-    def test_can_refresh_workspace_memory_via_api(self, mock_refresh_workspace_preference_memory):
-        workspace = Workspace.objects.create(name="Main", slug="main")
-        node = ConversationNode.objects.create(
-            workspace=workspace,
-            title="Memory node",
-            summary="",
-            provider=ConversationNode.Provider.OPENAI,
-            model_name="gpt-4.1-mini",
-        )
-        workspace_memory = ConversationMemory.objects.create(
-            workspace=workspace,
-            scope=ConversationMemory.Scope.WORKSPACE,
-            memory_type=ConversationMemory.MemoryType.PREFERENCE,
-            source=ConversationMemory.Source.EXTRACTED,
-            title="Workspace preference profile",
-            content="The user prefers concise explanations.",
-            is_pinned=True,
-        )
-        mock_refresh_workspace_preference_memory.return_value = workspace_memory
-
-        response = self.client.post(
-            reverse("refresh_workspace_memory", args=[workspace.slug, node.id]),
-            data=json.dumps({}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["memory"]["id"], workspace_memory.id)
-        mock_refresh_workspace_preference_memory.assert_called_once()
-
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
@@ -723,8 +692,9 @@ class WorkspaceGraphViewTests(TestCase):
             ],
         )
 
+    @patch("tree_ui.services.node_creation.refresh_workspace_preference_memory")
     @patch("tree_ui.services.node_creation.generate_text")
-    def test_append_messages_to_node_uses_provider_result_when_available(self, mock_generate_text):
+    def test_append_messages_to_node_uses_provider_result_when_available(self, mock_generate_text, mock_refresh_workspace_preference_memory):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
             workspace=workspace,
@@ -760,6 +730,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(mock_generate_text.call_args.kwargs["temperature"], 0.2)
         self.assertEqual(mock_generate_text.call_args.kwargs["top_p"], 0.7)
         self.assertEqual(mock_generate_text.call_args.kwargs["max_output_tokens"], 120)
+        mock_refresh_workspace_preference_memory.assert_called_once()
 
     @patch("tree_ui.services.providers.registry._get_provider")
     def test_legacy_gemini_model_alias_is_upgraded_for_generation(self, mock_get_provider):

@@ -12,6 +12,7 @@ from tree_ui.services.context_builder import (
     build_branch_lineage,
     build_generation_messages,
 )
+from tree_ui.services.memory_drafting import refresh_workspace_preference_memory
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.memory_service import format_memories_for_prompt, retrieve_memories_for_generation
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
@@ -354,7 +355,15 @@ def append_messages_to_node_with_reply(
         node.summary = resolved_inputs["summary"]
         node.save(update_fields=["summary", "updated_at"])
 
-    return ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
+    updated_node = ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
+
+    try:
+        refresh_workspace_preference_memory(updated_node)
+    except Exception:
+        # Memory refresh is best-effort and must not break the main chat flow.
+        pass
+
+    return updated_node
 
 
 def append_messages_to_node(

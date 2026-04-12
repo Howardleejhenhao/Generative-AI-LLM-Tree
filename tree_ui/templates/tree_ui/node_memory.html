@@ -78,9 +78,6 @@
               <h2 id="workspace-memory-title">Workspace</h2>
               <p>Auto-organized by the model from workspace conversations. Read only.</p>
             </div>
-            <button class="detail-toggle-button detail-toggle-button-quiet" id="workspace-memory-refresh" type="button">
-              Refresh
-            </button>
           </header>
           <div class="chat-branch-list memory-list" id="workspace-memory-list"></div>
         </section>
@@ -103,11 +100,6 @@
   <div
     id="node-memory-draft-url"
     data-draft-url="{% url 'generate_node_memory_draft' workspace.slug node_payload.id %}"
-    hidden
-  ></div>
-  <div
-    id="node-workspace-memory-refresh-url"
-    data-refresh-url="{{ workspace_memory_refresh_url }}"
     hidden
   ></div>
   <script type="module" src="{% static 'tree_ui/js/node-memory.js' %}?v=20260412-dedicated-memory-page"></script>
