@@ -12,6 +12,64 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:31
+
+### Session Goal
+- Implement the node-chat UI flow for editing an old node transcript and branching again from the edited state.
+
+### Planned Tasks
+- add an `Edit as variant` entry point in the node-focused chat view
+- wire the existing edited-variant API into a usable client-side form and redirect flow
+- add regression coverage for the new node-chat editing affordances
+- verify the affected JS and Django tests before pushing
+
+### Milestone Area
+- Graph Interaction
+- Edit / Re-branch
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- strengthens the required v2 graph workflow for version-safe node editing and re-branching
+
+### Demo Readiness Impact
+- Historical nodes can now be edited directly from the node-focused chat page and forked into a new variant without overwriting the original branch.
+
+### Work Completed
+- Added an `Edit as variant` action to the node-focused chat header.
+- Added an inline edit panel that clones the current node transcript into editable textareas plus a variant title field.
+- Wired the panel to the existing `create_edited_node_variant` API and redirect flow so successful edits open the new variant's chat page immediately.
+- Added lightweight node-chat styling for the edit panel so the new flow stays readable without turning the page into a second app surface.
+- Expanded chat-page regression coverage and re-ran the full `tree_ui.tests` suite.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - `5550ac0` - `feat: add node chat edited variant flow`
+- Push status:
+  - pushed to `origin/feature/v2-memory-foundation` after the feature commit
+  - progress-log update still pending commit in the working tree
+
+### Current Status
+- Node chat now supports a practical edit-old-node and re-branch workflow on top of the existing backend variant model.
+
+### Next Recommended Step
+- Let the human review the edit-variant flow in the browser, then decide whether the next slice should be inline variant creation from the graph workspace or richer variant comparison metadata.
+
+### Known Issues / Blockers / Tech Debt
+- The edit-variant form currently edits the entire transcript at once; it does not yet support adding or deleting message rows.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:24
 
 ### Session Goal
