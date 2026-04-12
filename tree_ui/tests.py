@@ -20,6 +20,7 @@ from tree_ui.services.memory_service import (
 )
 from tree_ui.services.node_creation import append_messages_to_node
 from tree_ui.services.node_editing import create_edited_variant
+from tree_ui.services.providers import ProviderError
 from tree_ui.services.providers.base import GenerationResult
 from tree_ui.services.providers.registry import generate_text as registry_generate_text
 
@@ -1001,6 +1002,29 @@ class MemoryFoundationTests(TestCase):
 
         self.assertFalse(draft["content"].endswith("..."))
         self.assertFalse(draft["content"].endswith("…"))
+
+    @patch("tree_ui.services.memory_drafting.generate_text", side_effect=ProviderError("provider unavailable"))
+    def test_refresh_workspace_preference_memory_uses_local_summary_when_generation_fails(self, _mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="C basics",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="教我 C 語言的基本概念",
+            order_index=0,
+        )
+
+        memory = refresh_workspace_preference_memory(node)
+
+        self.assertEqual(memory.title, "Workspace memory")
+        self.assertNotEqual(memory.content, WORKSPACE_MEMORY_FALLBACK_CONTENT)
+        self.assertIn("C basics", memory.content)
 
     @patch("tree_ui.services.memory_drafting.generate_text")
     def test_refresh_workspace_preference_memory_updates_read_only_profile(self, mock_generate_text):

@@ -12,6 +12,63 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:12
+
+### Session Goal
+- Fix the case where workspace memory still shows the placeholder even though the workspace already has real dialogue.
+- Ensure memory refresh falls back to a local summary instead of an empty placeholder when provider generation fails.
+
+### Planned Tasks
+- inspect the affected workspace data directly
+- replace placeholder fallback behavior with a transcript-based local summary
+- add regression coverage for provider-failure fallback behavior
+- push the fix after verifying the full test suite
+
+### Milestone Area
+- Memory
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Workspace memory no longer appears broken when provider-backed summarization is unavailable.
+
+### Work Completed
+- Inspected the real `C語言學習` workspace data and confirmed it had nodes/messages but was stuck on placeholder memory.
+- Added a transcript-based local workspace summary fallback so memory refresh now produces a usable stored summary even when provider generation fails.
+- Manually re-ran `ensure_workspace_memory(...)` for the affected workspace so its stored memory now contains a real summary immediately.
+- Added regression coverage for provider-failure fallback behavior.
+- Verified the fix with `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for local workspace-memory fallback summary
+- Push status:
+  - not pushed yet; fix is ready to commit
+
+### Current Status
+- The affected workspace now has a non-placeholder stored memory entry.
+- Future refreshes no longer depend entirely on provider-backed summarization success.
+
+### Next Recommended Step
+- Let the human confirm the new workspace memory content is visible and useful, then refine the summary wording if needed.
+
+### Known Issues / Blockers / Tech Debt
+- The local fallback summary is intentionally simple and should be improved if you want more polished memory wording.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:05
 
 ### Session Goal

@@ -152,6 +152,37 @@ def _build_workspace_context_messages(workspace) -> list[ContextMessage]:
     ]
 
 
+def _build_workspace_fallback_summary(workspace) -> str:
+    nodes = list(workspace.nodes.prefetch_related("messages").order_by("created_at"))
+    if not nodes:
+        return WORKSPACE_MEMORY_FALLBACK_CONTENT
+
+    titled_nodes = [node.title.strip() for node in nodes if node.title.strip()]
+    unique_titles: list[str] = []
+    for title in titled_nodes:
+        if title not in unique_titles:
+            unique_titles.append(title)
+
+    recent_user_messages: list[str] = []
+    for node in nodes:
+        for message in node.messages.order_by("order_index", "created_at"):
+            if message.role != "user":
+                continue
+            compact = " ".join(message.content.split())
+            if compact and compact not in recent_user_messages:
+                recent_user_messages.append(compact)
+
+    if not recent_user_messages:
+        return WORKSPACE_MEMORY_FALLBACK_CONTENT
+
+    recent_focus = "；".join(recent_user_messages[-3:])
+    topics = "、".join(unique_titles[:4]) if unique_titles else "目前對話"
+    summary = (
+        f"這個 workspace 目前主要在學習與整理 {topics}，最近的重點包含：{recent_focus}。"
+    )
+    return _normalize_draft_content(summary)
+
+
 def refresh_workspace_preference_memory(reference_node: ConversationNode) -> ConversationMemory:
     workspace = reference_node.workspace
     messages = _build_workspace_context_messages(workspace)
@@ -175,7 +206,7 @@ def refresh_workspace_preference_memory(reference_node: ConversationNode) -> Con
         content = _normalize_draft_content(str(payload.get("content", "")).strip()) or fallback["content"]
     except (ProviderError, ValueError, json.JSONDecodeError):
         title = fallback["title"]
-        content = fallback["content"]
+        content = _build_workspace_fallback_summary(workspace)
 
     with transaction.atomic():
         memory, _ = ConversationMemory.objects.update_or_create(
