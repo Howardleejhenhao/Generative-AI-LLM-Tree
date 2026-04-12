@@ -8,6 +8,7 @@ from django.urls import reverse
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.memory_drafting import (
+    WORKSPACE_MEMORY_FALLBACK_CONTENT,
     ensure_workspace_memory,
     generate_memory_draft_for_node,
     refresh_workspace_preference_memory,
@@ -52,7 +53,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Delete workspace")
         self.assertContains(response, "Delete node")
         self.assertContains(response, "Workspace Memory")
-        self.assertContains(response, "No durable workspace memory has been established yet.")
+        self.assertContains(response, WORKSPACE_MEMORY_FALLBACK_CONTENT)
         self.assertNotContains(response, "Research lane")
         self.assertNotContains(response, "Model comparison")
         self.assertNotContains(response, "Branch review")
@@ -1039,9 +1040,48 @@ class MemoryFoundationTests(TestCase):
 
         self.assertEqual(memory.workspace, workspace)
         self.assertEqual(memory.title, "Workspace memory")
-        self.assertEqual(memory.content, "No durable workspace memory has been established yet.")
+        self.assertEqual(memory.content, WORKSPACE_MEMORY_FALLBACK_CONTENT)
         self.assertEqual(memory.scope, ConversationMemory.Scope.WORKSPACE)
         self.assertEqual(memory.memory_type, ConversationMemory.MemoryType.SUMMARY)
+
+    @patch("tree_ui.services.memory_drafting.generate_text")
+    def test_ensure_workspace_memory_replaces_fallback_when_workspace_has_conversation(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        ConversationMemory.objects.create(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            source=ConversationMemory.Source.EXTRACTED,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Workspace memory",
+            content=WORKSPACE_MEMORY_FALLBACK_CONTENT,
+            is_pinned=True,
+        )
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="This workspace is about C language learning.",
+            order_index=0,
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text='{"title":"Workspace memory","content":"This workspace is focused on C language learning."}',
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        memory = ensure_workspace_memory(workspace)
+
+        self.assertEqual(memory.content, "This workspace is focused on C language learning.")
+        self.assertEqual(
+            ConversationMemory.objects.filter(workspace=workspace, title="Workspace memory").count(),
+            1,
+        )
 
     @patch("tree_ui.services.node_creation.generate_text")
     def test_append_messages_to_node_includes_retrieved_memory_in_system_instruction(self, mock_generate_text):

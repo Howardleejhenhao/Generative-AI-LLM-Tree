@@ -21,6 +21,8 @@ MEMORY_DRAFT_SYSTEM_INSTRUCTION = (
     "Do not include markdown fences or explanations."
 )
 
+WORKSPACE_MEMORY_FALLBACK_CONTENT = "No durable workspace memory has been established yet."
+
 WORKSPACE_MEMORY_SYSTEM_INSTRUCTION = (
     "You maintain one read-only workspace memory block for an entire conversation workspace. "
     "Summarize the important ongoing context, goals, decisions, preferences, and recurring instructions across the whole workspace. "
@@ -155,7 +157,7 @@ def refresh_workspace_preference_memory(reference_node: ConversationNode) -> Con
     messages = _build_workspace_context_messages(workspace)
     fallback = {
         "title": "Workspace memory",
-        "content": "No durable workspace memory has been established yet.",
+        "content": WORKSPACE_MEMORY_FALLBACK_CONTENT,
     }
 
     try:
@@ -201,10 +203,13 @@ def ensure_workspace_memory(workspace) -> ConversationMemory:
         memory_type=ConversationMemory.MemoryType.SUMMARY,
         title="Workspace memory",
     ).first()
+    reference_node = workspace.nodes.order_by("-updated_at", "-created_at").first()
+
     if memory is not None:
+        if reference_node is not None and memory.content.strip() == WORKSPACE_MEMORY_FALLBACK_CONTENT:
+            return refresh_workspace_preference_memory(reference_node)
         return memory
 
-    reference_node = workspace.nodes.order_by("-updated_at", "-created_at").first()
     if reference_node is not None:
         return refresh_workspace_preference_memory(reference_node)
 
@@ -214,6 +219,6 @@ def ensure_workspace_memory(workspace) -> ConversationMemory:
         source=ConversationMemory.Source.EXTRACTED,
         memory_type=ConversationMemory.MemoryType.SUMMARY,
         title="Workspace memory",
-        content="No durable workspace memory has been established yet.",
+        content=WORKSPACE_MEMORY_FALLBACK_CONTENT,
         is_pinned=True,
     )

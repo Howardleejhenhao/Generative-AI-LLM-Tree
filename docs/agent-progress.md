@@ -12,6 +12,63 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:05
+
+### Session Goal
+- Fix the case where a workspace with existing dialogue still shows the old fallback workspace-memory text.
+- Make sure stored fallback memory is automatically replaced by a real summary as soon as conversation history exists.
+
+### Planned Tasks
+- update workspace-memory initialization to detect stale fallback content
+- regenerate workspace memory when fallback content is found alongside real conversation history
+- add regression coverage for the stale-fallback replacement case
+- verify the full test suite and push the fix
+
+### Milestone Area
+- Memory
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Existing workspaces no longer get stuck showing the fallback message after conversation history has already accumulated.
+
+### Work Completed
+- Added a `WORKSPACE_MEMORY_FALLBACK_CONTENT` constant so placeholder-state detection is explicit and consistent.
+- Updated `ensure_workspace_memory(...)` so if the stored workspace memory is still the fallback text but the workspace now has conversation history, it immediately regenerates and overwrites the placeholder.
+- Added regression coverage for the stale-fallback replacement case and updated fallback assertions to use the shared constant.
+- Verified the fix with `python3 -m py_compile tree_ui/services/memory_drafting.py tree_ui/tests.py` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for stale workspace-memory fallback replacement
+- Push status:
+  - not pushed yet; fix is ready to commit
+
+### Current Status
+- Workspace memory is initialized by default.
+- Workspaces with older placeholder memory now auto-replace that placeholder with a real summary once dialogue exists.
+- Repeated viewing still stays stable when nothing new has changed.
+
+### Next Recommended Step
+- Let the human confirm the placeholder is gone for the affected workspace, then continue tuning the summary wording if necessary.
+
+### Known Issues / Blockers / Tech Debt
+- The summarization quality itself may still need product tuning even though the initialization and refresh flow is now correct.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 21:55
 
 ### Session Goal
