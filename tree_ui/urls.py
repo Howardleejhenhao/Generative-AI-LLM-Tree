@@ -61,4 +61,9 @@ urlpatterns = [
         views.generate_node_memory_draft_view,
         name="generate_node_memory_draft",
     ),
+    path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/workspace-memory/refresh/",
+        views.refresh_workspace_memory_view,
+        name="refresh_workspace_memory",
+    ),
 ]

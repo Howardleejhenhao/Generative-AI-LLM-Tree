@@ -11,6 +11,81 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-12 10:35
+
+### Session Goal
+- Align the long-term memory behavior with the user's clarified intent:
+  - workspace memory should be model-managed and read-only
+  - user edits should only apply to branch-level notes
+- Remove the appearance of incomplete memory drafts ending in `...`
+
+### Planned Tasks
+- inspect the current dedicated memory page and identify the minimum changes to separate workspace memory from user-editable branch memory
+- add a workspace-memory refresh flow managed by the model
+- reject manual workspace-memory creation from the user-facing save flow
+- normalize draft output so it no longer looks cut off
+- add regression coverage, update the progress log, and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The memory feature is now easier to explain as two clearer behaviors:
+  - model-maintained workspace preference memory
+  - user-maintained branch notes
+
+### Work Completed
+- Updated the memory drafting logic so drafts no longer intentionally end with ellipsis and have more output room.
+- Added a workspace-memory refresh path that lets the model auto-organize a read-only workspace preference profile from workspace conversations.
+- Added a new workspace-memory refresh API endpoint.
+- Changed the dedicated memory page so:
+  - workspace memory is explicitly read-only and model-managed
+  - branch memory remains the manual note area
+  - the workspace section has a dedicated refresh action
+- Prevented manual workspace-memory creation from the user-facing memory save endpoint.
+- Added regression coverage for:
+  - read-only workspace-memory wording on the dedicated memory page
+  - workspace-memory refresh API behavior
+  - rejection of manual workspace-memory creation
+  - workspace preference memory refresh behavior
+  - draft normalization that removes trailing ellipsis
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-memory.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; read-only workspace-memory slice is ready to commit
+
+### Current Status
+- Workspace memory is now implemented as model-managed read-only preference memory.
+- User edits are now limited to branch-level memory notes.
+
+### Next Recommended Step
+- Let the human review the new dedicated memory behavior, then decide whether the next slice should improve preference extraction quality, add memory history/versioning, or expose workspace memory in the graph view.
+
+### Known Issues / Blockers / Tech Debt
+- Workspace memory currently refreshes one consolidated preference profile rather than multiple structured preference entries.
+- Memory editing/deletion is still not implemented.
+
 ## Session 2026-04-12 10:21
 
 ### Session Goal

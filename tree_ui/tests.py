@@ -7,7 +7,10 @@ from django.urls import reverse
 
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import build_generation_messages
-from tree_ui.services.memory_drafting import generate_memory_draft_for_node
+from tree_ui.services.memory_drafting import (
+    generate_memory_draft_for_node,
+    refresh_workspace_preference_memory,
+)
 from tree_ui.services.memory_service import (
     create_memory,
     format_memories_for_prompt,
@@ -110,6 +113,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Regenerate")
         self.assertContains(response, "Workspace")
         self.assertContains(response, "Branch")
+        self.assertContains(response, "Read only.")
+        self.assertContains(response, "Manual notes only for this lineage.")
 
     def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -451,6 +456,33 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertTrue(memory.is_pinned)
         self.assertEqual(response.json()["memory_payload"]["branch_memories"][0]["id"], memory.id)
 
+    def test_workspace_memory_cannot_be_created_manually_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Memory node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.post(
+            reverse("create_workspace_memory", args=[workspace.slug]),
+            data=json.dumps(
+                {
+                    "context_node_id": node.id,
+                    "scope": ConversationMemory.Scope.WORKSPACE,
+                    "memory_type": ConversationMemory.MemoryType.PREFERENCE,
+                    "title": "Manual workspace edit",
+                    "content": "Should be rejected.",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Workspace memory is managed automatically by the model.", response.content.decode("utf-8"))
+
     @patch("tree_ui.views.generate_memory_draft_for_node")
     def test_can_generate_memory_draft_via_api(self, mock_generate_memory_draft_for_node):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -478,6 +510,37 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["draft"]["title"], "Draft title")
         mock_generate_memory_draft_for_node.assert_called_once()
+
+    @patch("tree_ui.views.refresh_workspace_preference_memory")
+    def test_can_refresh_workspace_memory_via_api(self, mock_refresh_workspace_preference_memory):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Memory node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        workspace_memory = ConversationMemory.objects.create(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.PREFERENCE,
+            source=ConversationMemory.Source.EXTRACTED,
+            title="Workspace preference profile",
+            content="The user prefers concise explanations.",
+            is_pinned=True,
+        )
+        mock_refresh_workspace_preference_memory.return_value = workspace_memory
+
+        response = self.client.post(
+            reverse("refresh_workspace_memory", args=[workspace.slug, node.id]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["memory"]["id"], workspace_memory.id)
+        mock_refresh_workspace_preference_memory.assert_called_once()
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -897,6 +960,56 @@ class MemoryFoundationTests(TestCase):
         self.assertEqual(draft["memory_type"], "summary")
         self.assertEqual(draft["title"], "Launch risks")
         self.assertIn("concise launch risk analysis", draft["content"])
+
+    @patch("tree_ui.services.memory_drafting.generate_text")
+    def test_generate_memory_draft_normalizes_trailing_ellipsis(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Draft source",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text='{"scope":"branch","memory_type":"summary","title":"C++ basics","content":"Learner already understands that C++ extends C and includes object-oriented programming..."}',
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        draft = generate_memory_draft_for_node(node)
+
+        self.assertFalse(draft["content"].endswith("..."))
+        self.assertFalse(draft["content"].endswith("…"))
+
+    @patch("tree_ui.services.memory_drafting.generate_text")
+    def test_refresh_workspace_preference_memory_updates_read_only_profile(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Draft source",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="I prefer concise answers and Traditional Chinese.",
+            order_index=0,
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text='{"title":"Workspace preference profile","content":"The user prefers concise answers in Traditional Chinese."}',
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        memory = refresh_workspace_preference_memory(node)
+
+        self.assertEqual(memory.scope, ConversationMemory.Scope.WORKSPACE)
+        self.assertEqual(memory.source, ConversationMemory.Source.EXTRACTED)
+        self.assertTrue(memory.is_pinned)
+        self.assertIn("Traditional Chinese", memory.content)
 
     @patch("tree_ui.services.node_creation.generate_text")
     def test_append_messages_to_node_includes_retrieved_memory_in_system_instruction(self, mock_generate_text):

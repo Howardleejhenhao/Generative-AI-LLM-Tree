@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import re
+
+from django.db import transaction
 
 from tree_ui.models import ConversationMemory, ConversationNode
 from tree_ui.services.context_builder import ContextMessage, build_generation_messages
@@ -13,7 +16,18 @@ MEMORY_DRAFT_SYSTEM_INSTRUCTION = (
     "Choose scope as either 'workspace' or 'branch'. "
     "Choose memory_type as one of: fact, preference, summary, task, artifact. "
     "Create a concise, reusable memory the user may want to keep. "
+    "Keep content as one short complete paragraph in plain text. "
+    "Do not use bullet lists. Do not end with ellipsis. "
     "Do not include markdown fences or explanations."
+)
+
+WORKSPACE_MEMORY_SYSTEM_INSTRUCTION = (
+    "You maintain a read-only workspace memory profile for a user. "
+    "Infer only stable user habits, preferences, and recurring instructions that are useful across the whole workspace. "
+    "Return strict JSON only with keys: title, content. "
+    "Content must be one short complete paragraph in plain text. "
+    "Do not use bullet lists. Do not end with ellipsis. "
+    "If no stable workspace-wide preference is visible yet, summarize that no stable preference has been established."
 )
 
 
@@ -31,9 +45,7 @@ def _fallback_memory_draft(node: ConversationNode) -> dict:
     if not fallback_content:
         fallback_content = f"Key detail from {node.title}."
 
-    compact = " ".join(fallback_content.split())
-    if len(compact) > 220:
-        compact = f"{compact[:217]}..."
+    compact = _normalize_draft_content(fallback_content)
 
     return {
         "scope": ConversationMemory.Scope.BRANCH,
@@ -42,6 +54,22 @@ def _fallback_memory_draft(node: ConversationNode) -> dict:
         "content": compact,
         "used_fallback": True,
     }
+
+
+def _normalize_draft_content(raw_content: str) -> str:
+    compact = " ".join(raw_content.split())
+    compact = re.sub(r"(\.\.\.|…)+\s*$", "", compact).strip()
+    if len(compact) > 420:
+        sentence_matches = list(re.finditer(r"[。！？!?]", compact))
+        truncated = compact[:420].rstrip()
+        for match in sentence_matches:
+            if match.end() <= 420:
+                truncated = compact[: match.end()].strip()
+        compact = truncated
+
+    if compact and compact[-1] not in "。！？!?.":  # keep the draft looking complete
+        compact = f"{compact}。"
+    return compact
 
 
 def generate_memory_draft_for_node(node: ConversationNode) -> dict:
@@ -59,7 +87,7 @@ def generate_memory_draft_for_node(node: ConversationNode) -> dict:
             system_instruction=MEMORY_DRAFT_SYSTEM_INSTRUCTION,
             temperature=0.2,
             top_p=0.9,
-            max_output_tokens=220,
+            max_output_tokens=420,
         )
         payload = _extract_json_object(result.text)
     except (ProviderError, ValueError, json.JSONDecodeError):
@@ -74,7 +102,7 @@ def generate_memory_draft_for_node(node: ConversationNode) -> dict:
         memory_type = ConversationMemory.MemoryType.SUMMARY
 
     title = str(payload.get("title", "")).strip()[:160]
-    content = str(payload.get("content", "")).strip()
+    content = _normalize_draft_content(str(payload.get("content", "")).strip())
     if not content:
         return _fallback_memory_draft(node)
 
@@ -85,3 +113,58 @@ def generate_memory_draft_for_node(node: ConversationNode) -> dict:
         "content": content,
         "used_fallback": False,
     }
+
+
+def _build_workspace_context_messages(workspace) -> list[ContextMessage]:
+    rows = (
+        workspace.nodes.filter(messages__isnull=False)
+        .prefetch_related("messages")
+        .order_by("created_at")
+    )
+    messages: list[ContextMessage] = []
+    for node in rows:
+        for message in node.messages.order_by("order_index", "created_at"):
+            messages.append(ContextMessage(role=message.role, content=message.content))
+
+    return messages[-36:]
+
+
+def refresh_workspace_preference_memory(reference_node: ConversationNode) -> ConversationMemory:
+    workspace = reference_node.workspace
+    messages = _build_workspace_context_messages(workspace)
+    fallback = {
+        "title": "Workspace preference profile",
+        "content": "No stable workspace-wide preference has been established yet.",
+    }
+
+    try:
+        result = generate_text(
+            provider_name=reference_node.provider,
+            model_name=reference_node.model_name,
+            messages=messages or [ContextMessage(role="user", content="No prior conversation yet.")],
+            system_instruction=WORKSPACE_MEMORY_SYSTEM_INSTRUCTION,
+            temperature=0.1,
+            top_p=0.8,
+            max_output_tokens=260,
+        )
+        payload = _extract_json_object(result.text)
+        title = str(payload.get("title", fallback["title"])).strip()[:160] or fallback["title"]
+        content = _normalize_draft_content(str(payload.get("content", "")).strip()) or fallback["content"]
+    except (ProviderError, ValueError, json.JSONDecodeError):
+        title = fallback["title"]
+        content = fallback["content"]
+
+    with transaction.atomic():
+        memory, _ = ConversationMemory.objects.update_or_create(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            source=ConversationMemory.Source.EXTRACTED,
+            memory_type=ConversationMemory.MemoryType.PREFERENCE,
+            title="Workspace preference profile",
+            defaults={
+                "content": content,
+                "source_node": reference_node,
+                "is_pinned": True,
+            },
+        )
+        return memory

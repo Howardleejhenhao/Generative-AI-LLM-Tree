@@ -8,7 +8,10 @@ from django.views.decorators.http import require_POST
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
-from tree_ui.services.memory_drafting import generate_memory_draft_for_node
+from tree_ui.services.memory_drafting import (
+    generate_memory_draft_for_node,
+    refresh_workspace_preference_memory,
+)
 from tree_ui.services.memory_service import (
     create_memory,
     format_memories_for_prompt,
@@ -214,10 +217,13 @@ def workspace_node_memory(request, slug: str, node_id: int):
                 for value, label in ConversationMemory.MemoryType.choices
             ],
             "memory_scope_choices": [
-                {"value": value, "label": label}
-                for value, label in ConversationMemory.Scope.choices
+                {"value": ConversationMemory.Scope.BRANCH, "label": "Branch"}
             ],
             "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
+            "workspace_memory_refresh_url": reverse(
+                "refresh_workspace_memory",
+                args=[workspace.slug, node.id],
+            ),
         },
     )
 
@@ -418,10 +424,14 @@ def create_workspace_memory_view(request, slug: str):
     elif payload.get("scope") == ConversationMemory.Scope.BRANCH:
         branch_anchor = context_node or source_node
 
+    requested_scope = payload.get("scope", ConversationMemory.Scope.WORKSPACE)
+    if requested_scope == ConversationMemory.Scope.WORKSPACE:
+        return HttpResponseBadRequest("Workspace memory is managed automatically by the model.")
+
     try:
         memory = create_memory(
             workspace=workspace,
-            scope=payload.get("scope", ConversationMemory.Scope.WORKSPACE),
+            scope=requested_scope,
             memory_type=payload.get("memory_type", ConversationMemory.MemoryType.FACT),
             title=payload.get("title", ""),
             content=payload.get("content") if payload.get("content") not in (None, "") else (
@@ -468,6 +478,24 @@ def generate_node_memory_draft_view(request, slug: str, node_id: int):
 
     draft = generate_memory_draft_for_node(node)
     return JsonResponse({"draft": draft})
+
+
+@require_POST
+def refresh_workspace_memory_view(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(
+        ConversationNode.objects.prefetch_related("messages"),
+        pk=node_id,
+        workspace=workspace,
+    )
+
+    memory = refresh_workspace_preference_memory(node)
+    return JsonResponse(
+        {
+            "memory": _serialize_memory(memory),
+            "memory_payload": _build_memory_payload(node),
+        }
+    )
 
 
 @require_POST
