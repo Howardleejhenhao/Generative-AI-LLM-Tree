@@ -11,6 +11,80 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-12 10:21
+
+### Session Goal
+- Move long-term memory out of the cramped node-chat sidebar into a dedicated page.
+- Change the memory flow so the model prepares a first draft and the user refines it before saving.
+
+### Planned Tasks
+- inspect the current memory/chat implementation and identify the smallest clean split into a dedicated memory page
+- add a dedicated node memory route, template, and frontend module
+- add a draft-generation endpoint so the page can prefill a memory draft automatically
+- simplify the node chat page back to chat-first behavior with a single memory entry link
+- add tests, update the progress log, and push the slice once stable
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The long-term memory workflow is now easier to explain and demo because memory is a dedicated screen with an explicit draft-review-save flow.
+
+### Work Completed
+- Reworked the memory UX based on human feedback that the node-chat sidebar was too cramped and manual-first.
+- Removed the memory UI from the node-chat page and restored node chat to a simpler chat-first layout with an `Open memory` entry link.
+- Added a dedicated memory page for each node.
+- Added an automatic memory draft flow so the memory page requests one suggested memory draft from the current node provider/model and pre-fills the form for user refinement.
+- Added a new `memory_drafting` service with:
+  - provider-backed draft generation
+  - strict JSON parsing
+  - fallback draft generation when provider output is unavailable or malformed
+- Added a draft-generation API endpoint for the memory page.
+- Added regression coverage for:
+  - dedicated memory page rendering
+  - memory draft API
+  - structured memory draft generation
+  - node chat still rendering as a chat-first view
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `node --check tree_ui/static/tree_ui/js/node-memory.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; dedicated memory page slice is ready to commit
+
+### Current Status
+- Long-term memory is no longer embedded into the node-chat UI.
+- The current v2 memory workflow is now: open dedicated memory page -> review model draft -> edit -> save.
+
+### Next Recommended Step
+- Let the human review the dedicated memory page, then decide whether the next slice should add draft history, edit/delete memory operations, or graph-visible memory summaries.
+
+### Known Issues / Blockers / Tech Debt
+- Draft generation currently returns one suggested memory at a time rather than multiple candidates.
+- Memory editing/deletion is still not implemented.
+
 ## Session 2026-04-11 21:10
 
 ### Session Goal

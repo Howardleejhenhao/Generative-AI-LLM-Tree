@@ -10,6 +10,11 @@ urlpatterns = [
         views.workspace_node_chat,
         name="workspace_node_chat",
     ),
+    path(
+        "workspaces/<slug:slug>/nodes/<int:node_id>/memory/",
+        views.workspace_node_memory,
+        name="workspace_node_memory",
+    ),
     path("api/workspaces/", views.create_workspace_view, name="create_workspace"),
     path(
         "api/workspaces/<slug:slug>/memories/",
@@ -50,5 +55,10 @@ urlpatterns = [
         "api/workspaces/<slug:slug>/nodes/<int:node_id>/edit-variant/",
         views.create_edited_node_variant,
         name="create_edited_node_variant",
+    ),
+    path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/memory-draft/",
+        views.generate_node_memory_draft_view,
+        name="generate_node_memory_draft",
     ),
 ]

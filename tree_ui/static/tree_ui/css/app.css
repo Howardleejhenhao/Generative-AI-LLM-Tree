@@ -845,6 +845,16 @@ body:has(.chat-page-immersive) .page-shell {
   color: var(--text);
 }
 
+.chat-shell-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chat-shell-links .ghost-link {
+  margin-bottom: 0;
+}
+
 .chat-topbar-copy h1,
 .lineage-card h2,
 .chat-panel-header h2,
@@ -953,6 +963,81 @@ body:has(.chat-page-immersive) .page-shell {
   gap: 16px;
   height: 100%;
   min-height: 0;
+}
+
+.memory-page {
+  display: grid;
+  gap: 18px;
+}
+
+.memory-page-header {
+  display: grid;
+  gap: 14px;
+}
+
+.memory-page-copy h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.memory-page-copy p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.memory-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.memory-main-column,
+.memory-side-column {
+  display: grid;
+  gap: 16px;
+}
+
+.memory-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 252, 247, 0.94);
+  box-shadow: 0 12px 28px rgba(49, 37, 22, 0.06);
+}
+
+.memory-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.memory-panel-header h2 {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.memory-panel-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.memory-preview-block {
+  min-height: 88px;
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .chat-thread-panel-history .chat-content-shell::before {
@@ -1358,6 +1443,10 @@ body:has(.chat-page-immersive) .page-shell {
 .memory-form {
   display: grid;
   gap: 10px;
+}
+
+.memory-form-standalone {
+  gap: 12px;
 }
 
 .memory-form-row {
@@ -3019,6 +3108,10 @@ kbd {
   }
 
   .chat-memory-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-page-layout {
     grid-template-columns: 1fr;
   }
 

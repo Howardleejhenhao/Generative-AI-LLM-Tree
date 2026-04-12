@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
+from tree_ui.services.memory_drafting import generate_memory_draft_for_node
 from tree_ui.services.memory_service import (
     create_memory,
     format_memories_for_prompt,
@@ -137,15 +138,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
             "workspace": workspace,
             "workspace_list": _serialize_workspace_list(workspace),
             "node_payload": serialize_node(node),
-            "memory_payload": _build_memory_payload(node),
-            "memory_type_choices": [
-                {"value": value, "label": label}
-                for value, label in ConversationMemory.MemoryType.choices
-            ],
-            "memory_scope_choices": [
-                {"value": value, "label": label}
-                for value, label in ConversationMemory.Scope.choices
-            ],
+            "node_memory_url": reverse("workspace_node_memory", args=[workspace.slug, node.id]),
             "lineage_items": [
                 {
                     "id": item.id,
@@ -193,6 +186,38 @@ def workspace_node_chat(request, slug: str, node_id: int):
                 for variant in edited_variants
             ],
             "can_append_in_place": not child_nodes.exists(),
+        },
+    )
+
+
+def workspace_node_memory(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(
+        ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
+            "messages",
+            "children",
+        ),
+        pk=node_id,
+        workspace=workspace,
+    )
+
+    return render(
+        request,
+        "tree_ui/node_memory.html",
+        {
+            "workspace": workspace,
+            "workspace_list": _serialize_workspace_list(workspace),
+            "node_payload": serialize_node(node),
+            "memory_payload": _build_memory_payload(node),
+            "memory_type_choices": [
+                {"value": value, "label": label}
+                for value, label in ConversationMemory.MemoryType.choices
+            ],
+            "memory_scope_choices": [
+                {"value": value, "label": label}
+                for value, label in ConversationMemory.Scope.choices
+            ],
+            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
         },
     )
 
@@ -430,6 +455,19 @@ def create_workspace_memory_view(request, slug: str):
         },
         status=201,
     )
+
+
+@require_POST
+def generate_node_memory_draft_view(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(
+        ConversationNode.objects.prefetch_related("messages"),
+        pk=node_id,
+        workspace=workspace,
+    )
+
+    draft = generate_memory_draft_for_node(node)
+    return JsonResponse({"draft": draft})
 
 
 @require_POST

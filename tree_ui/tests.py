@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import build_generation_messages
+from tree_ui.services.memory_drafting import generate_memory_draft_for_node
 from tree_ui.services.memory_service import (
     create_memory,
     format_memories_for_prompt,
@@ -87,8 +88,26 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
+        self.assertContains(response, "Open memory")
+        self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
+
+    def test_workspace_node_memory_page_renders_dedicated_memory_workspace(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="Discuss the launch plan.",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.get(reverse("workspace_node_memory", args=[workspace.slug, node.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Back to chat")
         self.assertContains(response, "Memory")
-        self.assertContains(response, "Retrieved")
+        self.assertContains(response, "Draft")
+        self.assertContains(response, "Regenerate")
         self.assertContains(response, "Workspace")
         self.assertContains(response, "Branch")
 
@@ -431,6 +450,34 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(memory.source_message, message)
         self.assertTrue(memory.is_pinned)
         self.assertEqual(response.json()["memory_payload"]["branch_memories"][0]["id"], memory.id)
+
+    @patch("tree_ui.views.generate_memory_draft_for_node")
+    def test_can_generate_memory_draft_via_api(self, mock_generate_memory_draft_for_node):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Memory node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        mock_generate_memory_draft_for_node.return_value = {
+            "scope": "branch",
+            "memory_type": "summary",
+            "title": "Draft title",
+            "content": "Draft content",
+            "used_fallback": False,
+        }
+
+        response = self.client.post(
+            reverse("generate_node_memory_draft", args=[workspace.slug, node.id]),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["draft"]["title"], "Draft title")
+        mock_generate_memory_draft_for_node.assert_called_once()
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -821,6 +868,35 @@ class MemoryFoundationTests(TestCase):
         self.assertIn("Retrieved long-term memory:", formatted)
         self.assertIn("[workspace/artifact] Canonical outline:", formatted)
         self.assertIn("The final deliverable needs a 3-minute demo.", formatted)
+
+    @patch("tree_ui.services.memory_drafting.generate_text")
+    def test_generate_memory_draft_for_node_returns_structured_payload(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Draft source",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="Remember that the user wants concise launch risks.",
+            order_index=0,
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text='{"scope":"branch","memory_type":"summary","title":"Launch risks","content":"This branch focuses on concise launch risk analysis."}',
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        draft = generate_memory_draft_for_node(node)
+
+        self.assertEqual(draft["scope"], "branch")
+        self.assertEqual(draft["memory_type"], "summary")
+        self.assertEqual(draft["title"], "Launch risks")
+        self.assertIn("concise launch risk analysis", draft["content"])
 
     @patch("tree_ui.services.node_creation.generate_text")
     def test_append_messages_to_node_includes_retrieved_memory_in_system_instruction(self, mock_generate_text):

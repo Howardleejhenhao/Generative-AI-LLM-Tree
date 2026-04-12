@@ -6,7 +6,10 @@
 {% block content %}
   <section class="chat-page chat-page-minimal chat-page-immersive" id="chat-page">
     <header class="chat-shell-header">
-      <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+      <div class="chat-shell-links">
+        <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+        <a class="ghost-link" href="{{ node_memory_url }}">Open memory</a>
+      </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
         <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
@@ -26,123 +29,54 @@
     </header>
 
     <section class="chat-thread-panel chat-thread-panel-minimal{% if not can_append_in_place %} chat-thread-panel-history{% endif %}">
-      <div class="chat-memory-layout">
-        <div class="chat-content-column">
-          <div class="chat-content-shell">
-            <div class="chat-transcript chat-transcript-minimal" id="chat-transcript"></div>
-            <button class="chat-jump-button" id="chat-jump-button" type="button" hidden>
-              Jump to latest
-            </button>
-            <div class="chat-composer-wrap">
-              <form
-                class="chat-composer chat-composer-minimal{% if not can_append_in_place %} chat-composer-branching{% endif %}"
-                id="chat-form"
-                data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
-              >
-                {% csrf_token %}
-                <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-                {% if not can_append_in_place %}
-                  <p class="chat-composer-kicker">Continue in new child</p>
-                {% endif %}
-                <label class="form-field chat-input-shell">
-                  <span>Reply</span>
-                  <textarea
-                    id="chat-prompt-input"
-                    name="prompt"
-                    rows="1"
-                    placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
-                  ></textarea>
-                </label>
-                <div class="chat-composer-actions">
-                  <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
-                  <button class="primary-button" id="chat-submit-button" type="submit">
-                    {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
-                  </button>
-                </div>
-                <div class="chat-composer-meta">
-                  <p class="chat-composer-note">
-                    {% if can_append_in_place %}
-                      Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.
-                    {% else %}
-                      This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
-                    {% endif %}
-                  </p>
-                </div>
-              </form>
-            </div>
+      <div class="chat-content-column">
+        <div class="chat-content-shell">
+          <div class="chat-transcript chat-transcript-minimal" id="chat-transcript"></div>
+          <button class="chat-jump-button" id="chat-jump-button" type="button" hidden>
+            Jump to latest
+          </button>
+          <div class="chat-composer-wrap">
+            <form
+              class="chat-composer chat-composer-minimal{% if not can_append_in_place %} chat-composer-branching{% endif %}"
+              id="chat-form"
+              data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
+            >
+              {% csrf_token %}
+              <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
+              {% if not can_append_in_place %}
+                <p class="chat-composer-kicker">Continue in new child</p>
+              {% endif %}
+              <label class="form-field chat-input-shell">
+                <span>Reply</span>
+                <textarea
+                  id="chat-prompt-input"
+                  name="prompt"
+                  rows="1"
+                  placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
+                ></textarea>
+              </label>
+              <div class="chat-composer-actions">
+                <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
+                <button class="primary-button" id="chat-submit-button" type="submit">
+                  {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
+                </button>
+              </div>
+              <div class="chat-composer-meta">
+                <p class="chat-composer-note">
+                  {% if can_append_in_place %}
+                    Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.
+                  {% else %}
+                    This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
+                  {% endif %}
+                </p>
+              </div>
+            </form>
           </div>
         </div>
-        <aside class="chat-sidebar chat-memory-sidebar">
-          <section class="chat-memory-panel">
-            <header class="chat-memory-header">
-              <h2>Memory</h2>
-              <p>Workspace is shared. Branch stays on this lineage.</p>
-            </header>
-
-            <section class="chat-memory-section">
-              <h3>Retrieved</h3>
-              <div class="chat-memory-preview" id="retrieved-memory-preview">No long-term memories are retrieved for this node yet.</div>
-            </section>
-
-            <section class="chat-memory-section">
-              <h3>Save</h3>
-              <form id="memory-form" data-create-memory-url="{% url 'create_workspace_memory' workspace.slug %}" class="memory-form">
-                {% csrf_token %}
-                <div class="memory-form-row">
-                  <label class="form-field">
-                    <span>Scope</span>
-                    <select id="memory-scope-input" name="scope">
-                      {% for item in memory_scope_choices %}
-                        <option value="{{ item.value }}">{{ item.label }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-                  <label class="form-field">
-                    <span>Type</span>
-                    <select id="memory-type-input" name="memory_type">
-                      {% for item in memory_type_choices %}
-                        <option value="{{ item.value }}">{{ item.label }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-                </div>
-                <label class="form-field">
-                  <span>Title</span>
-                  <input id="memory-title-input" name="title" type="text" maxlength="160" placeholder="Optional label">
-                </label>
-                <label class="form-field">
-                  <span>Content</span>
-                  <textarea id="memory-content-input" name="content" rows="4" placeholder="Write the memory"></textarea>
-                </label>
-                <div class="memory-source-row">
-                  <p class="memory-source-chip" id="memory-source-chip">Manual note</p>
-                  <button class="detail-toggle-button detail-toggle-button-quiet" id="memory-source-clear" type="button" hidden>
-                    Clear
-                  </button>
-                </div>
-                <div class="memory-form-actions">
-                  <p class="form-feedback" id="memory-feedback" role="status" aria-live="polite"></p>
-                  <button class="primary-button" id="memory-submit-button" type="submit">Save</button>
-                </div>
-              </form>
-            </section>
-
-            <section class="chat-memory-section">
-              <h3 id="workspace-memory-title">Workspace</h3>
-              <div class="chat-branch-list memory-list" id="workspace-memory-list"></div>
-            </section>
-
-            <section class="chat-memory-section">
-              <h3 id="branch-memory-title">Branch</h3>
-              <div class="chat-branch-list memory-list" id="branch-memory-list"></div>
-            </section>
-          </section>
-        </aside>
       </div>
     </section>
   </section>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  {{ memory_payload|json_script:"node-chat-memory-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260411-v2-memory-ui"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260412-memory-link-only"></script>
 {% endblock %}
