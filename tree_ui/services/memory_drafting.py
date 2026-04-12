@@ -22,12 +22,14 @@ MEMORY_DRAFT_SYSTEM_INSTRUCTION = (
 )
 
 WORKSPACE_MEMORY_SYSTEM_INSTRUCTION = (
-    "You maintain a read-only workspace memory profile for a user. "
-    "Infer only stable user habits, preferences, and recurring instructions that are useful across the whole workspace. "
+    "You maintain one read-only workspace memory block for an entire conversation workspace. "
+    "Summarize the important ongoing context, goals, decisions, preferences, and recurring instructions across the whole workspace. "
+    "This memory will be reused as reference for future replies in the workspace. "
     "Return strict JSON only with keys: title, content. "
+    "Set title to 'Workspace memory'. "
     "Content must be one short complete paragraph in plain text. "
     "Do not use bullet lists. Do not end with ellipsis. "
-    "If no stable workspace-wide preference is visible yet, summarize that no stable preference has been established."
+    "If the workspace is still empty, say that no durable workspace memory has been established yet."
 )
 
 
@@ -121,27 +123,46 @@ def _build_workspace_context_messages(workspace) -> list[ContextMessage]:
         .prefetch_related("messages")
         .order_by("created_at")
     )
-    messages: list[ContextMessage] = []
+    transcript_lines: list[str] = []
     for node in rows:
+        transcript_lines.append(f"[Node] {node.title}")
         for message in node.messages.order_by("order_index", "created_at"):
-            messages.append(ContextMessage(role=message.role, content=message.content))
+            compact = " ".join(message.content.split())
+            if len(compact) > 240:
+                compact = f"{compact[:237].rstrip()}..."
+            transcript_lines.append(f"{message.role.upper()}: {compact}")
 
-    return messages[-36:]
+    if not transcript_lines:
+        transcript_lines.append("No prior conversation yet.")
+
+    snapshot = "\n".join(transcript_lines)
+    if len(snapshot) > 12000:
+        snapshot = snapshot[-12000:]
+
+    return [
+        ContextMessage(
+            role="user",
+            content=(
+                "Summarize this workspace's conversations into one durable workspace memory.\n\n"
+                f"{snapshot}"
+            ),
+        )
+    ]
 
 
 def refresh_workspace_preference_memory(reference_node: ConversationNode) -> ConversationMemory:
     workspace = reference_node.workspace
     messages = _build_workspace_context_messages(workspace)
     fallback = {
-        "title": "Workspace preference profile",
-        "content": "No stable workspace-wide preference has been established yet.",
+        "title": "Workspace memory",
+        "content": "No durable workspace memory has been established yet.",
     }
 
     try:
         result = generate_text(
             provider_name=reference_node.provider,
             model_name=reference_node.model_name,
-            messages=messages or [ContextMessage(role="user", content="No prior conversation yet.")],
+            messages=messages,
             system_instruction=WORKSPACE_MEMORY_SYSTEM_INSTRUCTION,
             temperature=0.1,
             top_p=0.8,
@@ -159,11 +180,13 @@ def refresh_workspace_preference_memory(reference_node: ConversationNode) -> Con
             workspace=workspace,
             scope=ConversationMemory.Scope.WORKSPACE,
             source=ConversationMemory.Source.EXTRACTED,
-            memory_type=ConversationMemory.MemoryType.PREFERENCE,
-            title="Workspace preference profile",
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Workspace memory",
             defaults={
                 "content": content,
+                "branch_anchor": None,
                 "source_node": reference_node,
+                "source_message": None,
                 "is_pinned": True,
             },
         )

@@ -1648,6 +1648,43 @@ body:has(.chat-page-immersive) .page-shell {
   font-size: 0.78rem;
 }
 
+.workspace-memory-panel {
+  display: grid;
+  gap: 12px;
+  margin: 0 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.workspace-memory-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workspace-memory-header h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+
+.workspace-memory-header p:last-child {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.workspace-memory-content {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 250, 242, 0.9);
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 .detail-toggle-button,
 .detail-peek-button {
   border: 1px solid rgba(74, 58, 40, 0.14);

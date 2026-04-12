@@ -123,6 +123,18 @@ def list_workspace_memories(*, workspace: Workspace):
     ).select_related("branch_anchor", "source_node", "source_message")
 
 
+def get_workspace_memory(*, workspace: Workspace) -> ConversationMemory | None:
+    workspace_memories = list_workspace_memories(workspace=workspace)
+    canonical_memory = workspace_memories.filter(
+        source=ConversationMemory.Source.EXTRACTED,
+        memory_type=ConversationMemory.MemoryType.SUMMARY,
+        title="Workspace memory",
+    ).first()
+    if canonical_memory is not None:
+        return canonical_memory
+    return workspace_memories.first()
+
+
 def list_branch_memories(*, node: ConversationNode):
     lineage_ids = [item.id for item in build_branch_lineage(node)]
     return ConversationMemory.objects.filter(
@@ -138,19 +150,8 @@ def retrieve_memories_for_generation(
     parent: ConversationNode | None,
     limit: int = 8,
 ) -> list[RetrievedMemory]:
-    workspace_memories = list(
-        list_workspace_memories(workspace=workspace)[:limit]
-    )
-
-    branch_memories: list[ConversationMemory] = []
-    if parent is not None:
-        branch_memories = list(list_branch_memories(node=parent)[:limit])
-
-    combined = workspace_memories + branch_memories
-    combined.sort(
-        key=lambda item: (item.is_pinned, item.updated_at, item.created_at),
-        reverse=True,
-    )
+    workspace_memory = get_workspace_memory(workspace=workspace)
+    combined = [workspace_memory] if workspace_memory is not None else []
 
     return [
         RetrievedMemory(

@@ -10,8 +10,8 @@ from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import generate_memory_draft_for_node
 from tree_ui.services.memory_service import (
-    create_memory,
     format_memories_for_prompt,
+    get_workspace_memory,
     list_branch_memories,
     list_workspace_memories,
     retrieve_memories_for_generation,
@@ -72,6 +72,19 @@ def _serialize_memory(memory: ConversationMemory) -> dict:
     }
 
 
+def _serialize_workspace_memory(memory: ConversationMemory | None) -> dict | None:
+    if memory is None:
+        return None
+
+    return {
+        "id": memory.id,
+        "title": memory.title,
+        "content": memory.content,
+        "updated_at": memory.updated_at,
+        "source_node_id": memory.source_node_id,
+    }
+
+
 def _build_memory_payload(node: ConversationNode) -> dict:
     workspace_memories = list(list_workspace_memories(workspace=node.workspace))
     branch_memories = list(list_branch_memories(node=node))
@@ -107,12 +120,14 @@ def workspace_home(request):
 def workspace_graph(request, slug: str):
     workspace = get_object_or_404(Workspace, slug=slug)
     graph_payload = serialize_workspace(workspace)
+    workspace_memory = get_workspace_memory(workspace=workspace)
     return render(
         request,
         "tree_ui/index.html",
         {
             "graph_payload": graph_payload,
             "workspace_list": _serialize_workspace_list(workspace),
+            "workspace_memory": _serialize_workspace_memory(workspace_memory),
         },
     )
 
@@ -138,7 +153,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
             "workspace": workspace,
             "workspace_list": _serialize_workspace_list(workspace),
             "node_payload": serialize_node(node),
-            "node_memory_url": reverse("workspace_node_memory", args=[workspace.slug, node.id]),
+            "workspace_memory_url": f"{reverse('workspace_graph', args=[workspace.slug])}#workspace-memory-panel",
             "lineage_items": [
                 {
                     "id": item.id,
@@ -192,34 +207,8 @@ def workspace_node_chat(request, slug: str, node_id: int):
 
 def workspace_node_memory(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
-    node = get_object_or_404(
-        ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
-            "messages",
-            "children",
-        ),
-        pk=node_id,
-        workspace=workspace,
-    )
-
-    return render(
-        request,
-        "tree_ui/node_memory.html",
-        {
-            "workspace": workspace,
-            "workspace_list": _serialize_workspace_list(workspace),
-            "node_payload": serialize_node(node),
-            "memory_payload": _build_memory_payload(node),
-            "memory_type_choices": [
-                {"value": value, "label": label}
-                for value, label in ConversationMemory.MemoryType.choices
-            ],
-            "memory_scope_choices": [
-                {"value": ConversationMemory.Scope.BRANCH, "label": "Branch"}
-            ],
-            "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, node.id]),
-        },
-    )
-
+    get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+    return HttpResponseRedirect(f"{reverse('workspace_graph', args=[workspace.slug])}#workspace-memory-panel")
 
 def _parse_node_request(request, slug: str) -> tuple[Workspace, ConversationNode | None, dict]:
     workspace = get_object_or_404(Workspace, slug=slug)
@@ -370,94 +359,9 @@ def create_workspace_node(request, slug: str):
 
 @require_POST
 def create_workspace_memory_view(request, slug: str):
-    workspace = get_object_or_404(Workspace, slug=slug)
+    get_object_or_404(Workspace, slug=slug)
+    return HttpResponseBadRequest("Workspace memory is automatic and read only.")
 
-    try:
-        payload = _parse_json_payload(request)
-    except ValueError as exc:
-        return HttpResponseBadRequest(str(exc))
-
-    context_node = None
-    context_node_id = payload.get("context_node_id")
-    if context_node_id not in (None, ""):
-        context_node = get_object_or_404(
-            ConversationNode.objects.select_related("workspace"),
-            pk=context_node_id,
-            workspace=workspace,
-        )
-
-    source_node = None
-    source_node_id = payload.get("source_node_id")
-    if source_node_id not in (None, ""):
-        source_node = get_object_or_404(
-            ConversationNode.objects.select_related("workspace"),
-            pk=source_node_id,
-            workspace=workspace,
-        )
-
-    source_message = None
-    source_message_id = payload.get("source_message_id")
-    if source_message_id not in (None, ""):
-        source_message = get_object_or_404(
-            NodeMessage.objects.select_related("node", "node__workspace"),
-            pk=source_message_id,
-            node__workspace=workspace,
-        )
-        if source_node is None:
-            source_node = source_message.node
-
-    branch_anchor = None
-    branch_anchor_id = payload.get("branch_anchor_id")
-    if branch_anchor_id not in (None, ""):
-        branch_anchor = get_object_or_404(
-            ConversationNode.objects.select_related("workspace"),
-            pk=branch_anchor_id,
-            workspace=workspace,
-        )
-    elif payload.get("scope") == ConversationMemory.Scope.BRANCH:
-        branch_anchor = context_node or source_node
-
-    requested_scope = payload.get("scope", ConversationMemory.Scope.WORKSPACE)
-    if requested_scope == ConversationMemory.Scope.WORKSPACE:
-        return HttpResponseBadRequest("Workspace memory is managed automatically by the model.")
-
-    try:
-        memory = create_memory(
-            workspace=workspace,
-            scope=requested_scope,
-            memory_type=payload.get("memory_type", ConversationMemory.MemoryType.FACT),
-            title=payload.get("title", ""),
-            content=payload.get("content") if payload.get("content") not in (None, "") else (
-                source_message.content if source_message is not None else ""
-            ),
-            source=(
-                ConversationMemory.Source.PINNED
-                if source_message is not None
-                else payload.get("source", ConversationMemory.Source.MANUAL)
-            ),
-            branch_anchor=branch_anchor,
-            source_node=source_node,
-            source_message=source_message,
-            is_pinned=payload.get("is_pinned", False) or source_message is not None,
-        )
-    except ValueError as exc:
-        return HttpResponseBadRequest(str(exc))
-
-    response_node = context_node or source_node or branch_anchor
-    response_payload = _build_memory_payload(response_node) if response_node is not None else {
-        "workspace_memories": [_serialize_memory(item) for item in list_workspace_memories(workspace=workspace)],
-        "branch_memories": [],
-        "retrieved_memories": [],
-        "retrieved_memory_text": "",
-    }
-
-    return JsonResponse(
-        {
-            "memory": _serialize_memory(memory),
-            "memory_payload": response_payload,
-        },
-        status=201,
-    )
 
 
 @require_POST

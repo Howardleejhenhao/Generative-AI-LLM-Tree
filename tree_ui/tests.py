@@ -50,6 +50,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Add child node")
         self.assertContains(response, "Delete workspace")
         self.assertContains(response, "Delete node")
+        self.assertContains(response, "Workspace Memory")
+        self.assertContains(response, "No workspace memory yet. Start a conversation in this workspace.")
         self.assertNotContains(response, "Research lane")
         self.assertNotContains(response, "Model comparison")
         self.assertNotContains(response, "Branch review")
@@ -91,10 +93,29 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Main · Openai / gpt-4.1-mini")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
-        self.assertContains(response, "Open memory")
+        self.assertContains(response, "Workspace memory")
+        self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
 
-    def test_workspace_node_memory_page_renders_dedicated_memory_workspace(self):
+    def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        ConversationMemory.objects.create(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            source=ConversationMemory.Source.EXTRACTED,
+            title="Workspace memory",
+            content="This workspace is focused on C++ learning progress.",
+            is_pinned=True,
+        )
+
+        response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This workspace is focused on C++ learning progress.")
+        self.assertContains(response, "Workspace Memory")
+
+    def test_workspace_node_memory_page_redirects_to_workspace_memory_panel(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
             workspace=workspace,
@@ -106,15 +127,8 @@ class WorkspaceGraphViewTests(TestCase):
 
         response = self.client.get(reverse("workspace_node_memory", args=[workspace.slug, node.id]))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Back to chat")
-        self.assertContains(response, "Memory")
-        self.assertContains(response, "Draft")
-        self.assertContains(response, "Regenerate")
-        self.assertContains(response, "Workspace")
-        self.assertContains(response, "Branch")
-        self.assertContains(response, "Read only.")
-        self.assertContains(response, "Manual notes only for this lineage.")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"{reverse('workspace_graph', args=[workspace.slug])}#workspace-memory-panel")
 
     def test_non_leaf_node_chat_page_warns_that_sending_creates_new_child(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -416,7 +430,7 @@ class WorkspaceGraphViewTests(TestCase):
             response.json()["node_chat_url"],
         )
 
-    def test_can_create_memory_via_api(self):
+    def test_manual_branch_memory_creation_is_disabled_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
             workspace=workspace,
@@ -448,13 +462,9 @@ class WorkspaceGraphViewTests(TestCase):
             content_type="application/json",
         )
 
-        self.assertEqual(response.status_code, 201)
-        memory = ConversationMemory.objects.get()
-        self.assertEqual(memory.scope, ConversationMemory.Scope.BRANCH)
-        self.assertEqual(memory.branch_anchor, node)
-        self.assertEqual(memory.source_message, message)
-        self.assertTrue(memory.is_pinned)
-        self.assertEqual(response.json()["memory_payload"]["branch_memories"][0]["id"], memory.id)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(ConversationMemory.objects.count(), 0)
+        self.assertIn("Workspace memory is automatic and read only.", response.content.decode("utf-8"))
 
     def test_workspace_memory_cannot_be_created_manually_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -481,7 +491,7 @@ class WorkspaceGraphViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Workspace memory is managed automatically by the model.", response.content.decode("utf-8"))
+        self.assertIn("Workspace memory is automatic and read only.", response.content.decode("utf-8"))
 
     @patch("tree_ui.views.generate_memory_draft_for_node")
     def test_can_generate_memory_draft_via_api(self, mock_generate_memory_draft_for_node):
@@ -851,9 +861,10 @@ class MemoryFoundationTests(TestCase):
         workspace_memory = create_memory(
             workspace=workspace,
             scope=ConversationMemory.Scope.WORKSPACE,
-            memory_type=ConversationMemory.MemoryType.PREFERENCE,
-            title="Workspace default",
-            content="The user prefers concise answers.",
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Workspace memory",
+            source=ConversationMemory.Source.EXTRACTED,
+            content="This workspace is evaluating launch risks with concise updates.",
             is_pinned=True,
         )
         branch_memory = create_memory(
@@ -882,9 +893,9 @@ class MemoryFoundationTests(TestCase):
             {(item.id, item.scope) for item in retrieved},
             {
                 (workspace_memory.id, ConversationMemory.Scope.WORKSPACE),
-                (branch_memory.id, ConversationMemory.Scope.BRANCH),
             },
         )
+        self.assertNotIn(branch_memory.id, {item.id for item in retrieved})
 
     def test_format_memories_for_prompt_produces_explicit_memory_block(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -970,7 +981,7 @@ class MemoryFoundationTests(TestCase):
             order_index=0,
         )
         mock_generate_text.return_value = GenerationResult(
-            text='{"title":"Workspace preference profile","content":"The user prefers concise answers in Traditional Chinese."}',
+            text='{"title":"Workspace memory","content":"This workspace is teaching C++ basics and the learner prefers concise Traditional Chinese explanations."}',
             provider="openai",
             model_name="gpt-4.1-mini",
         )
@@ -979,6 +990,8 @@ class MemoryFoundationTests(TestCase):
 
         self.assertEqual(memory.scope, ConversationMemory.Scope.WORKSPACE)
         self.assertEqual(memory.source, ConversationMemory.Source.EXTRACTED)
+        self.assertEqual(memory.memory_type, ConversationMemory.MemoryType.SUMMARY)
+        self.assertEqual(memory.title, "Workspace memory")
         self.assertTrue(memory.is_pinned)
         self.assertIn("Traditional Chinese", memory.content)
 
@@ -996,9 +1009,10 @@ class MemoryFoundationTests(TestCase):
         create_memory(
             workspace=workspace,
             scope=ConversationMemory.Scope.WORKSPACE,
-            memory_type=ConversationMemory.MemoryType.PREFERENCE,
-            title="Language",
-            content="Answer in Traditional Chinese.",
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            source=ConversationMemory.Source.EXTRACTED,
+            title="Workspace memory",
+            content="This workspace should keep answers in Traditional Chinese.",
         )
         mock_generate_text.return_value = GenerationResult(
             text="Provider output",
@@ -1014,4 +1028,4 @@ class MemoryFoundationTests(TestCase):
         system_instruction = mock_generate_text.call_args.kwargs["system_instruction"]
         self.assertIn("Long-term memory retrieved separately from the current branch transcript:", system_instruction)
         self.assertIn("Retrieved long-term memory:", system_instruction)
-        self.assertIn("Answer in Traditional Chinese.", system_instruction)
+        self.assertIn("Traditional Chinese", system_instruction)

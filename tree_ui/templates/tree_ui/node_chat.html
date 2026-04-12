@@ -8,7 +8,7 @@
     <header class="chat-shell-header">
       <div class="chat-shell-links">
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
-        <a class="ghost-link" href="{{ node_memory_url }}">Open memory</a>
+        <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
