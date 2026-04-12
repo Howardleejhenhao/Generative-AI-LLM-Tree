@@ -42,6 +42,11 @@ urlpatterns = [
         name="update_node_position",
     ),
     path(
+        "api/workspaces/<slug:slug>/nodes/<int:node_id>/title/",
+        views.update_node_title,
+        name="update_node_title",
+    ),
+    path(
         "api/workspaces/<slug:slug>/nodes/stream/",
         views.stream_workspace_node,
         name="stream_workspace_node",

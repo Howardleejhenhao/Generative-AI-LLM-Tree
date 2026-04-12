@@ -12,6 +12,68 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:19
+
+### Session Goal
+- Fix two UI bugs reported during browser review:
+  - selected node title should be renameable
+  - ordered lists in rendered answers should keep `1. 2. 3. 4.` numbering instead of restarting at `1.`
+
+### Planned Tasks
+- add a node-title update API and expose a rename action in the main workspace UI
+- adjust markdown list parsing so ordered items with nested bullets remain part of one ordered list
+- verify both behaviors and push the fix
+
+### Milestone Area
+- UI-UX
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The graph workspace is now easier to correct during demos because node titles can be renamed in place.
+- Rendered teaching content now preserves normal ordered numbering for top-level lists.
+
+### Work Completed
+- Added `update_node_title` API support for workspace nodes.
+- Added a `Rename node` action to the main workspace toolbar for the current selection.
+- Added regression coverage for title updates and blank-title normalization.
+- Reworked the markdown list parser so ordered list items can contain nested bullet content without restarting numbering at `1.` for each top-level item.
+- Verified the markdown fix with a direct Node render check and re-ran `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/markdown.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for node rename and ordered-list rendering fixes
+- Push status:
+  - not pushed yet; fixes are ready to commit
+
+### Current Status
+- Selected nodes can now be renamed from the main workspace UI.
+- Ordered list rendering now preserves a single `<ol>` block with sequential numbering even when each item includes nested bullet points.
+
+### Next Recommended Step
+- Let the human verify both fixes in the browser, then continue with the next v2 interaction bug they find.
+
+### Known Issues / Blockers / Tech Debt
+- The node rename flow currently uses a browser prompt for speed; it can be upgraded later to an inline edit control if you want a cleaner interaction.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:14
 
 ### Session Goal

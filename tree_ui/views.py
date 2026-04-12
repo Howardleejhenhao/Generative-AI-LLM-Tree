@@ -436,6 +436,29 @@ def create_edited_node_variant(request, slug: str, node_id: int):
 
 
 @require_POST
+def update_node_title(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+
+    try:
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    raw_title = payload.get("title", "")
+    if not isinstance(raw_title, str):
+        return HttpResponseBadRequest("Title must be a string.")
+
+    normalized_title = raw_title.strip() or "Untitled conversation"
+    if len(normalized_title) > 160:
+        return HttpResponseBadRequest("Title must be 160 characters or fewer.")
+
+    node.title = normalized_title
+    node.save(update_fields=["title", "updated_at"])
+    return JsonResponse({"node": serialize_node(node)})
+
+
+@require_POST
 def update_node_position(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)

@@ -20,6 +20,7 @@ const workspaceHelpDialog = document.getElementById("workspace-help-dialog");
 const workspaceHelpBackdrop = document.getElementById("workspace-help-backdrop");
 const workspaceHelpClose = document.getElementById("workspace-help-close");
 const workspaceDeleteButton = document.getElementById("workspace-delete-button");
+const nodeRenameButton = document.getElementById("node-rename-button");
 const nodeDeleteButton = document.getElementById("node-delete-button");
 const fitViewButton = document.getElementById("graph-fit-view");
 const zoomOutButton = document.getElementById("graph-zoom-out");
@@ -29,6 +30,7 @@ const zoomLevel = document.getElementById("graph-zoom-level");
 const graphStage = document.getElementById("graph-stage");
 const nodeChatUrlTemplate = document.getElementById("node-chat-url-template");
 const nodeDeleteUrlTemplate = document.getElementById("node-delete-url-template");
+const nodeTitleUpdateUrlTemplate = document.getElementById("node-title-update-url-template");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
@@ -258,6 +260,7 @@ function updateWorkspaceSummary() {
     ? `${getProviderLabel(selectedNode.provider)} / ${selectedNode.model_name}`
     : "New root";
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
+  nodeRenameButton.disabled = !selectedNode;
   nodeDeleteButton.disabled = !selectedNode;
 }
 
@@ -267,6 +270,10 @@ function getNodeChatUrl(nodeId) {
 
 function getNodeDeleteUrl(nodeId) {
   return nodeDeleteUrlTemplate.dataset.nodeDeleteUrlTemplate.replace("999999", String(nodeId));
+}
+
+function getNodeTitleUpdateUrl(nodeId) {
+  return nodeTitleUpdateUrlTemplate.dataset.nodeTitleUpdateUrlTemplate.replace("999999", String(nodeId));
 }
 
 function openNodeChat(nodeId) {
@@ -737,6 +744,38 @@ function handleWorkspaceDelete() {
   });
 }
 
+async function handleNodeRename() {
+  const selectedNode = getSelectedNode();
+  if (!selectedNode) {
+    feedback.textContent = "Select a node first.";
+    return;
+  }
+
+  const requestedTitle = window.prompt("Rename node", selectedNode.title);
+  if (requestedTitle === null) {
+    return;
+  }
+
+  feedback.textContent = "";
+  nodeRenameButton.disabled = true;
+
+  try {
+    const result = await postJSON(
+      getNodeTitleUpdateUrl(selectedNode.id),
+      { title: requestedTitle },
+      csrfToken,
+    );
+    mergeNode(result.node);
+    updateSearchState();
+    updateSelection(result.node.id);
+    feedback.textContent = `Renamed node to ${result.node.title}.`;
+  } catch (error) {
+    feedback.textContent = error.message;
+  } finally {
+    nodeRenameButton.disabled = !getSelectedNode();
+  }
+}
+
 function handleNodeDelete() {
   const selectedNode = getSelectedNode();
   if (!selectedNode) {
@@ -874,6 +913,7 @@ workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspa
 workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceHelpBackdrop.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceDeleteButton.addEventListener("click", handleWorkspaceDelete);
+nodeRenameButton.addEventListener("click", handleNodeRename);
 nodeDeleteButton.addEventListener("click", handleNodeDelete);
 confirmDialogCancel.addEventListener("click", closeConfirmationDialog);
 confirmDialogBackdrop.addEventListener("click", closeConfirmationDialog);

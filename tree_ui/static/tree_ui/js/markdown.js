@@ -107,14 +107,59 @@ function renderParagraph(lines) {
   return `<p>${renderInlineMarkdown(lines.join("\n"))}</p>`;
 }
 
-function renderList(lines, ordered) {
-  const tagName = ordered ? "ol" : "ul";
+function renderListItemContent(lines) {
+  const rendered = renderMarkdown(lines.join("\n"));
+  if (!rendered) {
+    return "";
+  }
+  return rendered.replace(/^<p>([\s\S]*)<\/p>$/, "$1");
+}
+
+function consumeListItems(lines, startIndex, ordered) {
   const itemPattern = ordered ? /^\s*\d+\.\s+(.*)$/ : /^\s*[-+*]\s+(.*)$/;
-  const items = lines
-    .map((line) => line.match(itemPattern)?.[1] ?? "")
-    .map((content) => `<li>${renderInlineMarkdown(content)}</li>`)
+  const items = [];
+  let index = startIndex;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!(ordered ? isOrderedListItem(line) : isUnorderedListItem(line))) {
+      break;
+    }
+
+    const itemLines = [line.match(itemPattern)?.[1] ?? ""];
+    index += 1;
+
+    while (index < lines.length) {
+      const nextLine = lines[index];
+      if (ordered ? isOrderedListItem(nextLine) : isUnorderedListItem(nextLine)) {
+        break;
+      }
+      if (isHeading(nextLine) || isHorizontalRule(nextLine) || isCodeFence(nextLine) || isBlockQuote(nextLine)) {
+        break;
+      }
+      if (!nextLine.trim()) {
+        const lookahead = lines[index + 1] ?? "";
+        if (ordered ? isOrderedListItem(lookahead) : isUnorderedListItem(lookahead)) {
+          index += 1;
+          break;
+        }
+      }
+      itemLines.push(nextLine);
+      index += 1;
+    }
+
+    items.push(itemLines);
+  }
+
+  return { items, nextIndex: index };
+}
+
+function renderList(items, ordered) {
+  const tagName = ordered ? "ol" : "ul";
+  const body = items
+    .map((itemLines) => `<li>${renderListItemContent(itemLines)}</li>`)
     .join("");
-  return `<${tagName}>${items}</${tagName}>`;
+  return `<${tagName}>${body}</${tagName}>`;
 }
 
 function renderBlockQuote(lines) {
@@ -194,22 +239,16 @@ export function renderMarkdown(source) {
     }
 
     if (isUnorderedListItem(line)) {
-      const listLines = [];
-      while (index < lines.length && isUnorderedListItem(lines[index])) {
-        listLines.push(lines[index]);
-        index += 1;
-      }
-      blocks.push(renderList(listLines, false));
+      const { items, nextIndex } = consumeListItems(lines, index, false);
+      index = nextIndex;
+      blocks.push(renderList(items, false));
       continue;
     }
 
     if (isOrderedListItem(line)) {
-      const listLines = [];
-      while (index < lines.length && isOrderedListItem(lines[index])) {
-        listLines.push(lines[index]);
-        index += 1;
-      }
-      blocks.push(renderList(listLines, true));
+      const { items, nextIndex } = consumeListItems(lines, index, true);
+      index = nextIndex;
+      blocks.push(renderList(items, true));
       continue;
     }
 

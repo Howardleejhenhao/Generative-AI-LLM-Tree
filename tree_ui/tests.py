@@ -52,6 +52,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Search")
         self.assertContains(response, "Add child node")
         self.assertContains(response, "Delete workspace")
+        self.assertContains(response, "Rename node")
         self.assertContains(response, "Delete node")
         self.assertContains(response, "Workspace Memory")
         self.assertContains(response, WORKSPACE_MEMORY_FALLBACK_CONTENT)
@@ -352,6 +353,47 @@ class WorkspaceGraphViewTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("Temperature must be between 0.0 and 2.0.", response.content.decode("utf-8"))
+
+    def test_can_update_node_title_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Old title",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.post(
+            reverse("update_node_title", args=[workspace.slug, node.id]),
+            data=json.dumps({"title": "New title"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        node.refresh_from_db()
+        self.assertEqual(node.title, "New title")
+        self.assertEqual(response.json()["node"]["title"], "New title")
+
+    def test_blank_node_title_is_normalized_via_api(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Old title",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.post(
+            reverse("update_node_title", args=[workspace.slug, node.id]),
+            data=json.dumps({"title": "   "}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        node.refresh_from_db()
+        self.assertEqual(node.title, "Untitled conversation")
 
     def test_can_delete_node_subtree_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
