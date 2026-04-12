@@ -191,3 +191,29 @@ def refresh_workspace_preference_memory(reference_node: ConversationNode) -> Con
             },
         )
         return memory
+
+
+def ensure_workspace_memory(workspace) -> ConversationMemory:
+    memory = ConversationMemory.objects.filter(
+        workspace=workspace,
+        scope=ConversationMemory.Scope.WORKSPACE,
+        source=ConversationMemory.Source.EXTRACTED,
+        memory_type=ConversationMemory.MemoryType.SUMMARY,
+        title="Workspace memory",
+    ).first()
+    if memory is not None:
+        return memory
+
+    reference_node = workspace.nodes.order_by("-updated_at", "-created_at").first()
+    if reference_node is not None:
+        return refresh_workspace_preference_memory(reference_node)
+
+    return ConversationMemory.objects.create(
+        workspace=workspace,
+        scope=ConversationMemory.Scope.WORKSPACE,
+        source=ConversationMemory.Source.EXTRACTED,
+        memory_type=ConversationMemory.MemoryType.SUMMARY,
+        title="Workspace memory",
+        content="No durable workspace memory has been established yet.",
+        is_pinned=True,
+    )

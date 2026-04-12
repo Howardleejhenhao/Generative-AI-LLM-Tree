@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
-from tree_ui.services.memory_drafting import generate_memory_draft_for_node
+from tree_ui.services.memory_drafting import ensure_workspace_memory, generate_memory_draft_for_node
 from tree_ui.services.memory_service import (
     format_memories_for_prompt,
     get_workspace_memory,
@@ -120,7 +120,7 @@ def workspace_home(request):
 def workspace_graph(request, slug: str):
     workspace = get_object_or_404(Workspace, slug=slug)
     graph_payload = serialize_workspace(workspace)
-    workspace_memory = get_workspace_memory(workspace=workspace)
+    workspace_memory = ensure_workspace_memory(workspace)
     return render(
         request,
         "tree_ui/index.html",

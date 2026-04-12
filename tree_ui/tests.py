@@ -8,6 +8,7 @@ from django.urls import reverse
 from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.memory_drafting import (
+    ensure_workspace_memory,
     generate_memory_draft_for_node,
     refresh_workspace_preference_memory,
 )
@@ -51,7 +52,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Delete workspace")
         self.assertContains(response, "Delete node")
         self.assertContains(response, "Workspace Memory")
-        self.assertContains(response, "No workspace memory yet. Start a conversation in this workspace.")
+        self.assertContains(response, "No durable workspace memory has been established yet.")
         self.assertNotContains(response, "Research lane")
         self.assertNotContains(response, "Model comparison")
         self.assertNotContains(response, "Branch review")
@@ -97,9 +98,10 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
 
-    def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self):
+    @patch("tree_ui.views.ensure_workspace_memory")
+    def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self, mock_ensure_workspace_memory):
         workspace = Workspace.objects.create(name="Main", slug="main")
-        ConversationMemory.objects.create(
+        memory = ConversationMemory.objects.create(
             workspace=workspace,
             scope=ConversationMemory.Scope.WORKSPACE,
             memory_type=ConversationMemory.MemoryType.SUMMARY,
@@ -108,12 +110,47 @@ class WorkspaceGraphViewTests(TestCase):
             content="This workspace is focused on C++ learning progress.",
             is_pinned=True,
         )
+        mock_ensure_workspace_memory.return_value = memory
 
         response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This workspace is focused on C++ learning progress.")
         self.assertContains(response, "Workspace Memory")
+        mock_ensure_workspace_memory.assert_called_once_with(workspace)
+
+    @patch("tree_ui.services.memory_drafting.generate_text")
+    def test_workspace_page_auto_creates_workspace_memory_when_missing(self, mock_generate_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content="We are studying C++ basics in this workspace.",
+            order_index=0,
+        )
+        mock_generate_text.return_value = GenerationResult(
+            text='{"title":"Workspace memory","content":"This workspace is focused on learning C++ basics."}',
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+
+        response = self.client.get(reverse("workspace_graph", args=[workspace.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This workspace is focused on learning C++ basics.")
+        memory = ConversationMemory.objects.get(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            title="Workspace memory",
+        )
+        self.assertEqual(memory.content, "This workspace is focused on learning C++ basics.")
 
     def test_workspace_node_memory_page_redirects_to_workspace_memory_panel(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -994,6 +1031,17 @@ class MemoryFoundationTests(TestCase):
         self.assertEqual(memory.title, "Workspace memory")
         self.assertTrue(memory.is_pinned)
         self.assertIn("Traditional Chinese", memory.content)
+
+    def test_ensure_workspace_memory_creates_fallback_record_for_empty_workspace(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+
+        memory = ensure_workspace_memory(workspace)
+
+        self.assertEqual(memory.workspace, workspace)
+        self.assertEqual(memory.title, "Workspace memory")
+        self.assertEqual(memory.content, "No durable workspace memory has been established yet.")
+        self.assertEqual(memory.scope, ConversationMemory.Scope.WORKSPACE)
+        self.assertEqual(memory.memory_type, ConversationMemory.MemoryType.SUMMARY)
 
     @patch("tree_ui.services.node_creation.generate_text")
     def test_append_messages_to_node_includes_retrieved_memory_in_system_instruction(self, mock_generate_text):

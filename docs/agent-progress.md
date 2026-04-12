@@ -12,6 +12,66 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 21:55
+
+### Session Goal
+- Make workspace memory exist by default instead of waiting for the human to create or trigger it manually.
+- Ensure revisiting the workspace memory view does not regenerate content unless new dialogue has actually been added.
+
+### Planned Tasks
+- add a helper that guarantees a stored workspace memory record exists when opening a workspace
+- create a persisted fallback memory for empty workspaces
+- keep post-dialogue refresh behavior so completed replies still re-check and update workspace memory
+- add regression coverage and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The workspace memory behavior is now simpler and more deterministic for demos: the panel is never empty because of missing initialization, and repeated viewing no longer causes surprise changes.
+
+### Work Completed
+- Added `ensure_workspace_memory(...)` so opening a workspace guarantees there is one persisted workspace memory record.
+- For workspaces that already have conversation history but no saved memory yet, the first workspace open now auto-generates and stores the memory block.
+- For truly empty workspaces, the first workspace open now stores a fallback `Workspace memory` record instead of leaving the panel uninitialized.
+- Kept the existing post-dialogue refresh path, so each completed conversation turn still re-checks and updates workspace memory when needed.
+- Added tests for automatic memory creation on workspace open and for stable fallback creation in empty workspaces.
+- Verified the slice with `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for default workspace-memory initialization
+- Push status:
+  - not pushed yet; feature update is ready to commit
+
+### Current Status
+- Workspace memory now exists by default.
+- Revisiting the workspace page reuses the stored memory instead of regenerating it when nothing has changed.
+- New dialogue still refreshes the stored workspace memory after completion.
+
+### Next Recommended Step
+- Let the human verify whether the auto-generated workspace memory wording is the right level of abstraction, then tune summarization quality if needed.
+
+### Known Issues / Blockers / Tech Debt
+- The first-load initialization currently happens in the Django view path, which is practical for now but could later move to a more explicit workspace lifecycle hook.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 15:59
 
 ### Session Goal
