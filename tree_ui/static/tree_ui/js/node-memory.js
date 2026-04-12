@@ -1,5 +1,5 @@
 import { postJSON } from "./api.js?v=20260322-graph-hint-fix";
-import { setMarkdownContent } from "./markdown.js?v=20260324-markdown-rendering";
+import { setMarkdownContent } from "./markdown.js?v=20260412-ordered-list-fix";
 
 const nodePayload = JSON.parse(document.getElementById("node-memory-node-payload").textContent);
 const memoryPayload = JSON.parse(document.getElementById("node-memory-memory-payload").textContent);

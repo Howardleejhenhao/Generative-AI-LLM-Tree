@@ -12,6 +12,60 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:24
+
+### Session Goal
+- Fix the browser still loading stale frontend modules after the node-rename and markdown-renderer updates.
+
+### Planned Tasks
+- bump version strings for the main workspace script and markdown-related module imports
+- verify the JavaScript modules still parse correctly
+- push the cache-busting update
+
+### Milestone Area
+- UI-UX
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Browser review should now reflect the latest graph interaction and markdown rendering fixes without requiring guesswork about stale assets.
+
+### Work Completed
+- Updated the graph workspace script tag version so the browser fetches the latest `app.js`.
+- Updated markdown-related module import version strings so node-chat and memory rendering stop using stale cached markdown code.
+- Verified the affected JS modules with `node --check`.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for frontend cache-busting updates
+- Push status:
+  - not pushed yet; cache-busting fix is ready to commit
+
+### Current Status
+- The browser should now load the newest rename and markdown-list fixes instead of cached older modules.
+
+### Next Recommended Step
+- Have the human refresh the page and confirm the rename button is now interactive.
+
+### Known Issues / Blockers / Tech Debt
+- The current frontend still relies on manual version strings for cache busting.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:19
 
 ### Session Goal

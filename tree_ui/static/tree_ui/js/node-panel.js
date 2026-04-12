@@ -1,4 +1,4 @@
-import { setMarkdownContent } from "./markdown.js?v=20260324-markdown-rendering";
+import { setMarkdownContent } from "./markdown.js?v=20260412-ordered-list-fix";
 
 export function renderNodeDetails(container, messages) {
   container.innerHTML = "";
