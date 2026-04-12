@@ -98,6 +98,9 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
         self.assertContains(response, "Workspace memory")
+        self.assertContains(response, "Edit as variant")
+        self.assertContains(response, "Create edited variant")
+        self.assertContains(response, "Edit and branch")
         self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
 
@@ -193,6 +196,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "History node")
         self.assertContains(response, "Continue in new child")
+        self.assertContains(response, "Edit as variant")
         self.assertContains(
             response,
             "This node already has child branches. Your message will be written into a newly created child branch, not this historical node.",

@@ -9,6 +9,7 @@
       <div class="chat-shell-links">
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
+        <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
@@ -27,6 +28,33 @@
         {% endif %}
       </div>
     </header>
+
+    <section class="chat-edit-shell" id="chat-edit-shell" hidden>
+      <form
+        class="chat-edit-form"
+        id="edit-variant-form"
+        data-edit-variant-url="{% url 'create_edited_node_variant' workspace.slug node_payload.id %}"
+      >
+        {% csrf_token %}
+        <div class="chat-edit-header">
+          <div>
+            <p class="chat-edit-kicker">Edit and branch</p>
+            <h2>Create an edited variant</h2>
+            <p class="chat-edit-note">Adjust this node's messages, keep the original history unchanged, then open the new edited branch.</p>
+          </div>
+          <button class="chat-shell-action" id="edit-variant-cancel-button" type="button">Cancel</button>
+        </div>
+        <label class="form-field chat-edit-title-field">
+          <span>Variant title</span>
+          <input id="edit-variant-title" name="title" type="text" value="{{ node_payload.title }} (Edited)" maxlength="160">
+        </label>
+        <div class="editor-list chat-edit-editor-list" id="edit-variant-editors"></div>
+        <div class="chat-edit-actions">
+          <p class="form-feedback" id="edit-variant-feedback" role="status" aria-live="polite"></p>
+          <button class="primary-button" id="edit-variant-submit-button" type="submit">Create edited variant</button>
+        </div>
+      </form>
+    </section>
 
     <section class="chat-thread-panel chat-thread-panel-minimal{% if not can_append_in_place %} chat-thread-panel-history{% endif %}">
       <div class="chat-content-column">
@@ -78,5 +106,5 @@
   </section>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260412-memory-link-only"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260412-edit-variant-ui"></script>
 {% endblock %}

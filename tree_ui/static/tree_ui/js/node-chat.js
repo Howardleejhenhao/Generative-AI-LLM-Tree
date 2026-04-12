@@ -1,4 +1,4 @@
-import { renderChatTranscript } from "./node-panel.js?v=20260412-ordered-list-fix";
+import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260412-edit-variant-ui";
 import { streamJSON } from "./streaming.js";
 
 const payload = JSON.parse(document.getElementById("node-chat-node-payload").textContent);
@@ -10,6 +10,14 @@ const promptInput = document.getElementById("chat-prompt-input");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
 const csrfToken = document.getElementById("chat-csrf-token").value;
+const editVariantToggleButton = document.getElementById("edit-variant-toggle-button");
+const editVariantShell = document.getElementById("chat-edit-shell");
+const editVariantForm = document.getElementById("edit-variant-form");
+const editVariantTitleInput = document.getElementById("edit-variant-title");
+const editVariantEditors = document.getElementById("edit-variant-editors");
+const editVariantCancelButton = document.getElementById("edit-variant-cancel-button");
+const editVariantSubmitButton = document.getElementById("edit-variant-submit-button");
+const editVariantFeedback = document.getElementById("edit-variant-feedback");
 const PROMPT_MAX_HEIGHT = 176;
 
 function resizePromptInput() {
@@ -39,6 +47,39 @@ function renderTranscript(extraMessages = []) {
     scrollToBottom();
   }
   updateJumpButton();
+}
+
+function cloneMessages(messages) {
+  return messages.map((message) => ({
+    role: message.role,
+    content: message.content,
+    order_index: message.order_index,
+  }));
+}
+
+function setEditVariantVisible(visible) {
+  editVariantShell.hidden = !visible;
+  editVariantToggleButton.setAttribute("aria-expanded", visible ? "true" : "false");
+  if (visible) {
+    editVariantFeedback.textContent = "";
+    renderMessageEditors(editVariantEditors, cloneMessages(payload.messages));
+    editVariantTitleInput.value = `${payload.title} (Edited)`;
+    requestAnimationFrame(() => {
+      editVariantShell.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      editVariantTitleInput.focus();
+      editVariantTitleInput.select();
+    });
+    return;
+  }
+  editVariantEditors.innerHTML = "";
+}
+
+function collectEditedMessages() {
+  return Array.from(editVariantEditors.querySelectorAll("textarea")).map((textarea, index) => ({
+    role: textarea.dataset.role,
+    content: textarea.value.trim(),
+    order_index: index,
+  }));
 }
 
 async function handleSubmit(event) {
@@ -126,11 +167,65 @@ async function handleSubmit(event) {
   }
 }
 
+async function handleEditVariantSubmit(event) {
+  event.preventDefault();
+  editVariantFeedback.textContent = "";
+  const messages = collectEditedMessages();
+  if (!messages.length) {
+    editVariantFeedback.textContent = "This node has no messages to edit yet.";
+    return;
+  }
+  if (messages.some((message) => !message.content)) {
+    editVariantFeedback.textContent = "Every edited message needs content.";
+    return;
+  }
+
+  editVariantSubmitButton.disabled = true;
+
+  try {
+    const response = await fetch(editVariantForm.dataset.editVariantUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({
+        title: editVariantTitleInput.value,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error((await response.text()) || "Unable to create edited variant.");
+    }
+
+    const data = await response.json();
+    if (!data.node_chat_url) {
+      throw new Error("Edited variant created without a chat redirect URL.");
+    }
+    window.location.href = data.node_chat_url;
+  } catch (error) {
+    editVariantFeedback.textContent = error.message;
+  } finally {
+    editVariantSubmitButton.disabled = false;
+  }
+}
+
 function handlePromptKeydown(event) {
   if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
     form.requestSubmit();
     event.preventDefault();
   }
+}
+
+if (payload.messages.length) {
+  editVariantToggleButton.hidden = false;
+  editVariantToggleButton.setAttribute("aria-expanded", "false");
+  editVariantToggleButton.addEventListener("click", () => setEditVariantVisible(editVariantShell.hidden));
+  editVariantCancelButton.addEventListener("click", () => setEditVariantVisible(false));
+  editVariantForm.addEventListener("submit", handleEditVariantSubmit);
+} else {
+  editVariantToggleButton.hidden = true;
 }
 
 promptInput.addEventListener("input", resizePromptInput);

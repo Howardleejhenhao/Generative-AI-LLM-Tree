@@ -855,6 +855,18 @@ body:has(.chat-page-immersive) .page-shell {
   margin-bottom: 0;
 }
 
+.chat-shell-action {
+  border: 1px solid rgba(74, 58, 40, 0.14);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .chat-topbar-copy h1,
 .lineage-card h2,
 .chat-panel-header h2,
@@ -1057,6 +1069,76 @@ body:has(.chat-page-immersive) .page-shell {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.chat-edit-shell {
+  width: var(--chat-shell-width);
+  max-width: 100%;
+  margin: 0 auto 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 252, 247, 0.94);
+  box-shadow: 0 12px 28px rgba(49, 37, 22, 0.06);
+}
+
+.chat-edit-form {
+  display: grid;
+  gap: 16px;
+}
+
+.chat-edit-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.chat-edit-kicker {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chat-edit-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.chat-edit-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.chat-edit-title-field input,
+.chat-edit-editor-list .form-field textarea {
+  border-color: rgba(74, 58, 40, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+}
+
+.chat-edit-title-field span,
+.chat-edit-editor-list .form-field span {
+  color: var(--muted);
+}
+
+.chat-edit-editor-list .form-field textarea {
+  min-height: 92px;
+}
+
+.chat-edit-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.chat-edit-actions .form-feedback {
+  margin: 0;
 }
 
 .chat-transcript {
