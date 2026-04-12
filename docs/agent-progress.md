@@ -11,6 +11,133 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+
+## Session 2026-04-12 15:59
+
+### Session Goal
+- Replace the current multi-surface memory workflow with a single consolidated workspace memory.
+- Show that workspace memory directly in the main graph workspace instead of relying on a separate memory editing page.
+- Ensure the stored memory stays stable when revisiting the UI and only changes after new dialogue is added.
+
+### Planned Tasks
+- simplify retrieval so generation uses one canonical workspace memory entry
+- update workspace-memory refresh to summarize the whole workspace conversation state
+- move the primary memory display into the main workspace page and remove the old memory-page path from the main flow
+- update regression coverage, commit the slice, and push the branch
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The v2 memory behavior is now much easier to explain: one workspace, one stored memory block, visible on the main graph page and reused for future replies.
+
+### Work Completed
+- Changed long-term memory retrieval so new generations now use one canonical workspace memory entry instead of mixing workspace and branch memory lists.
+- Updated workspace-memory refresh so it summarizes the full workspace conversation snapshot into a single stored memory block titled `Workspace memory`.
+- Added a read-only workspace-memory panel directly to the main graph workspace UI.
+- Changed the node-chat memory link to jump back to the main workspace memory panel.
+- Redirected the old node-memory route back to the workspace memory panel so repeated viewing does not regenerate content.
+- Locked manual memory creation behind a read-only response so the UI model is consistently automatic.
+- Verified the slice with `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_service.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, `node --check tree_ui/static/tree_ui/js/app.js`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/services/memory_service.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - `a5cd54a` - `feat: consolidate workspace long-term memory`
+  - pending docs update commit for this progress log entry
+- Push status:
+  - not pushed yet; feature commit is ready and docs update is still being recorded
+
+### Current Status
+- Each workspace now has one primary long-term memory block.
+- The memory shown on the main graph page is stored content, not freshly regenerated view output.
+- New dialogue continues to auto-refresh that stored workspace memory after message append.
+
+### Next Recommended Step
+- Let the human review the main graph workspace memory panel, then tune the memory summarization quality and wording if needed.
+
+### Known Issues / Blockers / Tech Debt
+- Old branch-memory draft endpoints still exist in the codebase even though the main product flow no longer uses them.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commits.
+
+## Session 2026-04-12 10:52
+
+### Session Goal
+- Remove the remaining manual workspace-memory update behavior.
+- Make workspace memory refresh automatically whenever new dialogue is added.
+
+### Planned Tasks
+- connect workspace-memory refresh into the node message append flow
+- remove the manual refresh control and endpoint from the dedicated memory page flow
+- add/update tests so workspace-memory refresh is validated as automatic behavior
+- update the progress log and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The long-term memory story is simpler to explain: workspace memory updates itself from conversation activity rather than waiting for user action.
+
+### Work Completed
+- Connected workspace-memory refresh to the post-message append flow so new dialogue automatically triggers workspace preference memory regeneration.
+- Removed the manual workspace-memory refresh control from the dedicated memory page.
+- Removed the now-unnecessary workspace-memory refresh endpoint.
+- Updated regression coverage so the chat append flow now asserts that workspace memory refresh is triggered automatically.
+- Re-ran the full `tree_ui.tests` suite after the change.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; automatic workspace-memory refresh slice is ready to commit
+
+### Current Status
+- Workspace memory is no longer manually refreshed by the user.
+- New dialogue now automatically updates the workspace-level long-term memory profile.
+
+### Next Recommended Step
+- Let the human review the new behavior, then improve the quality and structure of the workspace preference profile itself.
+
+### Known Issues / Blockers / Tech Debt
+- Workspace memory is still one consolidated preference profile rather than multiple structured slots.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
 ## Session 2026-04-12 10:35
 
 ### Session Goal
