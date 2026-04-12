@@ -12,6 +12,54 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-12 22:14
+
+### Session Goal
+- Move the workspace-memory panel to the bottom of the main workspace page.
+
+### Planned Tasks
+- relocate the workspace-memory section in the workspace template
+- verify the main workspace page still renders and initializes memory correctly
+- push the UI adjustment
+
+### Milestone Area
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The main graph page now keeps the graph and creation controls visually primary, with workspace memory moved to the bottom as a secondary reference block.
+
+### Work Completed
+- Moved the `Workspace memory` panel from above the graph stage to the bottom of the main workspace page.
+- Verified the main workspace page still renders and auto-creates workspace memory correctly with targeted tests.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/index.html`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for moving workspace memory panel lower in the workspace page
+- Push status:
+  - not pushed yet; UI adjustment is ready to commit
+
+### Current Status
+- Workspace memory remains fully functional but is now placed at the bottom of the workspace page.
+
+### Next Recommended Step
+- Let the human review the new placement and decide whether the memory block should also be visually collapsed by default.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:12
 
 ### Session Goal

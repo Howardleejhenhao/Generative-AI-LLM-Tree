@@ -98,25 +98,6 @@
         </div>
         <div class="workspace-search-results" id="workspace-search-results" hidden></div>
       </div>
-      <section class="workspace-memory-panel" id="workspace-memory-panel" aria-label="Workspace memory">
-        <div class="workspace-memory-header">
-          <div>
-            <p class="panel-kicker">Workspace Memory</p>
-            <h3>Shared summary for this workspace</h3>
-            <p>Auto-updated after new dialogue and reused for future replies.</p>
-          </div>
-          {% if workspace_memory %}
-            <span class="workspace-summary-pill">Synced {{ workspace_memory.updated_at|date:"Y-m-d H:i" }}</span>
-          {% endif %}
-        </div>
-        <div class="workspace-memory-content">
-          {% if workspace_memory %}
-            {{ workspace_memory.content }}
-          {% else %}
-            No workspace memory yet. Start a conversation in this workspace.
-          {% endif %}
-        </div>
-      </section>
       <div class="graph-stage" id="graph-stage">
         <div class="graph-controls" aria-label="Graph zoom controls">
           <p class="graph-controls-label">Zoom</p>
@@ -257,6 +238,25 @@
         <div class="legend graph-action-legend">
           <span class="legend-pill legend-pill-openai">OpenAI branch</span>
           <span class="legend-pill legend-pill-gemini">Gemini branch</span>
+        </div>
+      </section>
+      <section class="workspace-memory-panel" id="workspace-memory-panel" aria-label="Workspace memory">
+        <div class="workspace-memory-header">
+          <div>
+            <p class="panel-kicker">Workspace Memory</p>
+            <h3>Shared summary for this workspace</h3>
+            <p>Auto-updated after new dialogue and reused for future replies.</p>
+          </div>
+          {% if workspace_memory %}
+            <span class="workspace-summary-pill">Synced {{ workspace_memory.updated_at|date:"Y-m-d H:i" }}</span>
+          {% endif %}
+        </div>
+        <div class="workspace-memory-content">
+          {% if workspace_memory %}
+            {{ workspace_memory.content }}
+          {% else %}
+            No workspace memory yet. Start a conversation in this workspace.
+          {% endif %}
         </div>
       </section>
     </div>
