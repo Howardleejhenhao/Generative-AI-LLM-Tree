@@ -1,12 +1,16 @@
 import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260412-edit-variant-ui";
-import { streamJSON } from "./streaming.js";
+import { streamJSON } from "./streaming.js?v=20260413-image-upload";
 
 const payload = JSON.parse(document.getElementById("node-chat-node-payload").textContent);
 
+const chatPage = document.getElementById("chat-page");
+const chatHeader = chatPage.querySelector(".chat-shell-header");
 const jumpButton = document.getElementById("chat-jump-button");
 const transcript = document.getElementById("chat-transcript");
 const form = document.getElementById("chat-form");
 const promptInput = document.getElementById("chat-prompt-input");
+const imageInput = document.getElementById("chat-image-input");
+const selectedFiles = document.getElementById("chat-selected-files");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
 const csrfToken = document.getElementById("chat-csrf-token").value;
@@ -47,6 +51,73 @@ function renderTranscript(extraMessages = []) {
     scrollToBottom();
   }
   updateJumpButton();
+}
+
+function renderSelectedFiles() {
+  const files = Array.from(imageInput.files || []);
+  selectedFiles.innerHTML = "";
+  selectedFiles.hidden = files.length === 0;
+  if (!files.length) {
+    return;
+  }
+  for (const file of files) {
+    const chip = document.createElement("span");
+    chip.className = "chat-selected-file";
+    chip.textContent = file.name;
+    selectedFiles.append(chip);
+  }
+}
+
+function renderAttachmentPanel() {
+  let panel = document.getElementById("chat-attachment-panel");
+  if (!payload.attachments?.length) {
+    panel?.remove();
+    return;
+  }
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.className = "chat-attachment-panel";
+    panel.id = "chat-attachment-panel";
+    chatHeader.insertAdjacentElement("afterend", panel);
+  }
+  panel.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.className = "chat-attachment-header";
+  const copy = document.createElement("div");
+  const kicker = document.createElement("p");
+  kicker.className = "chat-edit-kicker";
+  kicker.textContent = "Images";
+  const title = document.createElement("h2");
+  title.textContent = "Attached to this node";
+  copy.append(kicker, title);
+
+  const pill = document.createElement("span");
+  pill.className = "workspace-summary-pill";
+  pill.textContent = `${payload.attachments.length} image${payload.attachments.length === 1 ? "" : "s"}`;
+  header.append(copy, pill);
+
+  const grid = document.createElement("div");
+  grid.className = "chat-attachment-grid";
+
+  for (const attachment of payload.attachments) {
+    const link = document.createElement("a");
+    link.className = "chat-attachment-card";
+    link.href = attachment.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+
+    const image = document.createElement("img");
+    image.src = attachment.url;
+    image.alt = attachment.name;
+
+    const label = document.createElement("span");
+    label.textContent = attachment.name;
+    link.append(image, label);
+    grid.append(link);
+  }
+
+  panel.append(header, grid);
 }
 
 function cloneMessages(messages) {
@@ -91,7 +162,21 @@ async function handleSubmit(event) {
     return;
   }
 
+  const selectedImages = Array.from(imageInput.files || []);
+  const requestPayload = (() => {
+    if (!selectedImages.length) {
+      return { prompt: submittedPrompt };
+    }
+    const formData = new FormData();
+    formData.append("prompt", submittedPrompt);
+    for (const file of selectedImages) {
+      formData.append("images", file);
+    }
+    return formData;
+  })();
   promptInput.value = "";
+  imageInput.value = "";
+  renderSelectedFiles();
   resizePromptInput();
   submitButton.disabled = true;
   let previewPrompt = "";
@@ -100,17 +185,16 @@ async function handleSubmit(event) {
   try {
     await streamJSON(
       form.dataset.nodeMessageStreamUrl,
-      {
-        prompt: submittedPrompt,
-      },
+      requestPayload,
       csrfToken,
       {
         preview(data) {
           previewPrompt = data.prompt;
           assistantText = "";
+          const imageSuffix = data.attachment_count ? ` with ${data.attachment_count} image${data.attachment_count === 1 ? "" : "s"}` : "";
           feedback.textContent = data.created_new_branch
-            ? `This node already has children. Continuing in a new child branch via ${data.provider} / ${data.model_name}...`
-            : `Streaming reply from ${data.provider} / ${data.model_name}...`;
+            ? `This node already has children. Continuing in a new child branch via ${data.provider} / ${data.model_name}${imageSuffix}...`
+            : `Streaming reply from ${data.provider} / ${data.model_name}${imageSuffix}...`;
           renderTranscript([
             {
               role: "user",
@@ -145,8 +229,10 @@ async function handleSubmit(event) {
             return;
           }
           payload.messages = data.node.messages;
+          payload.attachments = data.node.attachments || [];
           resizePromptInput();
           feedback.textContent = "Reply added to this node.";
+          renderAttachmentPanel();
           renderTranscript();
           scrollToBottom();
         },
@@ -230,9 +316,12 @@ if (payload.messages.length) {
 
 promptInput.addEventListener("input", resizePromptInput);
 promptInput.addEventListener("keydown", handlePromptKeydown);
+imageInput.addEventListener("change", renderSelectedFiles);
 transcript.addEventListener("scroll", updateJumpButton);
 jumpButton.addEventListener("click", scrollToBottom);
 form.addEventListener("submit", handleSubmit);
 resizePromptInput();
+renderSelectedFiles();
+renderAttachmentPanel();
 renderTranscript();
 scrollToBottom();

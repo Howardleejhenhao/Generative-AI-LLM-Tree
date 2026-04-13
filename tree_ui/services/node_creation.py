@@ -6,7 +6,7 @@ from typing import Any
 from django.conf import settings
 from django.db import transaction
 
-from tree_ui.models import ConversationNode, NodeMessage, Workspace
+from tree_ui.models import ConversationNode, NodeAttachment, NodeMessage, Workspace
 from tree_ui.services.context_builder import (
     build_system_instruction,
     build_branch_lineage,
@@ -111,8 +111,13 @@ def generate_assistant_reply(
     temperature: float | None = None,
     top_p: float | None = None,
     max_output_tokens: int | None = None,
+    prompt_attachments: list[NodeAttachment] | None = None,
 ) -> str:
-    context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    context_messages = build_generation_messages(
+        parent=parent,
+        prompt=prompt,
+        prompt_attachments=prompt_attachments,
+    )
     memory_text = ""
     if parent is not None:
         memory_text = format_memories_for_prompt(
@@ -228,8 +233,13 @@ def stream_assistant_reply(
     temperature: float | None = None,
     top_p: float | None = None,
     max_output_tokens: int | None = None,
+    prompt_attachments: list[NodeAttachment] | None = None,
 ):
-    context_messages = build_generation_messages(parent=parent, prompt=prompt)
+    context_messages = build_generation_messages(
+        parent=parent,
+        prompt=prompt,
+        prompt_attachments=prompt_attachments,
+    )
     emitted_chunk = False
     memory_text = ""
     if parent is not None:
@@ -355,7 +365,7 @@ def append_messages_to_node_with_reply(
         node.summary = resolved_inputs["summary"]
         node.save(update_fields=["summary", "updated_at"])
 
-    updated_node = ConversationNode.objects.prefetch_related("messages").get(pk=node.pk)
+    updated_node = ConversationNode.objects.prefetch_related("messages", "attachments").get(pk=node.pk)
 
     try:
         refresh_workspace_preference_memory(updated_node)
@@ -370,6 +380,7 @@ def append_messages_to_node(
     *,
     node: ConversationNode,
     prompt: str,
+    prompt_attachments: list[NodeAttachment] | None = None,
 ) -> ConversationNode:
     resolved_inputs = resolve_message_append_inputs(prompt=prompt)
     assistant_reply = generate_assistant_reply(
@@ -381,6 +392,7 @@ def append_messages_to_node(
         temperature=node.temperature,
         top_p=node.top_p,
         max_output_tokens=node.max_output_tokens,
+        prompt_attachments=prompt_attachments,
     )
     return append_messages_to_node_with_reply(
         node=node,

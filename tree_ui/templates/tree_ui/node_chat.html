@@ -29,6 +29,26 @@
       </div>
     </header>
 
+    {% if node_payload.attachments %}
+      <section class="chat-attachment-panel" id="chat-attachment-panel">
+        <div class="chat-attachment-header">
+          <div>
+            <p class="chat-edit-kicker">Images</p>
+            <h2>Attached to this node</h2>
+          </div>
+          <span class="workspace-summary-pill">{{ node_payload.attachments|length }} image{% if node_payload.attachments|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="chat-attachment-grid" id="chat-attachment-grid">
+          {% for attachment in node_payload.attachments %}
+            <a class="chat-attachment-card" href="{{ attachment.url }}" target="_blank" rel="noreferrer">
+              <img src="{{ attachment.url }}" alt="{{ attachment.name }}">
+              <span>{{ attachment.name }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
     <section class="chat-edit-shell" id="chat-edit-shell" hidden>
       <form
         class="chat-edit-form"
@@ -83,6 +103,11 @@
                   placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
                 ></textarea>
               </label>
+              <label class="form-field chat-attachment-input-shell">
+                <span>Images</span>
+                <input id="chat-image-input" name="images" type="file" accept="image/*" multiple>
+              </label>
+              <div class="chat-selected-files" id="chat-selected-files" hidden></div>
               <div class="chat-composer-actions">
                 <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
                 <button class="primary-button" id="chat-submit-button" type="submit">
@@ -106,5 +131,5 @@
   </section>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260412-edit-variant-ui"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260413-image-upload"></script>
 {% endblock %}

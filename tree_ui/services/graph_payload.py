@@ -25,13 +25,24 @@ def serialize_node(node: ConversationNode) -> dict:
             }
             for message in node.messages.all()
         ],
+        "attachments": [
+            {
+                "id": attachment.id,
+                "kind": attachment.kind,
+                "name": attachment.original_name,
+                "content_type": attachment.content_type,
+                "size_bytes": attachment.size_bytes,
+                "url": attachment.file.url,
+            }
+            for attachment in node.attachments.all()
+        ],
     }
 
 
 def serialize_workspace(workspace: Workspace) -> dict:
     nodes = [
         serialize_node(node)
-        for node in workspace.nodes.prefetch_related("messages").all()
+        for node in workspace.nodes.prefetch_related("messages", "attachments").all()
     ]
     return {
         "workspace": {

@@ -1141,6 +1141,55 @@ body:has(.chat-page-immersive) .page-shell {
   margin: 0;
 }
 
+.chat-attachment-panel {
+  width: var(--chat-shell-width);
+  max-width: 100%;
+  margin: 0 auto 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.chat-attachment-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.chat-attachment-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.chat-attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.chat-attachment-card {
+  display: grid;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.chat-attachment-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.chat-attachment-card span {
+  font-size: 0.86rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .chat-transcript {
   display: grid;
   gap: 16px;
@@ -1451,6 +1500,27 @@ body:has(.chat-page-immersive) .page-shell {
   justify-content: flex-start;
   gap: 12px;
   align-items: center;
+}
+
+.chat-attachment-input-shell input[type="file"] {
+  padding-block: 10px;
+}
+
+.chat-selected-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-selected-file {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f8f1e8;
+  font-size: 0.82rem;
 }
 
 .chat-composer-actions .primary-button {

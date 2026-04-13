@@ -5,6 +5,7 @@ from typing import Iterator
 from urllib import error, parse, request
 
 from tree_ui.services.context_builder import ContextMessage
+from tree_ui.services.attachments import encode_attachment_as_data_url
 from tree_ui.services.providers.base import (
     BaseProvider,
     GenerationResult,
@@ -22,10 +23,29 @@ def _build_contents(messages: list[ContextMessage]) -> list[dict]:
         contents.append(
             {
                 "role": role,
-                "parts": [{"text": message.content}],
+                "parts": _build_parts(message),
             }
         )
     return contents
+
+
+def _build_parts(message: ContextMessage) -> list[dict]:
+    parts: list[dict] = [{"text": message.content}]
+    for attachment in message.attachments:
+        data_url = encode_attachment_as_data_url(
+            file_path=attachment.file_path,
+            content_type=attachment.content_type,
+        )
+        _, encoded = data_url.split(",", 1)
+        parts.append(
+            {
+                "inline_data": {
+                    "mime_type": attachment.content_type or "application/octet-stream",
+                    "data": encoded,
+                }
+            }
+        )
+    return parts
 
 
 def _extract_text(response_data: dict) -> str:

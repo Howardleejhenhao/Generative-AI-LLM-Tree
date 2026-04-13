@@ -22,14 +22,18 @@ function parseEventBlock(block) {
 }
 
 export async function streamJSON(url, payload, csrfToken, handlers) {
+  const isFormData = payload instanceof FormData;
+  const headers = {
+    "X-CSRFToken": csrfToken,
+    Accept: "text/event-stream",
+  };
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrfToken,
-      Accept: "text/event-stream",
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body: isFormData ? payload : JSON.stringify(payload),
   });
 
   if (!response.ok) {

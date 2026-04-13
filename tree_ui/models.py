@@ -92,6 +92,33 @@ class NodeMessage(models.Model):
         return f"{self.node_id}:{self.role}:{self.order_index}"
 
 
+class NodeAttachment(models.Model):
+    class Kind(models.TextChoices):
+        IMAGE = "image", "Image"
+
+    node = models.ForeignKey(
+        ConversationNode,
+        related_name="attachments",
+        on_delete=models.CASCADE,
+    )
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.IMAGE,
+    )
+    file = models.FileField(upload_to="node_attachments/%Y/%m/%d")
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=120, blank=True)
+    size_bytes = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.node_id}:{self.kind}:{self.original_name}"
+
+
 class ConversationMemory(models.Model):
     class Scope(models.TextChoices):
         WORKSPACE = "workspace", "Workspace"

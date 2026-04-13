@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from tree_ui.models import ConversationMemory, ConversationNode, Workspace
+from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
@@ -94,6 +95,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
         ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
             "messages",
             "children",
+            "attachments",
         ),
         pk=node_id,
         workspace=workspace,
@@ -433,15 +435,20 @@ def stream_workspace_node(request, slug: str):
 def stream_node_message(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
-        ConversationNode.objects.prefetch_related("messages"),
+        ConversationNode.objects.prefetch_related("messages", "attachments"),
         pk=node_id,
         workspace=workspace,
     )
 
-    try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        payload = {"prompt": request.POST.get("prompt", "")}
+        uploaded_images = request.FILES.getlist("images")
+    else:
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest("Invalid JSON payload.")
+        uploaded_images = []
 
     try:
         resolved_inputs = resolve_message_append_inputs(prompt=payload.get("prompt", ""))
@@ -456,6 +463,11 @@ def stream_node_message(request, slug: str, node_id: int):
             title=resolved_inputs["summary"],
         )
         created_new_branch = True
+
+    try:
+        prompt_attachments = create_node_attachments(node=target_node, files=uploaded_images)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     def event_stream():
         try:
@@ -475,6 +487,7 @@ def stream_node_message(request, slug: str, node_id: int):
                     "created_new_branch": created_new_branch,
                     "source_node_id": node.id,
                     "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, target_node.id]),
+                    "attachment_count": len(prompt_attachments),
                 },
             )
             for chunk in stream_assistant_reply(
@@ -486,6 +499,7 @@ def stream_node_message(request, slug: str, node_id: int):
                 temperature=target_node.temperature,
                 top_p=target_node.top_p,
                 max_output_tokens=target_node.max_output_tokens,
+                prompt_attachments=prompt_attachments,
             ):
                 assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
