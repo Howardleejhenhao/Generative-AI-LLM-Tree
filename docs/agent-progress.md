@@ -12,6 +12,66 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-13 00:02
+
+### Session Goal
+- Finalize the v2 long-term memory slice around the now-approved workspace-only memory design.
+
+### Planned Tasks
+- remove obsolete manual or node-level long-term memory entry points that no longer match the product direction
+- tighten the workspace-memory presentation on the main graph page so its read-only auto-sync behavior is explicit
+- update regression coverage and verify the full Django test suite before pushing
+
+### Milestone Area
+- Memory
+- Cleanup
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- consolidates long-term memory around one stable workspace-level memory block instead of leaving old manual-memory paths around
+
+### Demo Readiness Impact
+- the memory story now reads cleanly in demos: one workspace, one auto-maintained memory, visible on the main graph page, reused for future replies, and no competing manual-memory UI left behind
+
+### Work Completed
+- Removed the obsolete node-memory draft API route and the unused dedicated node-memory template/JS implementation.
+- Simplified the long-term memory surface so the remaining manual-memory endpoint now clearly rejects edits and points to the workspace-only design.
+- Added source-node metadata to serialized workspace memory so the main graph page can show where the latest memory refresh came from.
+- Updated the workspace-memory panel copy to make its read-only auto-sync behavior explicit and show the last source node link when available.
+- Expanded regression coverage for the new workspace-memory presentation and the updated manual-memory rejection response.
+- Re-ran `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `tree_ui/views.py`
+- `tree_ui/urls.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for long-term memory cleanup and presentation polish
+- Push status:
+  - not pushed yet; cleanup is verified and ready to commit
+
+### Current Status
+- Long-term memory is now presented as a single workspace-level, read-only, automatically refreshed summary with no active manual branch-memory UI path remaining.
+
+### Next Recommended Step
+- Summarize the completed long-term memory deliverable and, if v2 continues, move on to the next major milestone area instead of further memory churn.
+
+### Known Issues / Blockers / Tech Debt
+- The codebase still retains lower-level memory helper functions for possible future expansion, but the active product surface is now workspace-only.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-12 22:31
 
 ### Session Goal
