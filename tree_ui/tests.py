@@ -56,6 +56,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Delete node")
         self.assertContains(response, "Workspace Memory")
         self.assertContains(response, WORKSPACE_MEMORY_FALLBACK_CONTENT)
+        self.assertContains(response, "Read only")
         self.assertNotContains(response, "Research lane")
         self.assertNotContains(response, "Model comparison")
         self.assertNotContains(response, "Branch review")
@@ -107,6 +108,13 @@ class WorkspaceGraphViewTests(TestCase):
     @patch("tree_ui.views.ensure_workspace_memory")
     def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self, mock_ensure_workspace_memory):
         workspace = Workspace.objects.create(name="Main", slug="main")
+        source_node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root node",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
         memory = ConversationMemory.objects.create(
             workspace=workspace,
             scope=ConversationMemory.Scope.WORKSPACE,
@@ -114,6 +122,7 @@ class WorkspaceGraphViewTests(TestCase):
             source=ConversationMemory.Source.EXTRACTED,
             title="Workspace memory",
             content="This workspace is focused on C++ learning progress.",
+            source_node=source_node,
             is_pinned=True,
         )
         mock_ensure_workspace_memory.return_value = memory
@@ -123,6 +132,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This workspace is focused on C++ learning progress.")
         self.assertContains(response, "Workspace Memory")
+        self.assertContains(response, "Last refreshed from")
+        self.assertContains(response, "Root node")
         mock_ensure_workspace_memory.assert_called_once_with(workspace)
 
     @patch("tree_ui.services.memory_drafting.generate_text")
@@ -549,7 +560,7 @@ class WorkspaceGraphViewTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(ConversationMemory.objects.count(), 0)
-        self.assertIn("Workspace memory is automatic and read only.", response.content.decode("utf-8"))
+        self.assertIn("Manual long-term memory editing has been removed.", response.content.decode("utf-8"))
 
     def test_workspace_memory_cannot_be_created_manually_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -576,35 +587,7 @@ class WorkspaceGraphViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Workspace memory is automatic and read only.", response.content.decode("utf-8"))
-
-    @patch("tree_ui.views.generate_memory_draft_for_node")
-    def test_can_generate_memory_draft_via_api(self, mock_generate_memory_draft_for_node):
-        workspace = Workspace.objects.create(name="Main", slug="main")
-        node = ConversationNode.objects.create(
-            workspace=workspace,
-            title="Memory node",
-            summary="",
-            provider=ConversationNode.Provider.OPENAI,
-            model_name="gpt-4.1-mini",
-        )
-        mock_generate_memory_draft_for_node.return_value = {
-            "scope": "branch",
-            "memory_type": "summary",
-            "title": "Draft title",
-            "content": "Draft content",
-            "used_fallback": False,
-        }
-
-        response = self.client.post(
-            reverse("generate_node_memory_draft", args=[workspace.slug, node.id]),
-            data=json.dumps({}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["draft"]["title"], "Draft title")
-        mock_generate_memory_draft_for_node.assert_called_once()
+        self.assertIn("Manual long-term memory editing has been removed.", response.content.decode("utf-8"))
 
     def test_can_update_node_position_via_api(self):
         workspace = Workspace.objects.create(name="Main", slug="main")

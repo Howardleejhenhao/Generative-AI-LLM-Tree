@@ -5,17 +5,10 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from tree_ui.models import ConversationMemory, ConversationNode, NodeMessage, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, Workspace
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
-from tree_ui.services.memory_drafting import ensure_workspace_memory, generate_memory_draft_for_node
-from tree_ui.services.memory_service import (
-    format_memories_for_prompt,
-    get_workspace_memory,
-    list_branch_memories,
-    list_workspace_memories,
-    retrieve_memories_for_generation,
-)
+from tree_ui.services.memory_drafting import ensure_workspace_memory
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     append_messages_to_node_with_reply,
@@ -56,23 +49,7 @@ def _build_lineage(node: ConversationNode) -> list[ConversationNode]:
     return list(reversed(lineage))
 
 
-def _serialize_memory(memory: ConversationMemory) -> dict:
-    return {
-        "id": memory.id,
-        "scope": memory.scope,
-        "memory_type": memory.memory_type,
-        "source": memory.source,
-        "title": memory.title,
-        "content": memory.content,
-        "is_pinned": memory.is_pinned,
-        "branch_anchor_id": memory.branch_anchor_id,
-        "branch_anchor_title": memory.branch_anchor.title if memory.branch_anchor_id else "",
-        "source_node_id": memory.source_node_id,
-        "source_message_id": memory.source_message_id,
-    }
-
-
-def _serialize_workspace_memory(memory: ConversationMemory | None) -> dict | None:
+def _serialize_workspace_memory(memory: ConversationMemory | None, *, workspace: Workspace) -> dict | None:
     if memory is None:
         return None
 
@@ -82,33 +59,12 @@ def _serialize_workspace_memory(memory: ConversationMemory | None) -> dict | Non
         "content": memory.content,
         "updated_at": memory.updated_at,
         "source_node_id": memory.source_node_id,
-    }
-
-
-def _build_memory_payload(node: ConversationNode) -> dict:
-    workspace_memories = list(list_workspace_memories(workspace=node.workspace))
-    branch_memories = list(list_branch_memories(node=node))
-    retrieved_memories = retrieve_memories_for_generation(
-        workspace=node.workspace,
-        parent=node,
-    )
-    return {
-        "workspace_memories": [_serialize_memory(item) for item in workspace_memories],
-        "branch_memories": [_serialize_memory(item) for item in branch_memories],
-        "retrieved_memories": [
-            {
-                "id": item.id,
-                "scope": item.scope,
-                "memory_type": item.memory_type,
-                "source": item.source,
-                "title": item.title,
-                "content": item.content,
-                "is_pinned": item.is_pinned,
-                "branch_anchor_id": item.branch_anchor_id,
-            }
-            for item in retrieved_memories
-        ],
-        "retrieved_memory_text": format_memories_for_prompt(retrieved_memories),
+        "source_node_title": memory.source_node.title if memory.source_node_id else "",
+        "source_node_url": (
+            reverse("workspace_node_chat", args=[workspace.slug, memory.source_node_id])
+            if memory.source_node_id
+            else ""
+        ),
     }
 
 
@@ -127,7 +83,7 @@ def workspace_graph(request, slug: str):
         {
             "graph_payload": graph_payload,
             "workspace_list": _serialize_workspace_list(workspace),
-            "workspace_memory": _serialize_workspace_memory(workspace_memory),
+            "workspace_memory": _serialize_workspace_memory(workspace_memory, workspace=workspace),
         },
     )
 
@@ -359,22 +315,7 @@ def create_workspace_node(request, slug: str):
 
 @require_POST
 def create_workspace_memory_view(request, slug: str):
-    get_object_or_404(Workspace, slug=slug)
-    return HttpResponseBadRequest("Workspace memory is automatic and read only.")
-
-
-
-@require_POST
-def generate_node_memory_draft_view(request, slug: str, node_id: int):
-    workspace = get_object_or_404(Workspace, slug=slug)
-    node = get_object_or_404(
-        ConversationNode.objects.prefetch_related("messages"),
-        pk=node_id,
-        workspace=workspace,
-    )
-
-    draft = generate_memory_draft_for_node(node)
-    return JsonResponse({"draft": draft})
+    return HttpResponseBadRequest("Manual long-term memory editing has been removed. Workspace memory is automatic and read only.")
 
 
 @require_POST

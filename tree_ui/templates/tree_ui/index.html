@@ -248,11 +248,14 @@
           <div>
             <p class="panel-kicker">Workspace Memory</p>
             <h3>Shared summary for this workspace</h3>
-            <p>Auto-updated after new dialogue and reused for future replies.</p>
+            <p>Read-only. Auto-updated after each new reply and reused as long-term reference for future replies in this workspace.</p>
           </div>
-          {% if workspace_memory %}
-            <span class="workspace-summary-pill">Synced {{ workspace_memory.updated_at|date:"Y-m-d H:i" }}</span>
-          {% endif %}
+          <div class="workspace-summary-strip">
+            {% if workspace_memory %}
+              <span class="workspace-summary-pill">Synced {{ workspace_memory.updated_at|date:"Y-m-d H:i" }}</span>
+            {% endif %}
+            <span class="workspace-summary-pill">Read only</span>
+          </div>
         </div>
         <div class="workspace-memory-content">
           {% if workspace_memory %}
@@ -261,6 +264,12 @@
             No workspace memory yet. Start a conversation in this workspace.
           {% endif %}
         </div>
+        {% if workspace_memory and workspace_memory.source_node_title %}
+          <p class="workspace-memory-source">
+            Last refreshed from
+            <a href="{{ workspace_memory.source_node_url }}">{{ workspace_memory.source_node_title }}</a>.
+          </p>
+        {% endif %}
       </section>
     </div>
   </section>

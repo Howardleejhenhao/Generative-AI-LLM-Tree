@@ -61,9 +61,4 @@ urlpatterns = [
         views.create_edited_node_variant,
         name="create_edited_node_variant",
     ),
-    path(
-        "api/workspaces/<slug:slug>/nodes/<int:node_id>/memory-draft/",
-        views.generate_node_memory_draft_view,
-        name="generate_node_memory_draft",
-    ),
 ]
