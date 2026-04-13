@@ -12,6 +12,84 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-13 10:55
+
+### Session Goal
+- Start the v2 image-first multimodal milestone with a real end-to-end attachment slice.
+
+### Planned Tasks
+- add an image attachment data model and storage configuration for workspace nodes
+- wire node-chat image upload into the existing conversation flow
+- extend generation payload construction so prompt images can travel through the provider layer
+- add visible attachment indicators plus regression coverage before pushing
+
+### Milestone Area
+- Multimodal
+- Image-first
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- begins the required v2 multimodal capability with a concrete node/image workflow instead of placeholder UI
+
+### Demo Readiness Impact
+- the product now has a real image-anchored reasoning path that can be demonstrated from the node chat view and inspected back in the graph
+
+### Work Completed
+- Added a new `NodeAttachment` model plus migration for image attachments.
+- Added `MEDIA_URL` / `MEDIA_ROOT` development serving so uploaded images can be rendered back in the UI.
+- Added attachment serialization so nodes now carry image metadata into graph and chat payloads.
+- Extended context building so a user prompt can carry image attachments through the provider layer.
+- Updated both OpenAI and Gemini payload builders to include attached images in multimodal request parts.
+- Updated the node-chat composer to accept image uploads, show selected file chips, and send multipart requests when images are present.
+- Added a node-chat image gallery for attachments already linked to the current node.
+- Added a lightweight graph badge showing image counts on nodes with attachments.
+- Expanded regression coverage for node-chat attachment rendering and multipart streaming requests with images.
+- Re-ran `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `llm_tree_project/settings.py`
+- `llm_tree_project/urls.py`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0004_nodeattachment.py`
+- `tree_ui/services/attachments.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/streaming.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: `feature/v2-image-first-multimodal`
+- Commits made:
+  - pending commit for the first image-first multimodal slice
+- Push status:
+  - not pushed yet; implementation is verified and ready to commit
+
+### Current Status
+- The node chat flow now supports image attachments end-to-end and the provider request path is image-aware for OpenAI and Gemini.
+
+### Next Recommended Step
+- Let the human inspect the node-chat image upload flow in the browser, then decide whether the next multimodal slice should focus on graph-level comparison for image branches or routing behavior for image prompts.
+
+### Known Issues / Blockers / Tech Debt
+- Attachments are currently node-scoped rather than message-scoped, so a multi-turn node with several user prompts still shares one attachment set at the node level.
+- There is not yet any image-specific routing mode or provider observability UI beyond the visible attachment badges.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
 ## Session 2026-04-13 00:02
 
 ### Session Goal
