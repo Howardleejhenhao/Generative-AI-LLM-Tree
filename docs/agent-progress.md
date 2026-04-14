@@ -11,6 +11,76 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 22:46
+
+### Session Goal
+- Integrate the delegated remote-MCP-like adapter foundation, apply review fixes, and land the accepted result on the main feature branch.
+
+### Planned Tasks
+- commit the delegated remote adapter work and its report on the working branch
+- apply review fixes for transport-specific client selection and remote failure observability
+- merge the branch into `feature/v2-tool-use-groundwork`, rerun verification, and record the integration
+
+### Milestone Area
+- Remote MCP adapter groundwork
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- extends MCP groundwork from source registration into a real remote-adapter path with a client abstraction and observable transport-readiness behavior
+
+### Demo Readiness Impact
+- remote MCP remains non-networked, but the system now distinguishes stub transport from recognized-yet-unimplemented transports and exposes remote source unavailability more clearly
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-14-0815.md` and the delegated branch `feature/v2-mcp-remote-adapter`.
+- Accepted the introduction of `BaseMCPClient`, `StubMCPClient`, `RemoteMCPSourceAdapter`, and dispatcher wiring for `MCPSource.SourceType.MCP_SERVER`.
+- Identified and fixed two review findings before integration:
+  - `transport_kind` was parsed but did not actually affect client selection
+  - remote tool discovery failures were silently collapsed into an empty tool list
+- Added `UnsupportedTransportClient` and updated the remote adapter to:
+  - route `stub` transport to `StubMCPClient`
+  - route recognized-but-unimplemented transports (`sse`, `stdio`) to `UnsupportedTransportClient`
+  - surface remote discovery failure as an explicit `__unavailable` tool definition rather than silently hiding it
+- Updated tests to reflect and enforce the new behavior.
+- Committed the accepted work as `8352960` (`feat: implement remote MCP adapter foundation and stub client`) and the review fixes as `c79f76f` (`fix: surface remote transport readiness`) on `feature/v2-mcp-remote-adapter`.
+- Pushed `feature/v2-mcp-remote-adapter` to `origin/feature/v2-mcp-remote-adapter`.
+- Fast-forward merged `feature/v2-mcp-remote-adapter` into `feature/v2-tool-use-groundwork`.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 78 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0815.md`
+- `tree_ui/services/mcp/client.py`
+- `tree_ui/services/mcp/dispatcher.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-mcp-remote-adapter`
+- New branch created/switched:
+  - used delegated branch `feature/v2-mcp-remote-adapter` for commit/push
+  - switched back to `feature/v2-tool-use-groundwork` for integration
+- Commits made:
+  - `8352960` on `feature/v2-mcp-remote-adapter` - `feat: implement remote MCP adapter foundation and stub client`
+  - `c79f76f` on `feature/v2-mcp-remote-adapter` - `fix: surface remote transport readiness`
+- Push status:
+  - `feature/v2-mcp-remote-adapter` pushed to `origin/feature/v2-mcp-remote-adapter`
+  - `feature/v2-tool-use-groundwork` integration push pending until this progress-log update is committed
+
+### Current Status
+- Remote MCP adapter groundwork is now merged into `feature/v2-tool-use-groundwork` and verified on the main feature branch.
+
+### Next Recommended Step
+- decide whether to pursue a real transport implementation next (e.g. stdio-backed remote client) or build a minimal admin/config surface for managing `MCPSource` records
+
+### Known Issues / Blockers / Tech Debt
+- `sse` and `stdio` are now recognized transport kinds but still intentionally unimplemented.
+- There is still no user-facing management UI for `MCPSource`; current validation and behavior are backend-only.
+
 ## Session 2026-04-14 15:44
 
 ### Session Goal
