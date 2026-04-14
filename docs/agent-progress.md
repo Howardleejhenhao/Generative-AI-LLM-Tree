@@ -92,6 +92,7 @@
 - Updated the node-chat composer input to accept PDFs alongside images.
 - Updated the staged attachment preview so PDFs display as compact file cards instead of broken image previews.
 - Updated chat message attachment rendering so saved PDF attachments appear as clickable file cards in the transcript.
+- Updated transcript rendering so a just-submitted PDF also shows as a file card during streaming preview, before the final node payload arrives.
 - Added regression coverage for the PDF upload path and PDF-to-image multimodal expansion.
 - Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
 

@@ -9,12 +9,17 @@ function renderMessageAttachments(container, attachments) {
   gallery.className = "chat-message-attachments";
 
   for (const attachment of attachments) {
-    if (attachment.kind === "pdf" && attachment.url) {
-      const link = document.createElement("a");
-      link.className = "chat-message-file-card";
-      link.href = attachment.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
+    if (attachment.kind === "pdf") {
+      const card = attachment.url ? document.createElement("a") : document.createElement("div");
+      card.className = "chat-message-file-card";
+
+      if (attachment.url) {
+        card.href = attachment.url;
+        card.target = "_blank";
+        card.rel = "noreferrer";
+      } else {
+        card.classList.add("chat-message-file-card-static");
+      }
 
       const icon = document.createElement("span");
       icon.className = "chat-message-file-card-icon";
@@ -30,8 +35,8 @@ function renderMessageAttachments(container, attachments) {
       label.textContent = "PDF document";
 
       meta.append(name, label);
-      link.append(icon, meta);
-      gallery.append(link);
+      card.append(icon, meta);
+      gallery.append(card);
       continue;
     }
 

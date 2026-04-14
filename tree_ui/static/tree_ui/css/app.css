@@ -1242,6 +1242,10 @@ body:has(.chat-page-immersive) .page-shell {
   text-decoration: none;
 }
 
+.chat-message-file-card-static {
+  cursor: default;
+}
+
 .chat-message-file-card-icon {
   display: inline-flex;
   align-items: center;
