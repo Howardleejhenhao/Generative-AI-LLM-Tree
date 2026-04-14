@@ -68,9 +68,10 @@
 - Current branch at session start: `feature/v2-image-first-multimodal`
 - New branch created/switched: none
 - Commits made:
-  - pending commit for the ChatGPT-style composer and message-image rendering cleanup
+  - `9a40921` - `feat: refine multimodal chat composer UX`
+  - pending docs follow-up commit for the finalized session log
 - Push status:
-  - not pushed yet; session changes are verified and ready to commit
+  - not pushed yet; final docs update pending before push
 
 ### Current Status
 - The node-chat image workflow now matches the current product direction much more closely: one image, real preview before send, image-only send support, and images rendered back into the chat transcript.
