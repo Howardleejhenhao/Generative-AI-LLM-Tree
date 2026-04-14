@@ -1929,3 +1929,171 @@ class MCPAdapterTests(TestCase):
         tool_names = [t.name for t in tools]
         # Should still find internal tools due to fallback logic in dispatcher
         self.assertIn("compare_branches", tool_names)
+
+
+class RemoteMCPAdapterTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        default_dispatcher.refresh()
+
+    def test_remote_adapter_config_validation(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        # Test empty config (should use defaults)
+        adapter = RemoteMCPSourceAdapter(source_id="test-remote", name="Test Remote", config={})
+        status = adapter.get_status()
+        self.assertEqual(status["config"]["transport_kind"], "stub")
+        self.assertEqual(status["config"]["label"], "Remote MCP Server")
+
+        # Test valid custom config
+        custom_config = {
+            "transport_kind": "sse",
+            "endpoint": "http://localhost:8080/mcp",
+            "label": "Custom Remote Server",
+            "timeout": 60,
+        }
+        adapter2 = RemoteMCPSourceAdapter(
+            source_id="test-remote-2", name="Test Remote 2", config=custom_config
+        )
+        status2 = adapter2.get_status()
+        self.assertEqual(status2["config"]["transport_kind"], "sse")
+        self.assertEqual(status2["config"]["endpoint"], "http://localhost:8080/mcp")
+        self.assertEqual(status2["config"]["label"], "Custom Remote Server")
+        self.assertEqual(status2["config"]["timeout"], 60)
+
+    def test_remote_adapter_lists_tools_via_stub_client(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        adapter = RemoteMCPSourceAdapter(
+            source_id="test-remote", name="Test Remote", config={"label": "Remote Calc Server"}
+        )
+        tools = adapter.list_tools()
+
+        self.assertEqual(len(tools), 2)
+        tool_names = [t.name for t in tools]
+        self.assertIn("remote_calculator", tool_names)
+        self.assertIn("remote_fetch", tool_names)
+
+        # Verify ToolDefinition metadata
+        calc_tool = next(t for t in tools if t.name == "remote_calculator")
+        self.assertEqual(calc_tool.source_type, "mcp_server")
+        self.assertEqual(calc_tool.source_id, "test-remote")
+        self.assertIn("Remote Calc Server", calc_tool.description)
+
+    def test_remote_adapter_executes_tool_via_stub_client(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        adapter = RemoteMCPSourceAdapter(
+            source_id="test-remote", name="Test Remote", config={"label": "Remote Calc Server"}
+        )
+
+        result = adapter.execute_tool(
+            "remote_calculator", {"operation": "multiply", "a": 6, "b": 7}
+        )
+
+        self.assertFalse(result.is_error)
+        self.assertEqual(result.content[0]["text"], "Result: 42")
+        self.assertEqual(result.metadata["server"], "Remote Calc Server")
+
+    def test_dispatcher_uses_remote_adapter_for_mcp_server_source(self):
+        from tree_ui.models import MCPSource
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        MCPSource.objects.all().delete()
+        MCPSource.objects.create(
+            name="Real-like Remote",
+            source_id="real-remote",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            config={"label": "Production Server", "transport_kind": "sse"},
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        tools = default_dispatcher.list_tools()
+        tool_names = [t.name for t in tools]
+
+        self.assertIn("remote_calculator", tool_names)
+        self.assertIn("compare_branches", tool_names)  # Internal tool fallback should still work
+
+        calc_tool = next(t for t in tools if t.name == "remote_calculator")
+        self.assertEqual(calc_tool.source_type, "mcp_server")
+        self.assertEqual(calc_tool.source_id, "real-remote")
+
+    def test_multi_source_coexistence(self):
+        from tree_ui.models import MCPSource
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        MCPSource.objects.all().delete()
+
+        # 1. Internal
+        MCPSource.objects.create(
+            name="Internal",
+            source_id="internal-db",
+            source_type=MCPSource.SourceType.INTERNAL,
+            is_enabled=True,
+        )
+        # 2. Mock
+        MCPSource.objects.create(
+            name="Mock",
+            source_id="mock-db",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+        # 3. Remote
+        MCPSource.objects.create(
+            name="Remote",
+            source_id="remote-db",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            config={"label": "Remote Hub"},
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        tools = default_dispatcher.list_tools()
+        tool_names = [t.name for t in tools]
+
+        self.assertIn("compare_branches", tool_names)  # from internal
+        self.assertIn("external_echo", tool_names)  # from mock
+        self.assertIn("remote_calculator", tool_names)  # from remote
+
+        # Execute one from each
+        res_int = default_dispatcher.execute_tool(
+            "compare_branches",
+            {"node_id_a": 0, "node_id_b": 0},
+            context={"workspace": None},
+        )
+        self.assertTrue(res_int.is_error)  # Error is expected because node 0 doesn't exist
+
+        res_mock = default_dispatcher.execute_tool("external_echo", {"message": "hi"})
+        self.assertFalse(res_mock.is_error)
+        self.assertIn("Mock external echo", res_mock.content[0]["text"])
+
+        res_rem = default_dispatcher.execute_tool(
+            "remote_calculator", {"operation": "add", "a": 10, "b": 20}
+        )
+        self.assertFalse(res_rem.is_error)
+        self.assertEqual(res_rem.content[0]["text"], "Result: 30")
+
+    def test_remote_adapter_handles_client_failure(self):
+        from tree_ui.services.mcp.client import BaseMCPClient
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        class FailingClient(BaseMCPClient):
+            def list_tools(self):
+                raise Exception("Network timeout")
+
+            def call_tool(self, name, arguments):
+                raise Exception("Server crashed")
+
+            def get_server_info(self):
+                return {"status": "error"}
+
+        adapter = RemoteMCPSourceAdapter(
+            source_id="fail", name="Fail", config={}, client=FailingClient()
+        )
+
+        self.assertEqual(adapter.list_tools(), [])
+        result = adapter.execute_tool("any", {})
+        self.assertTrue(result.is_error)
+        self.assertIn("Remote MCP execution failed: Server crashed", result.content[0]["text"])

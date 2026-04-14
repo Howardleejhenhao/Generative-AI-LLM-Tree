@@ -114,12 +114,12 @@ def create_adapter_from_model(source_model: Any) -> Optional[ToolSource]:
             source_id=source_model.source_id, name=source_model.name
         )
     elif source_model.source_type == MCPSource.SourceType.MCP_SERVER:
-        # Placeholder for real MCP server connection.
-        # For now, we use a Mock adapter to satisfy the architecture.
-        from .mock_adapter import MockExternalMCPAdapter
+        from .remote_adapter import RemoteMCPSourceAdapter
 
-        return MockExternalMCPAdapter(
-            source_id=source_model.source_id, name=f"Remote: {source_model.name}"
+        return RemoteMCPSourceAdapter(
+            source_id=source_model.source_id,
+            name=source_model.name,
+            config=source_model.config,
         )
     return None
 
