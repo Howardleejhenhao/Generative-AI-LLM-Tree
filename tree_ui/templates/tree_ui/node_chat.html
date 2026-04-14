@@ -29,26 +29,6 @@
       </div>
     </header>
 
-    {% if node_payload.attachments %}
-      <section class="chat-attachment-panel" id="chat-attachment-panel">
-        <div class="chat-attachment-header">
-          <div>
-            <p class="chat-edit-kicker">Images</p>
-            <h2>Attached to this node</h2>
-          </div>
-          <span class="workspace-summary-pill">{{ node_payload.attachments|length }} image{% if node_payload.attachments|length != 1 %}s{% endif %}</span>
-        </div>
-        <div class="chat-attachment-grid" id="chat-attachment-grid">
-          {% for attachment in node_payload.attachments %}
-            <a class="chat-attachment-card" href="{{ attachment.url }}" target="_blank" rel="noreferrer">
-              <img src="{{ attachment.url }}" alt="{{ attachment.name }}">
-              <span>{{ attachment.name }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      </section>
-    {% endif %}
-
     <section class="chat-edit-shell" id="chat-edit-shell" hidden>
       <form
         class="chat-edit-form"
@@ -141,5 +121,5 @@
   </div>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer-fix2"></script>
 {% endblock %}

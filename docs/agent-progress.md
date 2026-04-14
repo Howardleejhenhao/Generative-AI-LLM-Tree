@@ -46,6 +46,7 @@
 - Rendered attached images directly inside user messages and added a lightweight click-to-enlarge lightbox with close controls.
 - Adjusted provider payload construction so image-only messages do not inject empty text parts.
 - Expanded regression coverage for the new image-only send path, message-linked attachments, and updated node-chat UI affordances.
+- Followed up on browser feedback by removing the separate node-attachment gallery from node chat, shrinking the composer preview to a thumbnail chip, and bumping CSS/JS asset versions so the corrected UI actually reaches the browser.
 - Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
 
 ### Files Changed
@@ -59,6 +60,7 @@
 - `tree_ui/services/providers/gemini_provider.py`
 - `tree_ui/views.py`
 - `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/static/tree_ui/js/node-chat.js`
 - `tree_ui/static/tree_ui/js/node-panel.js`
 - `tree_ui/static/tree_ui/css/app.css`

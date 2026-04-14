@@ -80,34 +80,26 @@ function renderSelectedFiles() {
     return;
   }
 
-  for (const [index, file] of files.entries()) {
-    const card = document.createElement("div");
-    card.className = "chat-selected-file";
+  const [file] = files;
+  const card = document.createElement("div");
+  card.className = "chat-selected-file";
 
-    const preview = document.createElement("img");
-    preview.className = "chat-selected-file-preview";
-    const previewUrl = URL.createObjectURL(file);
-    selectedPreviewUrls.push(previewUrl);
-    preview.src = previewUrl;
-    preview.alt = file.name;
+  const preview = document.createElement("img");
+  preview.className = "chat-selected-file-preview";
+  const previewUrl = URL.createObjectURL(file);
+  selectedPreviewUrls.push(previewUrl);
+  preview.src = previewUrl;
+  preview.alt = file.name;
 
-    const meta = document.createElement("div");
-    meta.className = "chat-selected-file-meta";
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "chat-selected-file-remove";
+  removeButton.setAttribute("aria-label", `Remove ${file.name}`);
+  removeButton.textContent = "×";
+  removeButton.addEventListener("click", () => removeSelectedFile(0));
 
-    const name = document.createElement("span");
-    name.className = "chat-selected-file-name";
-    name.textContent = file.name;
-
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.className = "chat-selected-file-remove";
-    removeButton.textContent = "Remove";
-    removeButton.addEventListener("click", () => removeSelectedFile(index));
-
-    meta.append(name, removeButton);
-    card.append(preview, meta);
-    selectedFiles.append(card);
-  }
+  card.append(preview, removeButton);
+  selectedFiles.append(card);
 }
 
 function removeSelectedFile(removeIndex) {
@@ -122,57 +114,7 @@ function removeSelectedFile(removeIndex) {
 }
 
 function renderAttachmentPanel() {
-  let panel = document.getElementById("chat-attachment-panel");
-  if (!payload.attachments?.length) {
-    panel?.remove();
-    return;
-  }
-  if (!panel) {
-    panel = document.createElement("section");
-    panel.className = "chat-attachment-panel";
-    panel.id = "chat-attachment-panel";
-    chatHeader.insertAdjacentElement("afterend", panel);
-    panel.addEventListener("click", handlePreviewClick);
-  }
-  panel.innerHTML = "";
-
-  const header = document.createElement("div");
-  header.className = "chat-attachment-header";
-  const copy = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "chat-edit-kicker";
-  kicker.textContent = "Images";
-  const title = document.createElement("h2");
-  title.textContent = "Attached to this node";
-  copy.append(kicker, title);
-
-  const pill = document.createElement("span");
-  pill.className = "workspace-summary-pill";
-  pill.textContent = `${payload.attachments.length} image${payload.attachments.length === 1 ? "" : "s"}`;
-  header.append(copy, pill);
-
-  const grid = document.createElement("div");
-  grid.className = "chat-attachment-grid";
-
-  for (const attachment of payload.attachments) {
-    const link = document.createElement("button");
-    link.type = "button";
-    link.className = "chat-attachment-card";
-    link.dataset.imageSrc = attachment.url;
-    link.dataset.imageName = attachment.name;
-
-    const image = document.createElement("img");
-    image.src = attachment.url;
-    image.alt = attachment.name;
-
-    const label = document.createElement("span");
-    label.className = "chat-attachment-name";
-    label.textContent = attachment.name;
-    link.append(image, label);
-    grid.append(link);
-  }
-
-  panel.append(header, grid);
+  document.getElementById("chat-attachment-panel")?.remove();
 }
 
 function cloneMessages(messages) {
@@ -211,6 +153,13 @@ function resetComposer({ focus = true } = {}) {
   if (focus) {
     promptInput.focus();
   }
+  updateComposerState();
+}
+
+function updateComposerState() {
+  const hasPrompt = Boolean(promptInput.value.trim());
+  const hasImage = Boolean((imageInput.files || []).length);
+  submitButton.disabled = !hasPrompt && !hasImage;
 }
 
 function setEditVariantVisible(visible) {
@@ -340,10 +289,19 @@ async function handleSubmit(event) {
       URL.revokeObjectURL(pendingPreviewAttachment.url);
     }
     pendingPreviewAttachment = null;
+    promptInput.value = submittedPrompt;
+    if (selectedImages[0]) {
+      const transfer = new DataTransfer();
+      transfer.items.add(selectedImages[0]);
+      imageInput.files = transfer.files;
+      renderSelectedFiles();
+    }
+    resizePromptInput();
+    updateComposerState();
     feedback.textContent = error.message;
     renderTranscript();
   } finally {
-    submitButton.disabled = false;
+    updateComposerState();
   }
 }
 
@@ -418,12 +376,16 @@ if (payload.messages.length) {
 }
 
 promptInput.addEventListener("input", resizePromptInput);
+promptInput.addEventListener("input", updateComposerState);
 promptInput.addEventListener("keydown", handlePromptKeydown);
 attachButton.addEventListener("click", () => imageInput.click());
-imageInput.addEventListener("change", renderSelectedFiles);
+imageInput.addEventListener("change", () => {
+  renderSelectedFiles();
+  updateComposerState();
+  promptInput.focus();
+});
 transcript.addEventListener("scroll", updateJumpButton);
 transcript.addEventListener("click", handlePreviewClick);
-document.getElementById("chat-attachment-panel")?.addEventListener("click", handlePreviewClick);
 lightboxBackdrop.addEventListener("click", closeImageLightbox);
 lightboxCloseButton.addEventListener("click", closeImageLightbox);
 document.addEventListener("keydown", (event) => {
@@ -437,4 +399,5 @@ resizePromptInput();
 renderSelectedFiles();
 renderAttachmentPanel();
 renderTranscript();
+updateComposerState();
 scrollToBottom();

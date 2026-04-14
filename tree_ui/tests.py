@@ -131,8 +131,8 @@ class WorkspaceGraphViewTests(TestCase):
                 response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
 
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, "Attached to this node")
-                self.assertContains(response, "diagram.png")
+                self.assertContains(response, 'id="chat-image-input"')
+                self.assertNotContains(response, "Attached to this node")
                 self.assertContains(response, 'id="chat-image-input"')
                 self.assertNotContains(response, "multiple hidden")
 
