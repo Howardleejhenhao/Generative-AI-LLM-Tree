@@ -1,7 +1,6 @@
 import { postJSON } from "./api.js?v=20260322-graph-hint-fix";
 import { getNodeBounds, renderCanvas } from "./canvas.js?v=20260413-image-badges";
 import { syncModelOptions } from "./model-options.js?v=20260322-graph-hint-fix";
-import { renderNodeInspector } from "./node-panel.js?v=20260414-inspector";
 import { createViewportController } from "./viewport.js?v=20260322-graph-hint-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
@@ -76,30 +75,11 @@ const confirmDialogWarning = document.getElementById("confirm-dialog-warning");
 const confirmDialogFeedback = document.getElementById("confirm-dialog-feedback");
 const confirmDialogCancel = document.getElementById("confirm-dialog-cancel");
 const confirmDialogConfirm = document.getElementById("confirm-dialog-confirm");
-const workspaceShell = document.getElementById("workspace-shell");
-const detailPanel = document.getElementById("node-detail-panel");
-const detailPanelToggle = document.getElementById("detail-panel-toggle");
-const detailPanelClose = document.getElementById("detail-panel-close");
-const detailNodeTitle = document.getElementById("detail-node-title");
-const detailContent = document.getElementById("node-detail-content");
 const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
 let pendingConfirmation = null;
-
-function setDetailPanelOpen(isOpen) {
-  workspaceShell.dataset.detailPanelOpen = String(isOpen);
-  detailPanelToggle.setAttribute("aria-expanded", String(isOpen));
-  if (isOpen) {
-    syncDetailPanel();
-  }
-}
-
-function syncDetailPanel() {
-  const selectedNode = getSelectedNode();
-  renderNodeInspector(detailContent, detailNodeTitle, selectedNode);
-}
 
 function handleViewportChange(viewportState) {
   latestViewportState = viewportState;
@@ -299,10 +279,6 @@ function updateWorkspaceSummary() {
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
   nodeRenameButton.disabled = !selectedNode;
   nodeDeleteButton.disabled = !selectedNode;
-
-  if (workspaceShell.dataset.detailPanelOpen === "true") {
-    syncDetailPanel();
-  }
 }
 
 function getNodeChatUrl(nodeId) {
@@ -942,8 +918,6 @@ async function handleQuickCreateSubmit(event) {
   }
 }
 
-detailPanelToggle.addEventListener("click", () => setDetailPanelOpen(workspaceShell.dataset.detailPanelOpen !== "true"));
-detailPanelClose.addEventListener("click", () => setDetailPanelOpen(false));
 providerInput.addEventListener("change", () => syncModelOptions(providerInput, modelInput));
 providerInput.addEventListener("change", syncQuickCreateDefaults);
 modelInput.addEventListener("change", syncQuickCreateDefaults);

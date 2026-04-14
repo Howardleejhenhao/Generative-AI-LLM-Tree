@@ -11,6 +11,60 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 15:07
+
+### Session Goal
+- Remove the graph-side Inspect UI after product review while keeping the underlying tool-use groundwork intact and the branch in a clean state.
+
+### Planned Tasks
+- remove the Inspect toggle, inspector panel, and related app wiring
+- strip inspector-specific CSS and unused renderer code
+- rerun tests to confirm the workspace remains stable
+- commit and push the rollback so the branch stays clean
+
+### Milestone Area
+- Graph inspector rollback
+- Integration / repo hygiene
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- removes the graph-side inspector UX from the current branch while preserving the already-landed backend tool-use foundations for future MCP-oriented work
+
+### Demo Readiness Impact
+- simplifies the workspace UI again and avoids keeping a product direction that was explicitly rejected in review
+
+### Work Completed
+- Removed the `Inspect` button, inspector side panel, and related open/close state from the graph workspace.
+- Removed inspector-specific rendering logic from `tree_ui/static/tree_ui/js/node-panel.js` and reverted the shared message renderer to the simpler message-only role it needs for existing flows.
+- Removed inspector-specific CSS layout and presentation rules.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 60 tests passed.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet
+
+### Current Status
+- The Inspect UI has been removed locally and the branch has been revalidated with tests.
+
+### Next Recommended Step
+- commit and push the rollback, then move directly to MCP-related planning or implementation
+
+### Known Issues / Blockers / Tech Debt
+- Backend tool-use metadata and tests remain in place even though the graph-side inspector UI was removed; this is intentional because the groundwork is still expected to support upcoming MCP work.
+
 ## Session 2026-04-14 14:59
 
 ### Session Goal
