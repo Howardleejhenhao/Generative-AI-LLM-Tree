@@ -76,7 +76,96 @@ function renderToolBlock(container, data, type) {
   container.append(details);
 }
 
-export function renderNodeDetails(container, messages) {
+export function renderNodeInspector(container, titleContainer, node) {
+  if (!node) {
+    titleContainer.textContent = "No node selected";
+    container.innerHTML = '<p class="chat-empty-copy">Select a node on the graph to inspect its metadata and tool traces.</p>';
+    return;
+  }
+
+  titleContainer.textContent = node.title;
+  container.innerHTML = "";
+
+  const metaList = document.createElement("dl");
+  metaList.className = "detail-metadata-list";
+
+  const addMeta = (label, value) => {
+    if (value === undefined || value === null || value === "") return;
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = value;
+    metaList.append(dt, dd);
+  };
+
+  addMeta("Provider", node.provider);
+  addMeta("Model", node.model_name);
+  addMeta("Routing Mode", node.routing_mode);
+  addMeta("Routing Decision", node.routing_decision);
+
+  container.append(metaList);
+
+  if (node.tool_invocations && node.tool_invocations.length > 0) {
+    const toolHeader = document.createElement("h3");
+    toolHeader.className = "detail-section-title";
+    toolHeader.textContent = "Tool Traces";
+    container.append(toolHeader);
+
+    const toolList = document.createElement("div");
+    toolList.className = "detail-tool-list";
+
+    for (const inv of node.tool_invocations) {
+      const invBlock = document.createElement("div");
+      invBlock.className = `detail-tool-invocation detail-tool-${inv.success ? "success" : "failure"}`;
+
+      const header = document.createElement("div");
+      header.className = "detail-tool-header";
+      const toolName = document.createElement("strong");
+      toolName.textContent = inv.name;
+      const toolStatus = document.createElement("span");
+      toolStatus.className = "detail-tool-status";
+      toolStatus.textContent = inv.success ? "Success" : "Failed";
+      header.append(toolName, toolStatus);
+
+      const body = document.createElement("div");
+      body.className = "detail-tool-body";
+
+      const renderPayload = (label, data) => {
+        const wrap = document.createElement("details");
+        wrap.className = "detail-tool-payload";
+        const summary = document.createElement("summary");
+        summary.textContent = label;
+        const pre = document.createElement("pre");
+        pre.textContent = JSON.stringify(data, null, 2);
+        wrap.append(summary, pre);
+        return wrap;
+      };
+
+      body.append(renderPayload("Arguments", inv.args));
+      body.append(renderPayload("Result", inv.result));
+
+      invBlock.append(header, body);
+      toolList.append(invBlock);
+    }
+    container.append(toolList);
+  } else {
+    const noTools = document.createElement("p");
+    noTools.className = "detail-note";
+    noTools.textContent = "No tool use recorded for this node.";
+    container.append(noTools);
+  }
+
+  const messageHeader = document.createElement("h3");
+  messageHeader.className = "detail-section-title";
+  messageHeader.textContent = "Messages";
+  container.append(messageHeader);
+
+  const messageWrap = document.createElement("div");
+  renderNodeMessages(messageWrap, node.messages);
+  container.append(messageWrap);
+}
+
+export function renderNodeMessages(container, messages) {
   container.innerHTML = "";
 
   if (!messages.length) {
@@ -110,7 +199,7 @@ export function renderNodeDetails(container, messages) {
 }
 
 export function renderStreamingPreview(container, prompt, assistantText) {
-  renderNodeDetails(container, [
+  renderNodeMessages(container, [
     {
       role: "user",
       content: prompt,

@@ -1589,6 +1589,22 @@ class ToolUseTests(TestCase):
         self.assertEqual(data["tool_invocations"][0]["name"], "test_tool")
         self.assertEqual(data["tool_invocations"][0]["args"], {"arg": 1})
 
+    def test_serialize_node_includes_routing_metadata(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+            routing_decision="Detected image input"
+        )
+        
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        self.assertEqual(data["routing_mode"], "auto-fast")
+        self.assertEqual(data["routing_decision"], "Detected image input")
+
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
     def test_streaming_tool_call_events(self, mock_stream_text):
@@ -1660,3 +1676,36 @@ class ToolUseTests(TestCase):
         self.assertEqual(len(tool_calls), 1)
         self.assertEqual(tool_calls[0].name, "compare_branches")
         self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)
+
+    def test_serialize_node_handles_empty_metadata(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        self.assertEqual(data["tool_invocations"], [])
+        self.assertEqual(data["routing_decision"], "")
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_stream_node_message_returns_full_node_at_end(self, mock_stream_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        mock_stream_text.return_value = iter([ProviderDelta(text="Hello")])
+        
+        response = self.client.post(
+            reverse("stream_node_message", args=[workspace.slug, node.id]),
+            data=json.dumps({"prompt": "hi"}),
+            content_type="application/json",
+        )
+        
+        streamed = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn("event: node", streamed)
+        # Parse the JSON from the 'node' event
+        node_event_line = [line for line in streamed.split("\n") if line.startswith("data: {\"node\":")][0]
+        node_data = json.loads(node_event_line[6:])["node"]
+        self.assertIn("tool_invocations", node_data)
+        self.assertIn("routing_decision", node_data)
