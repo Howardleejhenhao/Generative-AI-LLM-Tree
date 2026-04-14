@@ -329,6 +329,46 @@ The dedicated progress log file is the persistent memory for development progres
 
 Before any implementation work in a new session, the agent must read the latest entries in that file first.
 
+### Optional delegation / review mode
+
+Sometimes the human user may explicitly ask the coding agent to **not implement immediately**, but instead:
+
+* analyze the requested task in detail
+* list the next implementation steps clearly
+* describe how the work should be implemented
+* provide enough concrete guidance so another agent can execute it
+
+In that situation, the coding agent must switch into a **task breakdown + review** mode for that request.
+
+When the user explicitly requests this mode, the agent should:
+
+* produce a detailed implementation plan
+* identify the relevant files, services, views, templates, tests, and data flow that should be changed
+* describe expected acceptance criteria and verification steps
+* include the other agent's expected working environment in the handoff prompt, including at minimum:
+  * repository path / current working directory
+  * expected branch or branch policy
+  * relevant runtime assumptions such as Docker Compose / Django / test commands when applicable
+* avoid starting code changes unless the user also explicitly asks for direct implementation
+
+After another agent completes the work and the user returns with the result, the coding agent should:
+
+* inspect the repository changes carefully
+* verify whether the requested work was completed correctly
+* identify bugs, omissions, regressions, or mismatches
+* update the dedicated progress log file on behalf of the project workflow
+* if the work is acceptable, handle the final integration personally rather than delegating merge responsibility back to the other agent
+
+Rules for delegated implementation handoffs:
+
+* the handoff prompt must explicitly state that the other agent is **not allowed to merge**
+* the other agent may implement, test, and report results, but must leave final approval and merge decisions to this coding agent
+* after review is complete and the work is confirmed correct, this coding agent is responsible for merging the accepted changes back into `main`
+
+Default rule:
+
+* unless the user explicitly asks for this delegation-oriented planning mode, the coding agent should still follow the normal immediate execution rule and implement the work directly
+
 ---
 
 ## Git Workflow Rules
@@ -406,6 +446,9 @@ The agent should:
 * keep progress documented in the dedicated progress log file
 * keep git history organized
 * prioritize working features over overengineering
+* treat direct implementation as the default behavior unless the user explicitly asks for a handoff plan for another agent
+* when such a handoff plan is explicitly requested, act as the spec author / reviewer first and the progress log maintainer afterward
+* when other agents are used for implementation, require them to stop short of merge and keep final review / merge ownership in this coding agent
 
 ---
 
