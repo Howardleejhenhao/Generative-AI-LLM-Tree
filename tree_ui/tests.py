@@ -25,6 +25,7 @@ from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers import ProviderError
 from tree_ui.services.providers.base import GenerationResult
 from tree_ui.services.providers.registry import generate_text as registry_generate_text
+from tree_ui.services.router import route_model
 
 
 class WorkspaceGraphViewTests(TestCase):
@@ -97,7 +98,9 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Back to graph")
         self.assertContains(response, "Send")
         self.assertContains(response, "Root node")
-        self.assertContains(response, "Main · Openai / gpt-4.1-mini")
+        self.assertContains(response, "Main")
+        self.assertContains(response, "Openai")
+        self.assertContains(response, "gpt-4.1-mini")
         self.assertContains(response, "Jump to latest")
         self.assertContains(response, "想問就問")
         self.assertContains(response, "Workspace memory")
@@ -1409,3 +1412,75 @@ class MemoryFoundationTests(TestCase):
         self.assertIn("Long-term memory retrieved separately from the current branch transcript:", system_instruction)
         self.assertIn("Retrieved long-term memory:", system_instruction)
         self.assertIn("Traditional Chinese", system_instruction)
+
+class RoutingTests(TestCase):
+    def test_auto_fast_routing_picks_correct_models(self):
+        # Text only
+        result = route_model(routing_mode=ConversationNode.RoutingMode.AUTO_FAST, has_attachments=False)
+        self.assertEqual(result.provider, ConversationNode.Provider.OPENAI)
+        self.assertEqual(result.model, "gpt-4.1-mini")
+        self.assertIn("Fast mode", result.decision)
+
+        # With attachments
+        result = route_model(routing_mode=ConversationNode.RoutingMode.AUTO_FAST, has_attachments=True)
+        self.assertEqual(result.provider, ConversationNode.Provider.GEMINI)
+        self.assertEqual(result.model, "gemini-2.5-flash")
+        self.assertIn("multimodal", result.decision)
+
+    def test_auto_quality_routing_picks_correct_models(self):
+        # Text only
+        result = route_model(routing_mode=ConversationNode.RoutingMode.AUTO_QUALITY, has_attachments=False)
+        self.assertEqual(result.provider, ConversationNode.Provider.GEMINI)
+        self.assertEqual(result.model, "gemini-2.5-pro")
+
+        # With attachments
+        result = route_model(routing_mode=ConversationNode.RoutingMode.AUTO_QUALITY, has_attachments=True)
+        self.assertEqual(result.provider, ConversationNode.Provider.OPENAI)
+        self.assertEqual(result.model, "gpt-4.1")
+
+    def test_node_creation_with_auto_routing_persists_decision(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        response = self.client.post(
+            reverse("create_workspace_node", args=[workspace.slug]),
+            data=json.dumps({
+                "title": "Auto node",
+                "routing_mode": "auto-quality",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        node = ConversationNode.objects.get()
+        self.assertEqual(node.routing_mode, "auto-quality")
+        self.assertEqual(node.provider, ConversationNode.Provider.GEMINI)
+        self.assertEqual(node.model_name, "gemini-2.5-pro")
+        self.assertIn("Quality mode", node.routing_decision)
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_first_message_triggers_re_routing_if_auto_mode(self, mock_stream_text):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        # Create node in auto-fast mode (defaults to OpenAI gpt-4.1-mini for text)
+        node = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Auto node",
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        mock_stream_text.return_value = iter(["Reply"])
+
+        # Send a message WITH attachments. Auto-fast should re-route to Gemini Flash.
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.post(
+                    reverse("stream_node_message", args=[workspace.slug, node.id]),
+                    data={
+                        "prompt": "Look at this.",
+                        "images": [SimpleUploadedFile("img.png", b"...", content_type="image/png")],
+                    },
+                )
+                self.assertEqual(response.status_code, 200)
+                node.refresh_from_db()
+                self.assertEqual(node.provider, ConversationNode.Provider.GEMINI)
+                self.assertEqual(node.model_name, "gemini-2.5-flash")
+                self.assertIn("multimodal", node.routing_decision)

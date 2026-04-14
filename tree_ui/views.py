@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from tree_ui.models import ConversationMemory, ConversationNode, Workspace
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
+from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
 from tree_ui.services.node_editing import create_edited_variant
@@ -287,6 +288,7 @@ def create_workspace_node(request, slug: str):
             title=payload.get("title", ""),
             provider=payload.get("provider", ConversationNode.Provider.OPENAI),
             model_name=payload.get("model_name", ""),
+            routing_mode=payload.get("routing_mode", ConversationNode.RoutingMode.MANUAL),
             system_prompt=payload.get("system_prompt", ""),
             temperature=payload.get("temperature"),
             top_p=payload.get("top_p"),
@@ -298,6 +300,7 @@ def create_workspace_node(request, slug: str):
             title=resolved_inputs["title"],
             provider=resolved_inputs["provider"],
             model_name=resolved_inputs["model_name"],
+            routing_mode=resolved_inputs["routing_mode"],
             system_prompt=resolved_inputs["system_prompt"],
             temperature=resolved_inputs["temperature"],
             top_p=resolved_inputs["top_p"],
@@ -464,8 +467,23 @@ def stream_node_message(request, slug: str, node_id: int):
         target_node = create_continuation_child(
             source_node=node,
             title=resolved_inputs["summary"],
+            prompt=resolved_inputs["prompt"],
+            has_attachments=bool(uploaded_images),
         )
         created_new_branch = True
+    else:
+        # If the node already exists but its routing mode is not manual,
+        # and it has no messages yet (first turn), we should re-route now that we have signals.
+        if node.routing_mode != ConversationNode.RoutingMode.MANUAL and node.messages.count() == 0:
+            routing_result = route_model(
+                routing_mode=node.routing_mode,
+                has_attachments=bool(uploaded_images),
+                prompt_length=len(resolved_inputs["prompt"]),
+            )
+            node.provider = routing_result.provider
+            node.model_name = routing_result.model
+            node.routing_decision = routing_result.decision
+            node.save(update_fields=["provider", "model_name", "routing_decision", "updated_at"])
 
     try:
         prompt_attachments = create_node_attachments(node=target_node, files=uploaded_images)

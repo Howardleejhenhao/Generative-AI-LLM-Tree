@@ -12,6 +12,69 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-14 09:00
+
+### Session Goal
+- Implement the first slice of the v2 auto-routing layer, including the router service, routing mode support, and basic routing decision metadata.
+
+### Planned Tasks
+- add a routing service that can select provider/model based on routing mode and request signals (attachments, prompt size)
+- add support for `manual`, `auto-fast`, `auto-balanced`, and `auto-quality` modes
+- extend node creation and generation payloads to include routing decision metadata for observability
+- add regression coverage for routing decisions and fallback behavior
+
+### Milestone Area
+- Routing
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- begins the required v2 auto-routing capability with a transparent decision-making layer instead of hidden model switching
+
+### Demo Readiness Impact
+- the system can now demonstrate "intelligent" model selection where text-only prompts prefer fast/balanced models and multimodal prompts prefer vision-capable ones automatically
+
+### Work Completed
+- Added `routing_mode` and `routing_decision` to `ConversationNode` model.
+- Implemented `tree_ui/services/router.py` with logic for `manual`, `auto-fast`, `auto-balanced`, and `auto-quality` modes.
+- Integrated routing into `tree_ui/services/node_creation.py` and `tree_ui/views.py`.
+- Added re-routing support for existing nodes on their first message.
+- Updated graph workspace and chat UI to support routing mode selection and visibility of routing decisions.
+- Added regression tests for the routing layer in `tree_ui/tests.py`.
+
+### Files Changed
+- `tree_ui/models.py`
+- `tree_ui/services/router.py` (new)
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/router.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/v2-auto-routing`
+- Commits made:
+  - feat: implement auto-routing layer with mode support and observability
+- Push status:
+  - not yet recorded
+
+### Current Status
+- Auto-routing layer is implemented and verified.
+
+### Next Recommended Step
+- Implement internal tool registry or branch comparison as per V2 priorities.
+
+### Known Issues / Blockers / Tech Debt
+- none yet for this slice
+
+
 ## Session 2026-04-14 02:46
 
 ### Session Goal

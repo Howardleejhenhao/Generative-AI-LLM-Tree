@@ -13,7 +13,15 @@
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
-        <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
+        <p class="chat-shell-meta" id="chat-shell-meta-main">
+          {% if node_payload.routing_mode and node_payload.routing_mode != "manual" %}
+            <span id="chat-routing-mode-label">Auto ({{ node_payload.routing_mode }}) /</span>
+          {% endif %}
+          {{ workspace.name }} · <span id="chat-provider-label">{{ node_payload.provider|title }}</span> / <span id="chat-model-label">{{ node_payload.model_name }}</span>
+        </p>
+        <p class="chat-shell-meta" id="chat-routing-decision" {% if not node_payload.routing_decision %}hidden{% endif %}>
+          Routing decision: {{ node_payload.routing_decision }}
+        </p>
         <p class="chat-shell-meta">
           {% if node_payload.system_prompt %}Custom system prompt{% else %}Default system prompt{% endif %}
           {% if node_payload.temperature is not None %} · temp {{ node_payload.temperature }}{% endif %}

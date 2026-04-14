@@ -129,7 +129,16 @@
               <span class="sr-only">Child node title</span>
               <input id="quick-node-title-input" name="title" type="text" maxlength="160" placeholder="Child title">
             </label>
-            <div class="graph-quick-create-row">
+            <label class="graph-quick-create-field" for="quick-node-routing-mode-input">
+              <span class="sr-only">Routing mode</span>
+              <select id="quick-node-routing-mode-input" name="routing_mode" aria-label="Routing mode">
+                <option value="manual">Manual</option>
+                <option value="auto-fast">Auto Fast</option>
+                <option value="auto-balanced">Auto Balanced</option>
+                <option value="auto-quality">Auto Quality</option>
+              </select>
+            </label>
+            <div class="graph-quick-create-row" id="quick-node-manual-model-row">
               <label class="graph-quick-create-field" for="quick-node-provider-input">
                 <span class="sr-only">Child node provider</span>
                 <select id="quick-node-provider-input" name="provider" aria-label="Child node provider">
@@ -195,17 +204,28 @@
               <span class="sr-only">Node title</span>
               <input id="node-title-input" name="title" type="text" maxlength="160" placeholder="Node title">
             </label>
-            <label class="graph-action-field" for="node-provider-input">
-              <span class="sr-only">Provider</span>
-              <select id="node-provider-input" name="provider" aria-label="Provider">
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
+            <label class="graph-action-field" for="node-routing-mode-input">
+              <span class="sr-only">Routing mode</span>
+              <select id="node-routing-mode-input" name="routing_mode" aria-label="Routing mode">
+                <option value="manual">Manual</option>
+                <option value="auto-fast">Auto Fast</option>
+                <option value="auto-balanced">Auto Balanced</option>
+                <option value="auto-quality">Auto Quality</option>
               </select>
             </label>
-            <label class="graph-action-field graph-action-field-model" for="node-model-input">
-              <span class="sr-only">Model</span>
-              <select id="node-model-input" name="model_name" aria-label="Model"></select>
-            </label>
+            <div class="graph-action-row" id="node-manual-model-row">
+              <label class="graph-action-field" for="node-provider-input">
+                <span class="sr-only">Provider</span>
+                <select id="node-provider-input" name="provider" aria-label="Provider">
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              </label>
+              <label class="graph-action-field graph-action-field-model" for="node-model-input">
+                <span class="sr-only">Model</span>
+                <select id="node-model-input" name="model_name" aria-label="Model"></select>
+              </label>
+            </div>
           </div>
           <section class="graph-action-settings" aria-label="Node behavior settings">
             <div class="graph-action-settings-copy">

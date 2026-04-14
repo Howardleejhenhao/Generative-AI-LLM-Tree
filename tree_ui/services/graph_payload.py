@@ -11,6 +11,8 @@ def serialize_node(node: ConversationNode) -> dict:
         "summary": node.summary,
         "provider": node.provider,
         "model_name": resolve_model_name(provider=node.provider, model_name=node.model_name),
+        "routing_mode": node.routing_mode,
+        "routing_decision": node.routing_decision,
         "system_prompt": node.system_prompt,
         "temperature": node.temperature,
         "top_p": node.top_p,

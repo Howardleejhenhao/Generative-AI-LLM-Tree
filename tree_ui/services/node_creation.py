@@ -16,6 +16,7 @@ from tree_ui.services.memory_drafting import refresh_workspace_preference_memory
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.memory_service import format_memories_for_prompt, retrieve_memories_for_generation
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
+from tree_ui.services.router import route_model
 
 
 def _build_summary(prompt: str) -> str:
@@ -170,20 +171,38 @@ def resolve_node_creation_inputs(
     title: str,
     provider: str,
     model_name: str,
+    routing_mode: str = ConversationNode.RoutingMode.MANUAL,
     system_prompt: Any,
     temperature: Any,
     top_p: Any,
     max_output_tokens: Any,
+    prompt: str = "",
+    has_attachments: bool = False,
 ) -> dict:
-    if provider not in ConversationNode.Provider.values:
-        raise ValueError("Unsupported provider.")
+    if routing_mode == ConversationNode.RoutingMode.MANUAL:
+        if provider not in ConversationNode.Provider.values:
+            raise ValueError("Unsupported provider.")
+        resolved_provider = provider
+        resolved_model = resolve_model_name(provider=provider, model_name=model_name)
+        routing_decision = ""
+    else:
+        # Routing with available signals.
+        routing_result = route_model(
+            routing_mode=routing_mode,
+            has_attachments=has_attachments,
+            prompt_length=len(prompt),
+        )
+        resolved_provider = routing_result.provider
+        resolved_model = routing_result.model
+        routing_decision = routing_result.decision
 
-    resolved_model = resolve_model_name(provider=provider, model_name=model_name)
     position_x, position_y = _calculate_position(workspace=workspace, parent=parent)
 
     return {
-        "provider": provider,
+        "provider": resolved_provider,
         "model_name": resolved_model,
+        "routing_mode": routing_mode,
+        "routing_decision": routing_decision,
         "title": _build_node_title(title),
         "summary": "Open this node to start the conversation.",
         "system_prompt": _normalize_system_prompt(system_prompt),
@@ -293,10 +312,13 @@ def create_node(
     title: str,
     provider: str,
     model_name: str,
+    routing_mode: str = ConversationNode.RoutingMode.MANUAL,
     system_prompt: Any = "",
     temperature: Any = None,
     top_p: Any = None,
     max_output_tokens: Any = None,
+    prompt: str = "",
+    has_attachments: bool = False,
 ) -> ConversationNode:
     resolved_inputs = resolve_node_creation_inputs(
         workspace=workspace,
@@ -304,10 +326,13 @@ def create_node(
         title=title,
         provider=provider,
         model_name=model_name,
+        routing_mode=routing_mode,
         system_prompt=system_prompt,
         temperature=temperature,
         top_p=top_p,
         max_output_tokens=max_output_tokens,
+        prompt=prompt,
+        has_attachments=has_attachments,
     )
     return ConversationNode.objects.create(
         workspace=workspace,
@@ -316,6 +341,8 @@ def create_node(
         summary=resolved_inputs["summary"],
         provider=resolved_inputs["provider"],
         model_name=resolved_inputs["model_name"],
+        routing_mode=resolved_inputs["routing_mode"],
+        routing_decision=resolved_inputs["routing_decision"],
         system_prompt=resolved_inputs["system_prompt"],
         temperature=resolved_inputs["temperature"],
         top_p=resolved_inputs["top_p"],
@@ -329,6 +356,8 @@ def create_continuation_child(
     *,
     source_node: ConversationNode,
     title: str,
+    prompt: str = "",
+    has_attachments: bool = False,
 ) -> ConversationNode:
     return create_node(
         workspace=source_node.workspace,
@@ -336,10 +365,13 @@ def create_continuation_child(
         title=title,
         provider=source_node.provider,
         model_name=source_node.model_name,
+        routing_mode=source_node.routing_mode,
         system_prompt=source_node.system_prompt,
         temperature=source_node.temperature,
         top_p=source_node.top_p,
         max_output_tokens=source_node.max_output_tokens,
+        prompt=prompt,
+        has_attachments=has_attachments,
     )
 
 

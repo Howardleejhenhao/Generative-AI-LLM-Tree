@@ -20,6 +20,12 @@ class ConversationNode(models.Model):
         OPENAI = "openai", "OpenAI"
         GEMINI = "gemini", "Gemini"
 
+    class RoutingMode(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        AUTO_FAST = "auto-fast", "Auto Fast"
+        AUTO_BALANCED = "auto-balanced", "Auto Balanced"
+        AUTO_QUALITY = "auto-quality", "Auto Quality"
+
     workspace = models.ForeignKey(
         Workspace,
         related_name="nodes",
@@ -47,6 +53,12 @@ class ConversationNode(models.Model):
         default=Provider.OPENAI,
     )
     model_name = models.CharField(max_length=120)
+    routing_mode = models.CharField(
+        max_length=20,
+        choices=RoutingMode.choices,
+        default=RoutingMode.MANUAL,
+    )
+    routing_decision = models.TextField(blank=True)
     system_prompt = models.TextField(blank=True)
     temperature = models.FloatField(blank=True, null=True)
     top_p = models.FloatField(blank=True, null=True)

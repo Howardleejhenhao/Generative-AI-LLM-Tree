@@ -14,6 +14,9 @@ const imageInput = document.getElementById("chat-image-input");
 const selectedFiles = document.getElementById("chat-selected-files");
 const submitButton = document.getElementById("chat-submit-button");
 const feedback = document.getElementById("chat-feedback");
+const providerLabel = document.getElementById("chat-provider-label");
+const modelLabel = document.getElementById("chat-model-label");
+const routingDecisionLabel = document.getElementById("chat-routing-decision");
 const csrfToken = document.getElementById("chat-csrf-token").value;
 const lightbox = document.getElementById("chat-image-lightbox");
 const lightboxBackdrop = document.getElementById("chat-image-lightbox-backdrop");
@@ -328,6 +331,18 @@ async function handleSubmit(event) {
           }
           payload.messages = data.node.messages;
           payload.attachments = data.node.attachments || [];
+
+          if (providerLabel) {
+            providerLabel.textContent = data.node.provider.charAt(0).toUpperCase() + data.node.provider.slice(1);
+          }
+          if (modelLabel) {
+            modelLabel.textContent = data.node.model_name;
+          }
+          if (routingDecisionLabel && data.node.routing_decision) {
+            routingDecisionLabel.textContent = `Routing decision: ${data.node.routing_decision}`;
+            routingDecisionLabel.hidden = false;
+          }
+
           feedback.textContent = "Reply added to this node.";
           for (const attachment of pendingPreviewAttachments) {
             if (attachment.url) {

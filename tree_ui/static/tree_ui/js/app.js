@@ -39,6 +39,8 @@ const workspaceNameInput = document.getElementById("workspace-name-input");
 const workspaceCreateButton = document.getElementById("workspace-create-button");
 const workspaceCreateFeedback = document.getElementById("workspace-create-feedback");
 const nodeTitleInput = document.getElementById("node-title-input");
+const routingModeInput = document.getElementById("node-routing-mode-input");
+const manualModelRow = document.getElementById("node-manual-model-row");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
 const systemPromptInput = document.getElementById("node-system-prompt-input");
@@ -53,6 +55,8 @@ const quickCreateToggle = document.getElementById("graph-quick-create-toggle");
 const quickCreatePanel = document.getElementById("graph-quick-create-panel");
 const quickCreateLabel = document.getElementById("graph-quick-create-label");
 const quickTitleInput = document.getElementById("quick-node-title-input");
+const quickRoutingModeInput = document.getElementById("quick-node-routing-mode-input");
+const quickManualModelRow = document.getElementById("quick-node-manual-model-row");
 const quickProviderInput = document.getElementById("quick-node-provider-input");
 const quickModelInput = document.getElementById("quick-node-model-input");
 const quickSystemPromptInput = document.getElementById("quick-node-system-prompt-input");
@@ -256,9 +260,22 @@ function updateWorkspaceSummary() {
   workspaceNodePill.textContent = `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}`;
   workspaceSelectionTitle.textContent = selectedNode ? selectedNode.title : "No node selected";
   workspaceSelectionSummary.textContent = getSelectionSummaryText(selectedNode);
-  workspaceSelectionType.textContent = selectedNode
-    ? `${getProviderLabel(selectedNode.provider)} / ${selectedNode.model_name}`
-    : "New root";
+
+  let selectionTypeText = "New root";
+  if (selectedNode) {
+    const providerLabel = getProviderLabel(selectedNode.provider);
+    const routingPrefix =
+      selectedNode.routing_mode && selectedNode.routing_mode !== "manual"
+        ? `Auto (${selectedNode.routing_mode}) / `
+        : "";
+    selectionTypeText = `${routingPrefix}${providerLabel} / ${selectedNode.model_name}`;
+
+    if (selectedNode.routing_decision) {
+      workspaceSelectionSummary.textContent += ` Routing decision: ${selectedNode.routing_decision}`;
+    }
+  }
+
+  workspaceSelectionType.textContent = selectionTypeText;
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
   nodeRenameButton.disabled = !selectedNode;
   nodeDeleteButton.disabled = !selectedNode;
@@ -398,6 +415,8 @@ function updateQuickCreatePosition() {
 }
 
 function syncQuickCreateDefaults() {
+  quickRoutingModeInput.value = routingModeInput.value;
+  updateRoutingModeVisibility();
   quickProviderInput.value = providerInput.value;
   syncModelOptions(quickProviderInput, quickModelInput);
   if (modelOptionsMatchDock()) {
@@ -667,6 +686,7 @@ async function createNodeRequest({
   title,
   provider,
   modelName,
+  routingMode,
   systemPrompt,
   temperature,
   topP,
@@ -679,6 +699,7 @@ async function createNodeRequest({
       title,
       provider,
       model_name: modelName,
+      routing_mode: routingMode,
       system_prompt: systemPrompt,
       temperature,
       top_p: topP,
@@ -699,6 +720,7 @@ async function handleNodeSubmit(event) {
       title: nodeTitleInput.value,
       provider: providerInput.value,
       modelName: modelInput.value,
+      routingMode: routingModeInput.value,
       ...buildNodeConfigPayload({
         systemPromptValue: systemPromptInput,
         temperatureValue: temperatureInput,
@@ -870,6 +892,7 @@ async function handleQuickCreateSubmit(event) {
       title: quickTitleInput.value,
       provider: quickProviderInput.value,
       modelName: quickModelInput.value,
+      routingMode: quickRoutingModeInput.value,
       ...buildNodeConfigPayload({
         systemPromptValue: quickSystemPromptInput,
         temperatureValue: quickTemperatureInput,
@@ -935,3 +958,15 @@ setConfirmDialogOpen(false);
 updateSearchState();
 updateSelection(selectedNodeId);
 updateWorkspaceSummary();
+
+function updateRoutingModeVisibility() {
+  const isManual = routingModeInput.value === "manual";
+  manualModelRow.hidden = !isManual;
+
+  const isQuickManual = quickRoutingModeInput.value === "manual";
+  quickManualModelRow.hidden = !isQuickManual;
+}
+
+routingModeInput.addEventListener("change", updateRoutingModeVisibility);
+quickRoutingModeInput.addEventListener("change", updateRoutingModeVisibility);
+updateRoutingModeVisibility();
