@@ -48,6 +48,7 @@
 - Expanded regression coverage for the new image-only send path, message-linked attachments, and updated node-chat UI affordances.
 - Followed up on browser feedback by removing the separate node-attachment gallery from node chat, shrinking the composer preview to a thumbnail chip, and bumping CSS/JS asset versions so the corrected UI actually reaches the browser.
 - Followed up again on composer behavior so submitting clears the current text immediately and the attachment flow now supports multiple images instead of only one.
+- Corrected the multi-image UX so repeated attachment picks accumulate on the client instead of replacing the previous selection.
 - Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
 
 ### Files Changed

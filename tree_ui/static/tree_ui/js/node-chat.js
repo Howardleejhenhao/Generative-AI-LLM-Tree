@@ -29,6 +29,7 @@ const editVariantCancelButton = document.getElementById("edit-variant-cancel-but
 const editVariantSubmitButton = document.getElementById("edit-variant-submit-button");
 const editVariantFeedback = document.getElementById("edit-variant-feedback");
 const PROMPT_MAX_HEIGHT = 176;
+let stagedImages = [];
 let selectedPreviewUrls = [];
 let pendingPreviewAttachments = [];
 
@@ -62,18 +63,17 @@ function renderTranscript(extraMessages = []) {
 }
 
 function renderSelectedFiles() {
-  const files = Array.from(imageInput.files || []);
   for (const url of selectedPreviewUrls) {
     URL.revokeObjectURL(url);
   }
   selectedPreviewUrls = [];
   selectedFiles.innerHTML = "";
-  selectedFiles.hidden = files.length === 0;
-  if (!files.length) {
+  selectedFiles.hidden = stagedImages.length === 0;
+  if (!stagedImages.length) {
     return;
   }
 
-  for (const [index, file] of files.entries()) {
+  for (const [index, file] of stagedImages.entries()) {
     const card = document.createElement("div");
     card.className = "chat-selected-file";
 
@@ -97,13 +97,7 @@ function renderSelectedFiles() {
 }
 
 function removeSelectedFile(removeIndex) {
-  const files = Array.from(imageInput.files || []);
-  const nextFiles = files.filter((_, index) => index !== removeIndex);
-  const transfer = new DataTransfer();
-  for (const file of nextFiles) {
-    transfer.items.add(file);
-  }
-  imageInput.files = transfer.files;
+  stagedImages = stagedImages.filter((_, index) => index !== removeIndex);
   renderSelectedFiles();
   updateComposerState();
 }
@@ -139,10 +133,13 @@ function closeImageLightbox() {
   document.body.classList.remove("lightbox-open");
 }
 
-function resetComposer({ focus = true } = {}) {
+function resetComposer({ focus = true, clearPendingAttachments = true } = {}) {
   promptInput.value = "";
   imageInput.value = "";
-  pendingPreviewAttachments = [];
+  stagedImages = [];
+  if (clearPendingAttachments) {
+    pendingPreviewAttachments = [];
+  }
   renderSelectedFiles();
   resizePromptInput();
   if (focus) {
@@ -153,8 +150,25 @@ function resetComposer({ focus = true } = {}) {
 
 function updateComposerState() {
   const hasPrompt = Boolean(promptInput.value.trim());
-  const hasImage = Boolean((imageInput.files || []).length);
+  const hasImage = stagedImages.length > 0;
   submitButton.disabled = !hasPrompt && !hasImage;
+}
+
+function mergeSelectedImages(files) {
+  if (!files.length) {
+    return;
+  }
+  const existingKeys = new Set(
+    stagedImages.map((file) => `${file.name}:${file.size}:${file.lastModified}`),
+  );
+  for (const file of files) {
+    const fileKey = `${file.name}:${file.size}:${file.lastModified}`;
+    if (existingKeys.has(fileKey)) {
+      continue;
+    }
+    stagedImages.push(file);
+    existingKeys.add(fileKey);
+  }
 }
 
 function setEditVariantVisible(visible) {
@@ -186,7 +200,7 @@ async function handleSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
   const submittedPrompt = promptInput.value;
-  const selectedImages = Array.from(imageInput.files || []);
+  const selectedImages = stagedImages.slice();
   const trimmedPrompt = submittedPrompt.trim();
   if (!trimmedPrompt && !selectedImages.length) {
     feedback.textContent = "Type a message or attach an image.";
@@ -209,7 +223,7 @@ async function handleSubmit(event) {
     name: file.name,
     url: URL.createObjectURL(file),
   }));
-  resetComposer({ focus: false });
+  resetComposer({ focus: false, clearPendingAttachments: false });
   submitButton.disabled = true;
   let previewPrompt = "";
   let assistantText = "";
@@ -285,11 +299,7 @@ async function handleSubmit(event) {
     pendingPreviewAttachments = [];
     promptInput.value = submittedPrompt;
     if (selectedImages.length) {
-      const transfer = new DataTransfer();
-      for (const file of selectedImages) {
-        transfer.items.add(file);
-      }
-      imageInput.files = transfer.files;
+      stagedImages = selectedImages.slice();
       renderSelectedFiles();
     }
     resizePromptInput();
@@ -372,10 +382,12 @@ if (payload.messages.length) {
 }
 
 promptInput.addEventListener("input", resizePromptInput);
-promptInput.addEventListener("input", updateComposerState);
+  promptInput.addEventListener("input", updateComposerState);
 promptInput.addEventListener("keydown", handlePromptKeydown);
 attachButton.addEventListener("click", () => imageInput.click());
 imageInput.addEventListener("change", () => {
+  mergeSelectedImages(Array.from(imageInput.files || []));
+  imageInput.value = "";
   renderSelectedFiles();
   updateComposerState();
   promptInput.focus();
