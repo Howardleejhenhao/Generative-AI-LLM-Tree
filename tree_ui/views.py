@@ -9,6 +9,7 @@ from tree_ui.models import ConversationMemory, ConversationNode, Workspace, MCPS
 from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
+from tree_ui.services.mcp.dispatcher import default_dispatcher
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
@@ -575,6 +576,7 @@ def mcp_source_create(request):
         form = MCPSourceForm(request.POST)
         if form.is_valid():
             form.save()
+            default_dispatcher.refresh()
             return HttpResponseRedirect(reverse("mcp_source_list"))
     else:
         form = MCPSourceForm()
@@ -597,6 +599,7 @@ def mcp_source_edit(request, source_id: int):
         form = MCPSourceForm(request.POST, instance=source)
         if form.is_valid():
             form.save()
+            default_dispatcher.refresh()
             return HttpResponseRedirect(reverse("mcp_source_list"))
     else:
         form = MCPSourceForm(instance=source)
@@ -616,4 +619,5 @@ def mcp_source_edit(request, source_id: int):
 def mcp_source_delete(request, source_id: int):
     source = get_object_or_404(MCPSource, pk=source_id)
     source.delete()
+    default_dispatcher.refresh()
     return HttpResponseRedirect(reverse("mcp_source_list"))

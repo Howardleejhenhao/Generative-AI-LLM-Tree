@@ -2118,6 +2118,11 @@ class RemoteMCPAdapterTests(TestCase):
         self.assertIn("Remote MCP execution failed: Server crashed", result.content[0]["text"])
 
 class MCPSourceManagementTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        default_dispatcher.refresh()
+
     def test_mcp_source_list_page_renders(self):
         MCPSource.objects.create(
             name="Test Source",
@@ -2186,3 +2191,24 @@ class MCPSourceManagementTests(TestCase):
         response = self.client.post(reverse("mcp_source_delete", args=[source.id]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(MCPSource.objects.filter(pk=source.id).exists())
+
+    def test_mcp_source_management_refreshes_dispatcher_cache(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        initial_tool_names = [t.name for t in default_dispatcher.list_tools()]
+        self.assertIn("compare_branches", initial_tool_names)
+        self.assertNotIn("external_echo", initial_tool_names)
+
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "New Mock",
+            "source_id": "new-mock",
+            "source_type": "mock",
+            "is_enabled": True,
+            "description": "Mock source",
+            "config_json": "{}"
+        })
+        self.assertEqual(response.status_code, 302)
+
+        updated_tool_names = [t.name for t in default_dispatcher.list_tools()]
+        self.assertIn("compare_branches", updated_tool_names)
+        self.assertIn("external_echo", updated_tool_names)
