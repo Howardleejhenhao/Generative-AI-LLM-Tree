@@ -9,6 +9,32 @@ function renderMessageAttachments(container, attachments) {
   gallery.className = "chat-message-attachments";
 
   for (const attachment of attachments) {
+    if (attachment.kind === "pdf" && attachment.url) {
+      const link = document.createElement("a");
+      link.className = "chat-message-file-card";
+      link.href = attachment.url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+
+      const icon = document.createElement("span");
+      icon.className = "chat-message-file-card-icon";
+      icon.textContent = "PDF";
+
+      const meta = document.createElement("div");
+      meta.className = "chat-message-file-card-meta";
+
+      const name = document.createElement("strong");
+      name.textContent = attachment.name || "Attached PDF";
+
+      const label = document.createElement("span");
+      label.textContent = "PDF document";
+
+      meta.append(name, label);
+      link.append(icon, meta);
+      gallery.append(link);
+      continue;
+    }
+
     if (attachment.kind !== "image" || !attachment.url) {
       continue;
     }

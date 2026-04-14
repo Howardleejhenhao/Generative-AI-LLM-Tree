@@ -95,6 +95,7 @@ class NodeMessage(models.Model):
 class NodeAttachment(models.Model):
     class Kind(models.TextChoices):
         IMAGE = "image", "Image"
+        PDF = "pdf", "PDF"
 
     node = models.ForeignKey(
         ConversationNode,

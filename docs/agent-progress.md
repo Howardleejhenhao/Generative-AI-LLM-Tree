@@ -12,6 +12,76 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-14 02:10
+
+### Session Goal
+- Extend the existing image-first multimodal chat flow to support PDF attachments in a way that still uses multimodal model understanding instead of text-only extraction.
+
+### Planned Tasks
+- add PDF attachment support to the current node-chat composer and message rendering path
+- convert attached PDFs into page images before provider generation so the existing multimodal adapters can reason over them
+- keep the UI aligned with the existing chat composer by showing PDFs as compact file cards instead of image thumbnails
+
+### Milestone Area
+- Multimodal
+- PDF
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- broadens the multimodal demo beyond image-only prompts without changing the current chat architecture
+
+### Demo Readiness Impact
+- the product can now accept PDF teaching materials or slide decks and pass them through a real multimodal path using rendered page images
+
+### Work Completed
+- Added `pdf` as a supported `NodeAttachment.Kind`.
+- Extended attachment validation to accept both image files and PDF files.
+- Added PDF page rendering through `pdftoppm`, returning page images as data URLs for provider requests.
+- Extended context building so PDF attachments are expanded into image attachments before generation, letting the existing OpenAI and Gemini multimodal adapters consume them.
+- Updated provider payload builders to accept attachments that already carry prebuilt data URLs.
+- Updated the node-chat composer input to accept PDFs alongside images.
+- Updated the staged attachment preview so PDFs display as compact file cards instead of broken image previews.
+- Updated chat message attachment rendering so saved PDF attachments appear as clickable file cards in the transcript.
+- Added regression coverage for the PDF upload path and PDF-to-image multimodal expansion.
+- Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `Dockerfile`
+- `llm_tree_project/settings.py`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0006_nodeattachment_pdf_kind.py`
+- `tree_ui/services/attachments.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for PDF multimodal support
+- Push status:
+  - not pushed yet; implementation is verified and ready to commit
+
+### Current Status
+- Node chat now supports both image and PDF attachments, with PDFs flowing through the multimodal provider path as rendered page images.
+
+### Next Recommended Step
+- Let the human inspect the PDF card UI in the browser and verify whether the current compact card treatment is close enough to the desired ChatGPT-style presentation.
+
+### Known Issues / Blockers / Tech Debt
+- The PDF multimodal path currently renders up to a configured page limit and does not yet expose per-page metadata in the UI.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+- local uploaded media artifacts may appear during browser testing and should not be committed.
+
+
 ## Session 2026-04-14 00:05
 
 ### Session Goal

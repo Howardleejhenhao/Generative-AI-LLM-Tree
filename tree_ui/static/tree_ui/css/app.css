@@ -1227,6 +1227,54 @@ body:has(.chat-page-immersive) .page-shell {
   margin-top: 12px;
 }
 
+.chat-message-file-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: min(320px, 100%);
+  max-width: min(420px, 100%);
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: inherit;
+  text-decoration: none;
+}
+
+.chat-message-file-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #ff5a4f;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.chat-message-file-card-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-message-file-card-meta strong,
+.chat-message-file-card-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-message-file-card-meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .chat-message-image-button {
   padding: 0;
   border: 0;
@@ -1528,6 +1576,58 @@ body:has(.chat-page-immersive) .page-shell {
   border: 1px solid rgba(74, 58, 40, 0.1);
   box-shadow: 0 8px 18px rgba(49, 37, 22, 0.05);
   overflow: hidden;
+}
+
+.chat-selected-file-document {
+  width: min(320px, 100%);
+  height: 84px;
+}
+
+.chat-selected-file-pdf {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+}
+
+.chat-selected-file-pdf-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ff5a4f;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.chat-selected-file-pdf-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-selected-file-pdf-meta strong,
+.chat-selected-file-pdf-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-selected-file-pdf-meta strong {
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.chat-selected-file-pdf-meta span {
+  font-size: 0.66rem;
+  color: var(--muted);
 }
 
 .chat-selected-file-preview {

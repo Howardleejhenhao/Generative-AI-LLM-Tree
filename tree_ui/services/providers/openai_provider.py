@@ -74,9 +74,12 @@ def _build_content_parts(message: ContextMessage) -> list[dict]:
         parts.append(
             {
                 "type": "input_image",
-                "image_url": encode_attachment_as_data_url(
-                    file_path=attachment.file_path,
-                    content_type=attachment.content_type,
+                "image_url": (
+                    attachment.data_url
+                    or encode_attachment_as_data_url(
+                        file_path=attachment.file_path,
+                        content_type=attachment.content_type,
+                    )
                 ),
             }
         )

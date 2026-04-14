@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from django.conf import settings
+
 from tree_ui.models import ConversationNode, NodeAttachment
+from tree_ui.services.attachments import render_pdf_attachment_as_data_urls
 
 SYSTEM_INSTRUCTION = (
     "You are LLM-Tree, an assistant working inside a branching conversation graph. "
@@ -49,6 +52,7 @@ class ContextAttachment:
     name: str
     content_type: str
     file_path: str
+    data_url: str = ""
 
 
 @dataclass(frozen=True)
@@ -74,18 +78,42 @@ def build_generation_messages(
     prompt: str,
     prompt_attachments: list[NodeAttachment] | None = None,
 ) -> list[ContextMessage]:
-    messages: list[ContextMessage] = []
-    for node in build_branch_lineage(parent):
-        for message in node.messages.order_by("order_index", "created_at"):
-            message_attachments = tuple(
+    def build_context_attachments(items) -> tuple[ContextAttachment, ...]:
+        attachments: list[ContextAttachment] = []
+        for item in items:
+            if item.kind == NodeAttachment.Kind.PDF:
+                for index, data_url in enumerate(
+                    render_pdf_attachment_as_data_urls(
+                        file_path=item.file.path,
+                        max_pages=settings.PDF_RENDER_MAX_PAGES,
+                    ),
+                    start=1,
+                ):
+                    attachments.append(
+                        ContextAttachment(
+                            kind=NodeAttachment.Kind.IMAGE,
+                            name=f"{item.original_name} page {index}",
+                            content_type="image/png",
+                            file_path="",
+                            data_url=data_url,
+                        )
+                    )
+                continue
+
+            attachments.append(
                 ContextAttachment(
                     kind=item.kind,
                     name=item.original_name,
                     content_type=item.content_type,
                     file_path=item.file.path,
                 )
-                for item in message.attachments.all()
             )
+        return tuple(attachments)
+
+    messages: list[ContextMessage] = []
+    for node in build_branch_lineage(parent):
+        for message in node.messages.order_by("order_index", "created_at"):
+            message_attachments = build_context_attachments(message.attachments.all())
             messages.append(
                 ContextMessage(
                     role=message.role,
@@ -93,15 +121,7 @@ def build_generation_messages(
                     attachments=message_attachments,
                 )
             )
-    prompt_attachment_payload = tuple(
-        ContextAttachment(
-            kind=item.kind,
-            name=item.original_name,
-            content_type=item.content_type,
-            file_path=item.file.path,
-        )
-        for item in (prompt_attachments or [])
-    )
+    prompt_attachment_payload = build_context_attachments(prompt_attachments or [])
     messages.append(
         ContextMessage(
             role="user",

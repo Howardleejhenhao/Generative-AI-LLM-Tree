@@ -54,6 +54,14 @@ function buildAttachmentFile(file) {
   );
 }
 
+function buildAttachmentPreview(file) {
+  return {
+    kind: file.type === "application/pdf" ? "pdf" : "image",
+    name: file.name,
+    url: file.type === "application/pdf" ? "" : URL.createObjectURL(file),
+  };
+}
+
 function resizePromptInput() {
   promptInput.style.height = "auto";
   const nextHeight = Math.min(promptInput.scrollHeight, PROMPT_MAX_HEIGHT);
@@ -98,12 +106,36 @@ function renderSelectedFiles() {
     const card = document.createElement("div");
     card.className = "chat-selected-file";
 
-    const preview = document.createElement("img");
-    preview.className = "chat-selected-file-preview";
-    const previewUrl = URL.createObjectURL(file);
-    selectedPreviewUrls.push(previewUrl);
-    preview.src = previewUrl;
-    preview.alt = file.name;
+    if (file.type === "application/pdf") {
+      card.classList.add("chat-selected-file-document");
+      const pdfCard = document.createElement("div");
+      pdfCard.className = "chat-selected-file-pdf";
+
+      const pdfIcon = document.createElement("span");
+      pdfIcon.className = "chat-selected-file-pdf-icon";
+      pdfIcon.textContent = "PDF";
+
+      const pdfMeta = document.createElement("div");
+      pdfMeta.className = "chat-selected-file-pdf-meta";
+
+      const pdfName = document.createElement("strong");
+      pdfName.textContent = file.name;
+
+      const pdfLabel = document.createElement("span");
+      pdfLabel.textContent = "Document";
+
+      pdfMeta.append(pdfName, pdfLabel);
+      pdfCard.append(pdfIcon, pdfMeta);
+      card.append(pdfCard);
+    } else {
+      const preview = document.createElement("img");
+      preview.className = "chat-selected-file-preview";
+      const previewUrl = URL.createObjectURL(file);
+      selectedPreviewUrls.push(previewUrl);
+      preview.src = previewUrl;
+      preview.alt = file.name;
+      card.append(preview);
+    }
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
@@ -112,7 +144,7 @@ function renderSelectedFiles() {
     removeButton.textContent = "×";
     removeButton.addEventListener("click", () => removeSelectedFile(index));
 
-    card.append(preview, removeButton);
+    card.append(removeButton);
     selectedFiles.append(card);
   }
 }
@@ -240,11 +272,7 @@ async function handleSubmit(event) {
     }
     return formData;
   })();
-  pendingPreviewAttachments = selectedImages.map((file) => ({
-    kind: "image",
-    name: file.name,
-    url: URL.createObjectURL(file),
-  }));
+  pendingPreviewAttachments = selectedImages.map((file) => buildAttachmentPreview(file));
   resetComposer({ focus: false, clearPendingAttachments: false });
   submitButton.disabled = true;
   let previewPrompt = "";
@@ -302,7 +330,9 @@ async function handleSubmit(event) {
           payload.attachments = data.node.attachments || [];
           feedback.textContent = "Reply added to this node.";
           for (const attachment of pendingPreviewAttachments) {
-            URL.revokeObjectURL(attachment.url);
+            if (attachment.url) {
+              URL.revokeObjectURL(attachment.url);
+            }
           }
           resetComposer();
           renderAttachmentPanel();
@@ -316,7 +346,9 @@ async function handleSubmit(event) {
     );
   } catch (error) {
     for (const attachment of pendingPreviewAttachments) {
-      URL.revokeObjectURL(attachment.url);
+      if (attachment.url) {
+        URL.revokeObjectURL(attachment.url);
+      }
     }
     pendingPreviewAttachments = [];
     promptInput.value = submittedPrompt;

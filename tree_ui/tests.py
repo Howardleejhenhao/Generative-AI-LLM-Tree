@@ -105,6 +105,7 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Create edited variant")
         self.assertContains(response, "Edit and branch")
         self.assertContains(response, 'id="chat-image-lightbox"')
+        self.assertContains(response, 'accept="image/*,application/pdf"')
         self.assertContains(response, "Enter sends. Shift + Enter adds a new line.")
         self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
@@ -772,6 +773,54 @@ class WorkspaceGraphViewTests(TestCase):
                 user_message = NodeMessage.objects.get(node=node, role=NodeMessage.Role.USER)
                 self.assertEqual(user_message.attachments.count(), 2)
                 self.assertEqual(len(mock_stream_text.call_args.kwargs["messages"][-1].attachments), 2)
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.context_builder.render_pdf_attachment_as_data_urls")
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_can_stream_node_message_with_pdf_attachment_via_api(
+        self,
+        mock_stream_text,
+        mock_render_pdf_attachment_as_data_urls,
+    ):
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                workspace = Workspace.objects.create(name="Main", slug="main")
+                node = ConversationNode.objects.create(
+                    workspace=workspace,
+                    title="PDF node",
+                    summary="",
+                    provider=ConversationNode.Provider.OPENAI,
+                    model_name="gpt-4.1-mini",
+                )
+                mock_stream_text.return_value = iter(["PDF ", "reply"])
+                mock_render_pdf_attachment_as_data_urls.return_value = [
+                    "data:image/png;base64,ZmFrZS1wYWdlLTE=",
+                    "data:image/png;base64,ZmFrZS1wYWdlLTI=",
+                ]
+
+                response = self.client.post(
+                    reverse("stream_node_message", args=[workspace.slug, node.id]),
+                    data={
+                        "prompt": "Summarize this PDF.",
+                        "images": [
+                            SimpleUploadedFile(
+                                "slides.pdf",
+                                b"%PDF-1.4 fake-pdf",
+                                content_type="application/pdf",
+                            )
+                        ],
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                streamed = b"".join(response.streaming_content).decode("utf-8")
+                self.assertIn('"attachment_count": 1', streamed)
+                attachment = NodeAttachment.objects.get(node=node)
+                self.assertEqual(attachment.kind, NodeAttachment.Kind.PDF)
+                context_attachments = mock_stream_text.call_args.kwargs["messages"][-1].attachments
+                self.assertEqual(len(context_attachments), 2)
+                self.assertTrue(all(item.kind == NodeAttachment.Kind.IMAGE for item in context_attachments))
+                self.assertTrue(all(item.content_type == "image/png" for item in context_attachments))
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
