@@ -12,6 +12,54 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-14 02:28
+
+### Session Goal
+- Keep local upload artifacts out of git by ignoring the runtime `media/` directory.
+
+### Planned Tasks
+- add `media/` to `.gitignore`
+- keep the change isolated from unrelated local modifications
+- push the ignore update so future browser-upload testing stays out of version control
+
+### Milestone Area
+- Cleanup
+- Repo hygiene
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- prevents uploaded test assets from polluting the worktree during multimodal development
+
+### Demo Readiness Impact
+- keeps the repo clean while continuing browser-side attachment testing
+
+### Work Completed
+- Added `media/` to `.gitignore`.
+
+### Files Changed
+- `.gitignore`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for media ignore cleanup
+- Push status:
+  - not pushed yet; cleanup change ready to commit
+
+### Current Status
+- Local uploaded files under `media/` are now excluded from git once this ignore update is committed.
+
+### Next Recommended Step
+- Continue the next v2 feature slice without local attachment artifacts appearing in `git status`.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` already had a local `.codex` ignore change in progress before this session and it remains part of the current file state.
+
+
 ## Session 2026-04-14 02:10
 
 ### Session Goal
