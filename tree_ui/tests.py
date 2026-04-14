@@ -1587,6 +1587,7 @@ class ToolUseTests(TestCase):
         data = serialize_node(node)
         self.assertEqual(len(data["tool_invocations"]), 1)
         self.assertEqual(data["tool_invocations"][0]["name"], "test_tool")
+        self.assertEqual(data["tool_invocations"][0]["tool_type"], "internal")
         self.assertEqual(data["tool_invocations"][0]["args"], {"arg": 1})
 
     def test_serialize_node_includes_routing_metadata(self):

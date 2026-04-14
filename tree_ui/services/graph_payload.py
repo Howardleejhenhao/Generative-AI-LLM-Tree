@@ -23,6 +23,7 @@ def serialize_node(node: ConversationNode) -> dict:
             {
                 "id": inv.id,
                 "name": inv.tool_name,
+                "tool_type": inv.tool_type,
                 "args": json.loads(inv.invocation_payload) if inv.invocation_payload else {},
                 "result": json.loads(inv.result_payload) if inv.result_payload else {},
                 "success": inv.success,
