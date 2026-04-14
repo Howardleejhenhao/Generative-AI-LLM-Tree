@@ -1508,6 +1508,10 @@ class RoutingTests(TestCase):
         self.assertIn("(Gemini)", result.decision)
 
 class ToolUseTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        default_dispatcher.refresh()
+
     def test_compare_branches_tool_registered(self):
         from tree_ui.services.tools import default_registry
         tool = default_registry.get_tool("compare_branches")
@@ -1578,18 +1582,20 @@ class ToolUseTests(TestCase):
         ToolInvocation.objects.create(
             node=node,
             tool_name="test_tool",
+            tool_type="internal",
+            source_id="test-source",
             invocation_payload='{"arg": 1}',
             result_payload='{"res": "ok"}',
             success=True
         )
-        
+
         from tree_ui.services.graph_payload import serialize_node
         data = serialize_node(node)
         self.assertEqual(len(data["tool_invocations"]), 1)
         self.assertEqual(data["tool_invocations"][0]["name"], "test_tool")
         self.assertEqual(data["tool_invocations"][0]["tool_type"], "internal")
+        self.assertEqual(data["tool_invocations"][0]["source_id"], "test-source")
         self.assertEqual(data["tool_invocations"][0]["args"], {"arg": 1})
-
     def test_serialize_node_includes_routing_metadata(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
         node = ConversationNode.objects.create(
@@ -1713,6 +1719,10 @@ class ToolUseTests(TestCase):
 
 
 class MCPAdapterTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        default_dispatcher.refresh()
+
     def test_internal_adapter_lists_tools(self):
         from tree_ui.services.mcp.internal_adapter import InternalToolAdapter
         adapter = InternalToolAdapter()
@@ -1792,3 +1802,130 @@ class MCPAdapterTests(TestCase):
         content = json.loads(inv.result_payload)
         self.assertIsInstance(content, list)
         self.assertEqual(content[0]["type"], "text")
+
+    def test_mcpsource_registration_and_listing(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        # Clear existing sources and refresh
+        MCPSource.objects.all().delete()
+        default_dispatcher.refresh()
+
+        # Add internal source record
+        MCPSource.objects.create(
+            name="Internal Tools",
+            source_id="internal-registry-db",
+            source_type=MCPSource.SourceType.INTERNAL,
+            is_enabled=True,
+        )
+
+        # Add mock source record
+        MCPSource.objects.create(
+            name="Mock External",
+            source_id="mock-ext",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        tools = default_dispatcher.list_tools()
+
+        # Should have internal tools + mock tools
+        tool_names = [t.name for t in tools]
+        self.assertIn("compare_branches", tool_names)
+        self.assertIn("external_echo", tool_names)
+
+        # Verify source metadata in ToolDefinition
+        echo_tool = next(t for t in tools if t.name == "external_echo")
+        self.assertEqual(echo_tool.source_id, "mock-ext")
+        self.assertEqual(echo_tool.source_type, "mock")
+
+    def test_enabled_disabled_source(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        MCPSource.objects.all().delete()
+
+        # Add disabled mock source
+        MCPSource.objects.create(
+            name="Disabled Mock",
+            source_id="disabled-mock",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=False,
+        )
+
+        default_dispatcher.refresh()
+        tools = default_dispatcher.list_tools()
+        tool_names = [t.name for t in tools]
+        self.assertNotIn("external_echo", tool_names)
+
+    def test_mock_external_tool_execution(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        MCPSource.objects.all().delete()
+        MCPSource.objects.create(
+            name="Mock External",
+            source_id="mock-ext",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+        default_dispatcher.refresh()
+
+        result = default_dispatcher.execute_tool(
+            "external_echo", {"message": "hello multi-source"}
+        )
+        self.assertFalse(result.is_error)
+        self.assertIn(
+            "Mock external echo: hello multi-source", result.content[0]["text"]
+        )
+        self.assertEqual(result.metadata["source_name"], "Mock External")
+
+    def test_mock_only_source_still_keeps_internal_tools(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        MCPSource.objects.all().delete()
+        MCPSource.objects.create(
+            name="Mock External",
+            source_id="mock-ext",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        tool_names = [t.name for t in default_dispatcher.list_tools()]
+        self.assertIn("external_echo", tool_names)
+        self.assertIn("compare_branches", tool_names)
+
+    def test_internal_source_registration_controls_source_identity(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        MCPSource.objects.all().delete()
+        MCPSource.objects.create(
+            name="Registered Internal",
+            source_id="registered-internal",
+            source_type=MCPSource.SourceType.INTERNAL,
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        compare_tool = next(
+            t for t in default_dispatcher.list_tools() if t.name == "compare_branches"
+        )
+        self.assertEqual(compare_tool.source_type, "internal")
+        self.assertEqual(compare_tool.source_id, "registered-internal")
+
+    def test_dispatcher_fallback_to_internal_when_no_sources_in_db(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        from tree_ui.models import MCPSource
+
+        # Ensure no sources in DB
+        MCPSource.objects.all().delete()
+        default_dispatcher.refresh()
+
+        tools = default_dispatcher.list_tools()
+        tool_names = [t.name for t in tools]
+        # Should still find internal tools due to fallback logic in dispatcher
+        self.assertIn("compare_branches", tool_names)

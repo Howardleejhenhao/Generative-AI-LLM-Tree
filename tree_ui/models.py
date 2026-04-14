@@ -218,6 +218,7 @@ class ToolInvocation(models.Model):
     )
     tool_name = models.CharField(max_length=120)
     tool_type = models.CharField(max_length=40, default="internal")
+    source_id = models.CharField(max_length=120, blank=True)
     invocation_payload = models.TextField(blank=True)
     result_payload = models.TextField(blank=True)
     success = models.BooleanField(default=True)
@@ -228,3 +229,31 @@ class ToolInvocation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.node_id}:{self.tool_name}:{self.success}"
+
+
+class MCPSource(models.Model):
+    class SourceType(models.TextChoices):
+        INTERNAL = "internal", "Internal Registry"
+        MCP_SERVER = "mcp_server", "Remote MCP Server"
+        MOCK = "mock", "Mock/Placeholder Source"
+
+    name = models.CharField(max_length=120)
+    source_id = models.SlugField(max_length=120, unique=True)
+    source_type = models.CharField(
+        max_length=20,
+        choices=SourceType.choices,
+        default=SourceType.MCP_SERVER,
+    )
+    is_enabled = models.BooleanField(default=True)
+    description = models.TextField(blank=True)
+    config = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "MCP Source"
+        verbose_name_plural = "MCP Sources"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.source_id})"

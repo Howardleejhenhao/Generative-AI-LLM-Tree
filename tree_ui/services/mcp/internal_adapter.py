@@ -12,12 +12,19 @@ class InternalToolAdapter(ToolSource):
     Adapts existing internal tools into the MCP-compatible interface.
     """
 
-    def __init__(self, registry: ToolRegistry = default_registry):
+    def __init__(
+        self,
+        registry: ToolRegistry = default_registry,
+        source_id: str = "internal-registry",
+        name: str = "Internal Registry",
+    ):
         self._registry = registry
+        self._source_id = source_id
+        self._name = name
 
     @property
     def source_id(self) -> str:
-        return "internal-registry"
+        return self._source_id
 
     @property
     def source_type(self) -> str:

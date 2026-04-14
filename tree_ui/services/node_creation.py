@@ -168,11 +168,13 @@ def generate_assistant_reply(
                 # For persistence, we try to get the tool's source_type from the list of tools.
                 tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc.name), None)
                 tool_type = tool_def.source_type if tool_def else "unknown"
+                source_id = tool_def.source_id if tool_def else ""
 
                 ToolInvocation.objects.create(
                     node=parent,
                     tool_name=tc.name,
                     tool_type=tool_type,
+                    source_id=source_id,
                     invocation_payload=json.dumps(tc.arguments),
                     result_payload=json.dumps(mcp_result.content),
                     success=not mcp_result.is_error,
@@ -385,11 +387,13 @@ def stream_assistant_reply(
         if parent:
             tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tool_name), None)
             tool_type = tool_def.source_type if tool_def else "unknown"
+            source_id = tool_def.source_id if tool_def else ""
 
             ToolInvocation.objects.create(
                 node=parent,
                 tool_name=tool_name,
                 tool_type=tool_type,
+                source_id=source_id,
                 invocation_payload=tool_args_str,
                 result_payload=json.dumps(mcp_result.content),
                 success=not mcp_result.is_error,
