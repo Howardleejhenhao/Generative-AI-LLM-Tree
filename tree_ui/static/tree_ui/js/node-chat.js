@@ -33,6 +33,27 @@ let stagedImages = [];
 let selectedPreviewUrls = [];
 let pendingPreviewAttachments = [];
 
+function buildAttachmentFile(file) {
+  if (file.name) {
+    return file;
+  }
+  const extensionMap = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  };
+  const extension = extensionMap[file.type] || "png";
+  return new File(
+    [file],
+    `pasted-image-${Date.now()}.${extension}`,
+    {
+      type: file.type || "image/png",
+      lastModified: Date.now(),
+    },
+  );
+}
+
 function resizePromptInput() {
   promptInput.style.height = "auto";
   const nextHeight = Math.min(promptInput.scrollHeight, PROMPT_MAX_HEIGHT);
@@ -161,7 +182,8 @@ function mergeSelectedImages(files) {
   const existingKeys = new Set(
     stagedImages.map((file) => `${file.name}:${file.size}:${file.lastModified}`),
   );
-  for (const file of files) {
+  for (const rawFile of files) {
+    const file = buildAttachmentFile(rawFile);
     const fileKey = `${file.name}:${file.size}:${file.lastModified}`;
     if (existingKeys.has(fileKey)) {
       continue;
@@ -371,6 +393,23 @@ function handlePreviewClick(event) {
   openImageLightbox(previewTrigger.dataset.imageSrc, previewTrigger.dataset.imageName || "");
 }
 
+function handlePromptPaste(event) {
+  const clipboardItems = Array.from(event.clipboardData?.items || []);
+  const imageFiles = clipboardItems
+    .filter((item) => item.type?.startsWith("image/"))
+    .map((item) => item.getAsFile())
+    .filter(Boolean);
+
+  if (!imageFiles.length) {
+    return;
+  }
+
+  event.preventDefault();
+  mergeSelectedImages(imageFiles);
+  renderSelectedFiles();
+  updateComposerState();
+}
+
 if (payload.messages.length) {
   editVariantToggleButton.hidden = false;
   editVariantToggleButton.setAttribute("aria-expanded", "false");
@@ -382,8 +421,9 @@ if (payload.messages.length) {
 }
 
 promptInput.addEventListener("input", resizePromptInput);
-  promptInput.addEventListener("input", updateComposerState);
+promptInput.addEventListener("input", updateComposerState);
 promptInput.addEventListener("keydown", handlePromptKeydown);
+promptInput.addEventListener("paste", handlePromptPaste);
 attachButton.addEventListener("click", () => imageInput.click());
 imageInput.addEventListener("change", () => {
   mergeSelectedImages(Array.from(imageInput.files || []));
