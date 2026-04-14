@@ -1709,3 +1709,85 @@ class ToolUseTests(TestCase):
         node_data = json.loads(node_event_line[6:])["node"]
         self.assertIn("tool_invocations", node_data)
         self.assertIn("routing_decision", node_data)
+
+
+class MCPAdapterTests(TestCase):
+    def test_internal_adapter_lists_tools(self):
+        from tree_ui.services.mcp.internal_adapter import InternalToolAdapter
+        adapter = InternalToolAdapter()
+        tools = adapter.list_tools()
+        self.assertTrue(len(tools) > 0)
+        tool_names = [t.name for t in tools]
+        self.assertIn("compare_branches", tool_names)
+
+        # Check ToolDefinition shape
+        compare_tool = next(t for t in tools if t.name == "compare_branches")
+        self.assertEqual(compare_tool.source_type, "internal")
+        self.assertEqual(compare_tool.source_id, "internal-registry")
+        self.assertIn("node_id_a", compare_tool.input_schema["properties"])
+
+    def test_dispatcher_aggregates_tools(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        schemas = default_dispatcher.get_tool_schemas()
+        self.assertTrue(len(schemas) > 0)
+        self.assertEqual(schemas[0]["type"], "function")
+
+    def test_dispatcher_executes_internal_tool(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+
+        # Execute compare_branches (internal tool) via dispatcher
+        result = default_dispatcher.execute_tool(
+            "compare_branches",
+            {"node_id_a": node.id, "node_id_b": node.id},
+            context={"workspace": workspace}
+        )
+
+        self.assertFalse(result.is_error)
+        self.assertEqual(len(result.content), 1)
+        self.assertEqual(result.content[0]["type"], "text")
+        self.assertIn("Root", result.content[0]["text"])
+        self.assertEqual(result.metadata["raw"]["branch_a"]["title"], "Root")
+
+    def test_dispatcher_returns_error_for_unknown_tool(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        result = default_dispatcher.execute_tool("non_existent_tool", {})
+        self.assertTrue(result.is_error)
+        self.assertIn("not found", result.content[0]["text"])
+
+    @patch("tree_ui.services.node_creation.generate_text")
+    def test_node_creation_uses_mcp_dispatcher_and_persists_metadata(self, mock_generate_text):
+        from tree_ui.services.providers.base import ToolCall
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+
+        mock_generate_text.return_value = GenerationResult(
+            text="",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
+        )
+
+        from tree_ui.services.node_creation import generate_assistant_reply
+        generate_assistant_reply(
+            parent=node,
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            prompt="Compare branches"
+        )
+
+        self.assertEqual(ToolInvocation.objects.count(), 1)
+        inv = ToolInvocation.objects.get()
+        self.assertEqual(inv.tool_name, "compare_branches")
+        self.assertEqual(inv.tool_type, "internal")  # Verified standardized metadata
+        self.assertEqual(inv.node, node)
+        self.assertTrue(inv.success)
+        # Check if result_payload is the serialized MCP content (list of blocks)
+        content = json.loads(inv.result_payload)
+        self.assertIsInstance(content, list)
+        self.assertEqual(content[0]["type"], "text")

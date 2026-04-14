@@ -19,7 +19,7 @@ from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.memory_service import format_memories_for_prompt, retrieve_memories_for_generation
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
 from tree_ui.services.router import route_model
-from tree_ui.services.tools import default_registry
+from tree_ui.services.mcp.dispatcher import default_dispatcher
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,7 @@ def generate_assistant_reply(
         system_prompt,
         retrieved_memory_text=memory_text,
     )
-    tools = default_registry.get_tool_schemas()
+    tools = default_dispatcher.get_tool_schemas()
 
     try:
         # Simple non-streaming tool handling (one-shot for MVP)
@@ -156,26 +156,32 @@ def generate_assistant_reply(
             top_p=top_p,
             max_output_tokens=max_output_tokens,
         )
-        
+
         if result.tool_calls:
             # Execute first tool call for MVP
             tc = result.tool_calls[0]
-            tool = default_registry.get_tool(tc.name)
-            if tool:
-                context = {"workspace": parent.workspace} if parent else {}
-                tool_result = tool.execute(context=context, **tc.arguments)
-                # Persist invocation
-                if parent:
-                    ToolInvocation.objects.create(
-                        node=parent,
-                        tool_name=tc.name,
-                        invocation_payload=json.dumps(tc.arguments),
-                        result_payload=json.dumps(tool_result),
-                        success="error" not in tool_result,
-                    )
-                # In a real multi-turn we'd append and call generate_text again.
-                # For now just return a mention that it happened.
-                return f"[Tool Call: {tc.name} executed. Result: {json.dumps(tool_result)[:100]}...]"
+            context = {"workspace": parent.workspace} if parent else {}
+            mcp_result = default_dispatcher.execute_tool(tc.name, tc.arguments, context=context)
+
+            # Standardize persistence using MCP result shape
+            if parent:
+                # For persistence, we try to get the tool's source_type from the list of tools.
+                tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc.name), None)
+                tool_type = tool_def.source_type if tool_def else "unknown"
+
+                ToolInvocation.objects.create(
+                    node=parent,
+                    tool_name=tc.name,
+                    tool_type=tool_type,
+                    invocation_payload=json.dumps(tc.arguments),
+                    result_payload=json.dumps(mcp_result.content),
+                    success=not mcp_result.is_error,
+                )
+
+            # In a real multi-turn we'd append and call generate_text again.
+            # For now just return a mention that it happened.
+            display_result = json.dumps(mcp_result.content)[:100]
+            return f"[Tool Call: {tc.name} executed. Result: {display_result}...]"
 
         return result.text
     except ProviderError as exc:
@@ -317,7 +323,7 @@ def stream_assistant_reply(
         system_prompt,
         retrieved_memory_text=memory_text,
     )
-    tools = default_registry.get_tool_schemas()
+    tools = default_dispatcher.get_tool_schemas()
 
     # Multi-turn tool execution loop
     active_messages = list(context_messages)
@@ -366,32 +372,33 @@ def stream_assistant_reply(
         if not tool_name:
             break
 
-        # Execute tool
+        # Execute tool via dispatcher
         try:
             args = json.loads(tool_args_str) if tool_args_str else {}
         except json.JSONDecodeError:
             args = {"error": "Invalid tool arguments JSON", "raw": tool_args_str}
 
-        tool = default_registry.get_tool(tool_name)
-        if tool:
-            context = {"workspace": parent.workspace} if parent else {}
-            result = tool.execute(context=context, **args)
-            success = "error" not in result
-        else:
-            result = {"error": f"Tool '{tool_name}' not found."}
-            success = False
+        context = {"workspace": parent.workspace} if parent else {}
+        mcp_result = default_dispatcher.execute_tool(tool_name, args, context=context)
 
-        # Persist invocation
+        # Standardize persistence using MCP result shape
         if parent:
+            tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tool_name), None)
+            tool_type = tool_def.source_type if tool_def else "unknown"
+
             ToolInvocation.objects.create(
                 node=parent,
                 tool_name=tool_name,
+                tool_type=tool_type,
                 invocation_payload=tool_args_str,
-                result_payload=json.dumps(result),
-                success=success,
+                result_payload=json.dumps(mcp_result.content),
+                success=not mcp_result.is_error,
             )
 
-        yield ReplyChunk(tool_result={"name": tool_name, "result": result})
+        # Emit result for streaming consumers
+        # In a real multi-turn we'd append and call stream_text again.
+        # For now, just yield the normalized result.
+        yield ReplyChunk(tool_result={"name": tool_name, "result": mcp_result.content})
 
         # Feed back to model (Simplified: stop after one tool call for MVP)
         break
