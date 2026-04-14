@@ -26,6 +26,34 @@ class BaseMCPClient(ABC):
         pass
 
 
+class UnsupportedTransportClient(BaseMCPClient):
+    """
+    Placeholder client for remote transport kinds that are recognized but not yet implemented.
+    """
+
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.server_label = config.get("label", "Remote MCP Server")
+        self.transport_kind = config.get("transport_kind", "unknown")
+
+    def list_tools(self) -> List[ToolDefinition]:
+        raise NotImplementedError(
+            f"Transport '{self.transport_kind}' is recognized but not yet implemented."
+        )
+
+    def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolResult:
+        return ToolResult.from_error(
+            f"Transport '{self.transport_kind}' is recognized but not yet implemented."
+        )
+
+    def get_server_info(self) -> Dict[str, Any]:
+        return {
+            "label": self.server_label,
+            "transport": self.transport_kind,
+            "status": "not_implemented",
+        }
+
+
 class StubMCPClient(BaseMCPClient):
     """
     A stub implementation of BaseMCPClient for the v2 foundation phase.

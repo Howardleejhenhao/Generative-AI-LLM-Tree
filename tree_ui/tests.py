@@ -1962,6 +1962,21 @@ class RemoteMCPAdapterTests(TestCase):
         self.assertEqual(status2["config"]["label"], "Custom Remote Server")
         self.assertEqual(status2["config"]["timeout"], 60)
 
+    def test_remote_adapter_uses_transport_specific_client_selection(self):
+        from tree_ui.services.mcp.client import StubMCPClient, UnsupportedTransportClient
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        stub_adapter = RemoteMCPSourceAdapter(
+            source_id="stub-remote", name="Stub Remote", config={"transport_kind": "stub"}
+        )
+        self.assertIsInstance(stub_adapter._client, StubMCPClient)
+
+        sse_adapter = RemoteMCPSourceAdapter(
+            source_id="sse-remote", name="SSE Remote", config={"transport_kind": "sse"}
+        )
+        self.assertIsInstance(sse_adapter._client, UnsupportedTransportClient)
+        self.assertEqual(sse_adapter.get_status()["client_info"]["status"], "not_implemented")
+
     def test_remote_adapter_lists_tools_via_stub_client(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
 
@@ -2013,12 +2028,13 @@ class RemoteMCPAdapterTests(TestCase):
         tools = default_dispatcher.list_tools()
         tool_names = [t.name for t in tools]
 
-        self.assertIn("remote_calculator", tool_names)
         self.assertIn("compare_branches", tool_names)  # Internal tool fallback should still work
+        self.assertIn("real-remote__unavailable", tool_names)
 
-        calc_tool = next(t for t in tools if t.name == "remote_calculator")
-        self.assertEqual(calc_tool.source_type, "mcp_server")
-        self.assertEqual(calc_tool.source_id, "real-remote")
+        unavailable_tool = next(t for t in tools if t.name == "real-remote__unavailable")
+        self.assertEqual(unavailable_tool.source_type, "mcp_server")
+        self.assertEqual(unavailable_tool.source_id, "real-remote")
+        self.assertIn("not yet implemented", unavailable_tool.description)
 
     def test_multi_source_coexistence(self):
         from tree_ui.models import MCPSource
@@ -2093,7 +2109,10 @@ class RemoteMCPAdapterTests(TestCase):
             source_id="fail", name="Fail", config={}, client=FailingClient()
         )
 
-        self.assertEqual(adapter.list_tools(), [])
+        tools = adapter.list_tools()
+        self.assertEqual(len(tools), 1)
+        self.assertEqual(tools[0].source_id, "fail")
+        self.assertIn("Remote source unavailable", tools[0].description)
         result = adapter.execute_tool("any", {})
         self.assertTrue(result.is_error)
         self.assertIn("Remote MCP execution failed: Server crashed", result.content[0]["text"])

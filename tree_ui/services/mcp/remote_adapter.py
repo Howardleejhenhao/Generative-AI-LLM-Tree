@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from .base import ToolSource
-from .client import BaseMCPClient, StubMCPClient
+from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient
 from .schema import ToolDefinition, ToolResult
 
 
@@ -25,9 +25,7 @@ class RemoteMCPSourceAdapter(ToolSource):
         self._raw_config = config
         self._parsed_config = self.parse_and_validate_config(config)
 
-        # In this foundation version, we default to StubMCPClient
-        # In a real version, we'd factory out based on transport_kind
-        self._client = client or StubMCPClient(self._parsed_config)
+        self._client = client or self.build_client(self._parsed_config)
 
     @property
     def source_id(self) -> str:
@@ -47,7 +45,6 @@ class RemoteMCPSourceAdapter(ToolSource):
         # Minimum transport_kind requirement
         transport_kind = validated.get("transport_kind", "stub")
         if transport_kind not in cls.SUPPORTED_TRANSPORTS:
-            # For now, default to stub if invalid, but in production we'd raise error or log warning
             transport_kind = "stub"
         validated["transport_kind"] = transport_kind
 
@@ -60,6 +57,13 @@ class RemoteMCPSourceAdapter(ToolSource):
         validated["enabled_tools"] = validated.get("enabled_tools", [])
 
         return validated
+
+    @staticmethod
+    def build_client(config: Dict[str, Any]) -> BaseMCPClient:
+        transport_kind = config.get("transport_kind", "stub")
+        if transport_kind == "stub":
+            return StubMCPClient(config)
+        return UnsupportedTransportClient(config)
 
     def list_tools(self) -> List[ToolDefinition]:
         """List all tools fetched from the remote client."""
@@ -79,8 +83,20 @@ class RemoteMCPSourceAdapter(ToolSource):
                 )
             return enriched
         except Exception as e:
-            # Log error and return empty list or failure-indicating tools if appropriate
-            return []
+            return [
+                ToolDefinition(
+                    name=f"{self.source_id}__unavailable",
+                    description=(
+                        f"[{self._name}] Remote source unavailable: {str(e)}"
+                    ),
+                    input_schema={
+                        "type": "object",
+                        "properties": {},
+                    },
+                    source_type=self.source_type,
+                    source_id=self.source_id,
+                )
+            ]
 
     def execute_tool(
         self,
