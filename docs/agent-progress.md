@@ -11,6 +11,76 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 15:44
+
+### Session Goal
+- Integrate the delegated MCP source registration foundation, apply the review fixes, and land the result on the main feature branch in a clean state.
+
+### Planned Tasks
+- commit the delegated MCP source registration work on its working branch
+- push the delegated branch, merge it into `feature/v2-tool-use-groundwork`, and rerun verification
+- document the review fixes and integration result in the progress log
+
+### Milestone Area
+- MCP source registration
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- extends the MCP groundwork from a single internal adapter into a registered multi-source foundation with mock external support, persisted source metadata, and improved compatibility defaults
+
+### Demo Readiness Impact
+- there is still no user-facing MCP management UI, but the backend can now represent enabled sources and simulate external tool sources in a way that is meaningful for future demos
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-14-0745.md` and the delegated worktree changes on `feature/v2-mcp-source-registration`.
+- Confirmed the new `MCPSource` model, mock adapter, dispatcher registration flow, and trace metadata expansion were implemented.
+- Identified and fixed two review findings before integration:
+  - internal tools disappeared when only mock/external-like sources were registered
+  - internal source registration did not actually control the resulting `source_id`
+- Added regression coverage for both of those scenarios.
+- Committed the accepted work as `1fe460a` (`feat: add MCP source registration foundation`) on `feature/v2-mcp-source-registration`.
+- Pushed `feature/v2-mcp-source-registration` to `origin/feature/v2-mcp-source-registration`.
+- Fast-forward merged `feature/v2-mcp-source-registration` into `feature/v2-tool-use-groundwork`.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 71 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0745.md`
+- `tree_ui/migrations/0009_mcpsource.py`
+- `tree_ui/migrations/0010_toolinvocation_source_id.py`
+- `tree_ui/models.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/mcp/dispatcher.py`
+- `tree_ui/services/mcp/internal_adapter.py`
+- `tree_ui/services/mcp/mock_adapter.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-mcp-source-registration`
+- New branch created/switched:
+  - used delegated branch `feature/v2-mcp-source-registration` for commit/push
+  - switched back to `feature/v2-tool-use-groundwork` for integration
+- Commits made:
+  - `1fe460a` on `feature/v2-mcp-source-registration` - `feat: add MCP source registration foundation`
+- Push status:
+  - `feature/v2-mcp-source-registration` pushed to `origin/feature/v2-mcp-source-registration`
+  - `feature/v2-tool-use-groundwork` integration push pending until this progress-log update is committed
+
+### Current Status
+- MCP source registration groundwork is now merged into `feature/v2-tool-use-groundwork` and verified on the main feature branch.
+
+### Next Recommended Step
+- manually validate source registration behavior against a migrated local database, then move to the next slice: real MCP-server-like adapter wiring or admin/config UI for source management
+
+### Known Issues / Blockers / Tech Debt
+- The current external source is still a mock adapter; there is no real remote MCP transport yet.
+- Manual local verification requires running the new migrations first so the `MCPSource` table exists in the development database.
+
 ## Session 2026-04-14 15:24
 
 ### Session Goal
