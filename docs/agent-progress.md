@@ -11,6 +11,296 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 14:39
+
+### Session Goal
+- Clean the current workspace by integrating the in-progress tool-use groundwork, re-verifying it locally, and landing the work as committed and pushed history.
+
+### Planned Tasks
+- review the uncommitted tool-use, provider, UI, migration, and documentation changes for consistency
+- run focused project verification for tests and migration state
+- update progress documentation with final integration results
+- create clear commits on a dedicated feature branch and push the branch so the workspace returns to a clean state
+
+### Milestone Area
+- Tools / MCP groundwork
+- Integration / repo hygiene
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- lands the internal tool invocation groundwork as versioned history, including tool persistence, provider tool-call parsing, visible tool traces, and the delegated workflow documentation that now governs future handoffs
+
+### Demo Readiness Impact
+- the workspace is back to a shareable branch state with verified tests and pushed commits, which makes the current v2 tool-use slice easier to demo and hand off safely
+
+### Work Completed
+- Session started on branch `feature/v2-tool-use-groundwork`.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 57 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Reviewed and integrated the in-progress tool-use groundwork into commit `80e4c0a` (`feat: add internal tool invocation groundwork`).
+- Collected the agent-workflow and delegated-report documentation updates into commit `2e05694` (`docs: refine agent workflow guidance`).
+- Pushed `feature/v2-tool-use-groundwork` to `origin/feature/v2-tool-use-groundwork`.
+
+### Files Changed
+- `AGENTS.md`
+- `GEMINI.md`
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0615.md`
+- `tree_ui/models.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/base.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/services/tools/__init__.py`
+- `tree_ui/services/tools/base.py`
+- `tree_ui/services/tools/branch_comparison.py`
+- `tree_ui/services/tools/registry.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+- `tree_ui/migrations/0008_toolinvocation.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/v2-tool-use-groundwork`
+- Commits made:
+  - `80e4c0a` - `feat: add internal tool invocation groundwork`
+  - `2e05694` - `docs: refine agent workflow guidance`
+- Push status:
+  - pushed to `origin/feature/v2-tool-use-groundwork`
+  - this progress-log finalization update is being committed immediately after this entry and will be pushed to the same branch
+
+### Current Status
+- The previously uncommitted tool-use groundwork is now integrated, verified locally, and pushed on a dedicated feature branch.
+
+### Next Recommended Step
+- open a PR from `feature/v2-tool-use-groundwork`, perform the final review against `main`, and then merge the accepted tool-use groundwork
+
+### Known Issues / Blockers / Tech Debt
+- The tool loop remains intentionally single-round; multi-step tool orchestration is still future work.
+- External MCP integration is still not implemented; the current work only establishes internal tool contracts, invocation persistence, and visible traces.
+
+
+## Session 2026-04-14 14:35
+
+### Session Goal
+- Record the completed review of the delegated tool-use groundwork fixes and tighten the agent delegation rules so future handoff prompts include environment details and preserve final merge ownership in this coding agent.
+
+### Planned Tasks
+- document the accepted tool-use groundwork fixes that were validated in review
+- record the verification outcome for the delegated implementation report
+- update `AGENTS.md` so delegated prompts include working-environment details and explicitly forbid the implementing agent from merging
+
+### Milestone Area
+- Tools / MCP groundwork
+- Documentation
+- Agent workflow
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- formalizes the verified tool-use groundwork fixes in project memory and clarifies the required delegation workflow for future multi-agent implementation rounds
+
+### Demo Readiness Impact
+- tool traces are now documented as reviewed and acceptable for the current internal-tool milestone, while future delegated execution is less likely to drift because environment and merge ownership rules are explicit
+
+### Work Completed
+- Reviewed the delegated fix report in `task_reports/REPORT-2026-04-14-0615.md` against the actual repository changes.
+- Confirmed that `compare_branches` now enforces workspace-aware comparisons when context is provided, with a same-workspace fallback guard when context is absent.
+- Confirmed that node-chat now synchronizes `payload.tool_invocations` after the final `node` SSE event so tool traces remain visible without a full page refresh.
+- Confirmed that regression coverage was added for tool registration, workspace boundary checks, invocation persistence, node serialization, streaming tool events, and provider tool-call parsing.
+- Re-ran `python3 manage.py test tree_ui.tests` successfully: 57 tests passed.
+- Updated `AGENTS.md` so future delegated implementation prompts must include the other agent's working environment and must explicitly state that the implementing agent cannot merge; final review and merge remain owned by this coding agent.
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none; documentation / workflow update only
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed
+
+### Current Status
+- The internal tool-use groundwork fixes have been reviewed and accepted for the current milestone scope.
+- The project instructions now explicitly require environment details in delegated prompts and reserve final merge ownership for this coding agent.
+
+### Next Recommended Step
+- When the current tool-use work is ready for integration, perform the final review pass, commit the accepted changes, and merge them back into `main` through this coding agent rather than through a delegated implementer.
+
+### Known Issues / Blockers / Tech Debt
+- The tool loop remains intentionally single-round; this is still a known limitation rather than a newly introduced defect.
+- This work still does not constitute full external MCP integration.
+
+
+## Session 2026-04-14 13:57
+
+### Session Goal
+- Update `AGENTS.md` so the project explicitly supports an optional "task breakdown for another agent, then review and progress update" workflow.
+
+### Planned Tasks
+- add a rule describing when the coding agent should provide a detailed implementation handoff instead of coding immediately
+- preserve the existing default behavior where direct implementation remains the norm
+- record the documentation update in the progress log
+
+### Milestone Area
+- Documentation
+- Agent workflow
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- clarifies a supported collaboration pattern where the human can ask for a detailed implementation spec for another agent without changing the default execution model
+
+### Demo Readiness Impact
+- no direct product impact; improves execution clarity across future development sessions
+
+### Work Completed
+- Updated `AGENTS.md` to add an explicit optional delegation/review mode.
+- Documented that the default behavior remains direct implementation unless the user explicitly asks for a handoff plan.
+- Documented that after another agent completes the work, this coding agent should review correctness and maintain the progress log.
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none; docs-only hotfix
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed
+
+### Current Status
+- The repository instructions now explicitly support the occasional spec-first / other-agent-executes / reviewer-updates-progress workflow.
+
+### Next Recommended Step
+- If desired, add a missing dedicated session entry for shipped commit `563e9a9`, then continue or finish the current tool-use WIP before documenting it as completed work.
+
+### Known Issues / Blockers / Tech Debt
+- The undocumented tool-use work in the current worktree is still in progress and remains separate from this docs update.
+
+
+## Session 2026-04-14 13:53
+
+### Session Goal
+- Audit the persistent progress log against git history and the current worktree to identify missing progress entries.
+
+### Planned Tasks
+- compare `docs/agent-progress.md` against recent commits on `main`
+- inspect the current uncommitted worktree for undocumented in-progress work
+- record the missing documented items so the next implementation session starts from an accurate state
+
+### Milestone Area
+- Documentation
+- Repo audit
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- restores accurate project memory by recording the gap between documented progress and actual repository state
+
+### Demo Readiness Impact
+- prevents the next session from overlooking the already-landed routing follow-up and the active tool-use WIP
+
+### Work Completed
+- Audited `docs/agent-progress.md` against recent git history on `main`.
+- Confirmed that commit `563e9a9` (`feat: support provider-restricted auto-routing and cross-provider option`) is not represented by a dedicated session entry in the progress log.
+- Confirmed that the 2026-04-14 09:00 auto-routing session still says push status was not recorded even though the resulting work is now present on `main` and `origin/main`.
+- Identified an additional undocumented in-progress tool-use slice in the working tree, including the new `ToolInvocation` model, tool registry scaffolding, branch comparison tool, provider tool-call support, streaming tool event plumbing, and node-chat/node-panel tool trace UI updates.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none
+- Commits made:
+  - none in this audit session
+- Push status:
+  - not pushed; docs audit entry is local only
+
+### Current Status
+- The progress log was missing one completed post-routing implementation entry and one active uncommitted WIP area.
+
+### Next Recommended Step
+- Add a dedicated session entry for the shipped commit `563e9a9`.
+- After the current tool-use work is committed, add a separate session entry for that implementation slice with exact files, verification, commit hash, and push status.
+
+### Known Issues / Blockers / Tech Debt
+- The current tool-use implementation is still uncommitted and therefore should not be described as completed work yet.
+
+
+## Session 2026-04-14 11:42
+
+### Session Goal
+- Refine the first auto-routing slice so routing respects provider restrictions while still allowing cross-provider selection when appropriate.
+
+### Planned Tasks
+- tighten the router logic so it only selects models that are valid for the current provider constraints
+- support a cross-provider option when routing mode allows a better provider/model choice
+- update the workspace creation/generation flow to preserve the refined routing output
+- add regression coverage for provider-restricted routing decisions
+
+### Milestone Area
+- Routing
+- Routing refinement
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- makes the routing layer more realistic by preventing invalid provider/model combinations while still supporting transparent provider switching where the product allows it
+
+### Demo Readiness Impact
+- improves routing demos because auto mode can now explain not only which model was chosen, but also why provider constraints or cross-provider behavior affected the selection
+
+### Work Completed
+- Refined the router implementation to respect provider-restricted model selection.
+- Added cross-provider routing support for cases where the routing mode should be allowed to move to a different provider/model combination.
+- Updated node creation and request handling so the refined routing decision is carried through generation correctly.
+- Updated the graph workspace form/UI wiring to align with the refined routing behavior.
+- Added regression coverage for the provider-restricted auto-routing and cross-provider option paths.
+- Landed the changes in commit `563e9a9` (`feat: support provider-restricted auto-routing and cross-provider option`).
+
+### Files Changed
+- `tree_ui/services/router.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: not separately recorded in the original log; work is now present on `main`
+- Commits made:
+  - `563e9a9` - `feat: support provider-restricted auto-routing and cross-provider option`
+- Push status:
+  - present on `origin/main`
+
+### Current Status
+- The routing layer now has a documented follow-up implementation beyond the initial 09:00 auto-routing slice.
+
+### Next Recommended Step
+- Continue the next v2 slice around tool registry / branch comparison / visible tool traces, which is already partially in progress in the working tree.
+
+### Known Issues / Blockers / Tech Debt
+- The surrounding progress log originally omitted this session, so branch-switch details from the original implementation moment were not preserved precisely.
+
 
 ## Session 2026-04-14 09:00
 
