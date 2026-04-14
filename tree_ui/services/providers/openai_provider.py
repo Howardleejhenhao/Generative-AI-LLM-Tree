@@ -67,7 +67,9 @@ def _build_payload(
 
 
 def _build_content_parts(message: ContextMessage) -> list[dict]:
-    parts: list[dict] = [{"type": "input_text", "text": message.content}]
+    parts: list[dict] = []
+    if message.content:
+        parts.append({"type": "input_text", "text": message.content})
     for attachment in message.attachments:
         parts.append(
             {

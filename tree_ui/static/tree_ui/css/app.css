@@ -1144,9 +1144,9 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-attachment-panel {
   width: var(--chat-shell-width);
   max-width: 100%;
-  margin: 0 auto 18px;
+  margin: 0 auto 14px;
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .chat-attachment-header {
@@ -1158,36 +1158,43 @@ body:has(.chat-page-immersive) .page-shell {
 
 .chat-attachment-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .chat-attachment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .chat-attachment-card {
+  flex: 0 0 112px;
   display: grid;
-  gap: 8px;
-  text-decoration: none;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .chat-attachment-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 84px;
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid rgba(74, 58, 40, 0.12);
   background: rgba(255, 255, 255, 0.9);
 }
 
-.chat-attachment-card span {
-  font-size: 0.86rem;
+.chat-attachment-name {
+  font-size: 0.74rem;
   color: var(--muted);
   overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .chat-transcript {
@@ -1263,6 +1270,34 @@ body:has(.chat-page-immersive) .page-shell {
   overflow-wrap: anywhere;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 14px 28px rgba(49, 37, 22, 0.08);
+}
+
+.chat-message-body-media-only {
+  padding: 10px;
+}
+
+.chat-message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.chat-message-image-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.chat-message-image {
+  display: block;
+  width: auto;
+  max-width: min(320px, 100%);
+  max-height: 240px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 12px 24px rgba(49, 37, 22, 0.12);
 }
 
 .markdown-content {
@@ -1422,7 +1457,7 @@ body:has(.chat-page-immersive) .page-shell {
   width: 100%;
   max-width: var(--chat-shell-width);
   margin-inline: auto;
-  padding: 10px 12px 10px;
+  padding: 10px 12px 8px;
   border: 1px solid rgba(74, 58, 40, 0.12);
   border-radius: 26px;
   box-shadow: 0 22px 44px rgba(49, 37, 22, 0.12);
@@ -1456,9 +1491,35 @@ body:has(.chat-page-immersive) .page-shell {
   margin: 0;
 }
 
+.chat-input-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-attach-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(74, 58, 40, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(49, 37, 22, 0.08);
+}
+
 .chat-input-shell textarea {
-  min-height: 54px;
+  min-height: 44px;
   max-height: 176px;
+  padding: 11px 14px;
   border-radius: 18px;
   border-color: rgba(74, 58, 40, 0.12);
   background: rgba(255, 255, 255, 0.96);
@@ -1502,25 +1563,129 @@ body:has(.chat-page-immersive) .page-shell {
   align-items: center;
 }
 
-.chat-attachment-input-shell input[type="file"] {
-  padding-block: 10px;
-}
-
 .chat-selected-files {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
   gap: 8px;
+  margin-top: 2px;
+  padding-left: 42px;
 }
 
 .chat-selected-file {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
-  min-height: 28px;
-  padding: 4px 10px;
+  min-height: 48px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(74, 58, 40, 0.1);
+  box-shadow: 0 8px 18px rgba(49, 37, 22, 0.05);
+}
+
+.chat-selected-file-preview {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: rgba(255, 250, 242, 0.9);
+}
+
+.chat-selected-file-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chat-selected-file-name {
+  font-size: 0.74rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-selected-file-remove {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.chat-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.chat-lightbox[hidden] {
+  display: none;
+}
+
+.chat-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(20, 17, 14, 0.72);
+}
+
+.chat-lightbox-dialog {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  width: min(860px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 252, 247, 0.98);
+  box-shadow: 0 24px 60px rgba(15, 12, 9, 0.26);
+}
+
+.chat-lightbox-dialog img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
+  margin: 0 auto;
+  border-radius: 18px;
+  object-fit: contain;
+}
+
+.chat-lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #f8f1e8;
-  font-size: 0.82rem;
+  background: rgba(34, 34, 34, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chat-lightbox-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+body.lightbox-open {
+  overflow: hidden;
 }
 
 .chat-composer-actions .primary-button {
@@ -3433,6 +3598,19 @@ kbd {
     width: 100%;
     padding: 10px;
     border-radius: 20px;
+  }
+
+  .chat-selected-files {
+    padding-left: 0;
+  }
+
+  .chat-selected-file {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .chat-message-image {
+    max-width: 100%;
+    max-height: 220px;
   }
 
   .chat-message-body,

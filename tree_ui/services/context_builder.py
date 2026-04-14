@@ -76,20 +76,16 @@ def build_generation_messages(
 ) -> list[ContextMessage]:
     messages: list[ContextMessage] = []
     for node in build_branch_lineage(parent):
-        attachments = tuple(
-            ContextAttachment(
-                kind=item.kind,
-                name=item.original_name,
-                content_type=item.content_type,
-                file_path=item.file.path,
-            )
-            for item in node.attachments.all()
-        )
-        attached_to_user = False
         for message in node.messages.order_by("order_index", "created_at"):
-            message_attachments = attachments if message.role == "user" and not attached_to_user else ()
-            if message_attachments:
-                attached_to_user = True
+            message_attachments = tuple(
+                ContextAttachment(
+                    kind=item.kind,
+                    name=item.original_name,
+                    content_type=item.content_type,
+                    file_path=item.file.path,
+                )
+                for item in message.attachments.all()
+            )
             messages.append(
                 ContextMessage(
                     role=message.role,

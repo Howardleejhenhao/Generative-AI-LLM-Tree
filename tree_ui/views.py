@@ -93,7 +93,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
         ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
-            "messages",
+            "messages__attachments",
             "children",
             "attachments",
         ),
@@ -435,14 +435,14 @@ def stream_workspace_node(request, slug: str):
 def stream_node_message(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
-        ConversationNode.objects.prefetch_related("messages", "attachments"),
+        ConversationNode.objects.prefetch_related("messages__attachments", "attachments"),
         pk=node_id,
         workspace=workspace,
     )
 
     if request.content_type and request.content_type.startswith("multipart/form-data"):
         payload = {"prompt": request.POST.get("prompt", "")}
-        uploaded_images = request.FILES.getlist("images")
+        uploaded_images = request.FILES.getlist("images")[-1:]
     else:
         try:
             payload = json.loads(request.body.decode("utf-8"))
@@ -451,7 +451,10 @@ def stream_node_message(request, slug: str, node_id: int):
         uploaded_images = []
 
     try:
-        resolved_inputs = resolve_message_append_inputs(prompt=payload.get("prompt", ""))
+        resolved_inputs = resolve_message_append_inputs(
+            prompt=payload.get("prompt", ""),
+            has_attachments=bool(uploaded_images),
+        )
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
@@ -507,6 +510,7 @@ def stream_node_message(request, slug: str, node_id: int):
                 node=target_node,
                 prompt=resolved_inputs["prompt"],
                 assistant_reply="".join(assistant_chunks),
+                prompt_attachments=prompt_attachments,
             )
             yield _sse_event(
                 "node",

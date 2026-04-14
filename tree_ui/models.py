@@ -101,6 +101,13 @@ class NodeAttachment(models.Model):
         related_name="attachments",
         on_delete=models.CASCADE,
     )
+    source_message = models.ForeignKey(
+        NodeMessage,
+        related_name="attachments",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
     kind = models.CharField(
         max_length=20,
         choices=Kind.choices,

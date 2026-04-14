@@ -1,5 +1,39 @@
 import { setMarkdownContent } from "./markdown.js?v=20260412-ordered-list-fix";
 
+function renderMessageAttachments(container, attachments) {
+  if (!attachments?.length) {
+    return;
+  }
+
+  const gallery = document.createElement("div");
+  gallery.className = "chat-message-attachments";
+
+  for (const attachment of attachments) {
+    if (attachment.kind !== "image" || !attachment.url) {
+      continue;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chat-message-image-button";
+    button.dataset.imageSrc = attachment.url;
+    button.dataset.imageName = attachment.name || "Attached image";
+
+    const image = document.createElement("img");
+    image.className = "chat-message-image";
+    image.src = attachment.url;
+    image.alt = attachment.name || "Attached image";
+    image.loading = "lazy";
+
+    button.append(image);
+    gallery.append(button);
+  }
+
+  if (gallery.childElementCount) {
+    container.append(gallery);
+  }
+}
+
 export function renderNodeDetails(container, messages) {
   container.innerHTML = "";
 
@@ -89,7 +123,11 @@ export function renderChatTranscript(container, messages, options = {}) {
 
     const body = document.createElement("div");
     body.className = "chat-message-body";
+    if (!message.content && (message.attachments || []).length) {
+      body.classList.add("chat-message-body-media-only");
+    }
     setMarkdownContent(body, message.content);
+    renderMessageAttachments(body, message.attachments || []);
 
     article.append(label, body);
 

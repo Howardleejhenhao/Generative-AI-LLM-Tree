@@ -205,14 +205,21 @@ def resolve_node_creation_inputs(
     }
 
 
-def resolve_message_append_inputs(*, prompt: str) -> dict:
+def resolve_message_append_inputs(*, prompt: str, has_attachments: bool = False) -> dict:
     normalized_prompt = prompt.strip()
-    if not normalized_prompt:
+    if not normalized_prompt and not has_attachments:
         raise ValueError("Prompt is required.")
+
+    if normalized_prompt:
+        summary = _build_summary(normalized_prompt)
+    elif has_attachments:
+        summary = "Image attachment"
+    else:
+        summary = "Untitled message"
 
     return {
         "prompt": normalized_prompt,
-        "summary": _build_summary(normalized_prompt),
+        "summary": summary,
     }
 
 
@@ -341,31 +348,35 @@ def append_messages_to_node_with_reply(
     node: ConversationNode,
     prompt: str,
     assistant_reply: str,
+    prompt_attachments: list[NodeAttachment] | None = None,
 ) -> ConversationNode:
-    resolved_inputs = resolve_message_append_inputs(prompt=prompt)
+    resolved_inputs = resolve_message_append_inputs(
+        prompt=prompt,
+        has_attachments=bool(prompt_attachments),
+    )
     starting_order = node.messages.count()
 
     with transaction.atomic():
-        NodeMessage.objects.bulk_create(
-            [
-                NodeMessage(
-                    node=node,
-                    role=NodeMessage.Role.USER,
-                    content=resolved_inputs["prompt"],
-                    order_index=starting_order,
-                ),
-                NodeMessage(
-                    node=node,
-                    role=NodeMessage.Role.ASSISTANT,
-                    content=assistant_reply,
-                    order_index=starting_order + 1,
-                ),
-            ]
+        user_message = NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.USER,
+            content=resolved_inputs["prompt"],
+            order_index=starting_order,
         )
+        NodeMessage.objects.create(
+            node=node,
+            role=NodeMessage.Role.ASSISTANT,
+            content=assistant_reply,
+            order_index=starting_order + 1,
+        )
+        if prompt_attachments:
+            NodeAttachment.objects.filter(
+                pk__in=[attachment.pk for attachment in prompt_attachments],
+            ).update(source_message=user_message)
         node.summary = resolved_inputs["summary"]
         node.save(update_fields=["summary", "updated_at"])
 
-    updated_node = ConversationNode.objects.prefetch_related("messages", "attachments").get(pk=node.pk)
+    updated_node = ConversationNode.objects.prefetch_related("messages__attachments", "attachments").get(pk=node.pk)
 
     try:
         refresh_workspace_preference_memory(updated_node)
@@ -382,7 +393,10 @@ def append_messages_to_node(
     prompt: str,
     prompt_attachments: list[NodeAttachment] | None = None,
 ) -> ConversationNode:
-    resolved_inputs = resolve_message_append_inputs(prompt=prompt)
+    resolved_inputs = resolve_message_append_inputs(
+        prompt=prompt,
+        has_attachments=bool(prompt_attachments),
+    )
     assistant_reply = generate_assistant_reply(
         parent=node,
         provider=node.provider,
@@ -398,4 +412,5 @@ def append_messages_to_node(
         node=node,
         prompt=resolved_inputs["prompt"],
         assistant_reply=assistant_reply,
+        prompt_attachments=prompt_attachments,
     )

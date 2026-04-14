@@ -94,19 +94,20 @@
               {% if not can_append_in_place %}
                 <p class="chat-composer-kicker">Continue in new child</p>
               {% endif %}
-              <label class="form-field chat-input-shell">
-                <span>Reply</span>
-                <textarea
-                  id="chat-prompt-input"
-                  name="prompt"
-                  rows="1"
-                  placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
-                ></textarea>
-              </label>
-              <label class="form-field chat-attachment-input-shell">
-                <span>Images</span>
-                <input id="chat-image-input" name="images" type="file" accept="image/*" multiple>
-              </label>
+              <div class="chat-input-row">
+                <button class="chat-attach-button" id="chat-attach-button" type="button" aria-label="Attach images">+</button>
+                <label class="form-field chat-input-shell">
+                  <span>Reply</span>
+                  <textarea
+                    id="chat-prompt-input"
+                    name="prompt"
+                    rows="1"
+                    placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
+                  ></textarea>
+                </label>
+              </div>
+              <label class="sr-only" for="chat-image-input">Attach images</label>
+              <input id="chat-image-input" name="images" type="file" accept="image/*" hidden>
               <div class="chat-selected-files" id="chat-selected-files" hidden></div>
               <div class="chat-composer-actions">
                 <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
@@ -117,7 +118,7 @@
               <div class="chat-composer-meta">
                 <p class="chat-composer-note">
                   {% if can_append_in_place %}
-                    Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.
+                    Enter sends. Shift + Enter adds a new line.
                   {% else %}
                     This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
                   {% endif %}
@@ -130,6 +131,15 @@
     </section>
   </section>
 
+  <div class="chat-lightbox" id="chat-image-lightbox" hidden>
+    <button class="chat-lightbox-backdrop" id="chat-image-lightbox-backdrop" type="button" aria-label="Close image preview"></button>
+    <div class="chat-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Image preview">
+      <button class="chat-lightbox-close" id="chat-image-lightbox-close" type="button" aria-label="Close image preview">×</button>
+      <img id="chat-image-lightbox-image" alt="">
+      <p class="chat-lightbox-caption" id="chat-image-lightbox-caption"></p>
+    </div>
+  </div>
+
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260413-image-upload"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer"></script>
 {% endblock %}

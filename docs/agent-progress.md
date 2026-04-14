@@ -12,6 +12,77 @@
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
 
+## Session 2026-04-14 00:05
+
+### Session Goal
+- Fix the multimodal composer UI bug and refactor the image-upload control into a compact ChatGPT-style attachment interaction.
+
+### Planned Tasks
+- replace the visible file input block with a compact `+` attachment button
+- tighten composer spacing so the bottom bar stops dominating the node-chat layout
+- verify the updated node-chat UI with targeted tests and frontend parsing checks
+
+### Milestone Area
+- Multimodal
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- keeps the new image-first multimodal capability usable instead of letting the attachment control overwhelm the node-chat experience
+
+### Demo Readiness Impact
+- the node chat should feel much closer to a modern chat product, with image upload available but visually lightweight
+
+### Work Completed
+- Refined the node-chat composer into a compact chat-style input bar with a dedicated attach button, multiline textarea, and stable bottom layout.
+- Changed image upload from multi-file selection to single-image behavior, where a new pick replaces the previous image.
+- Added true pre-send thumbnail preview with an immediate remove action instead of filename-only chips.
+- Updated keyboard behavior so `Enter` sends and `Shift + Enter` inserts a newline.
+- Allowed image-only sends while preserving the existing streaming request flow.
+- Added a minimal `source_message` relation on `NodeAttachment` so uploaded images can be attached to the correct user message.
+- Updated node serialization so each chat message now carries its own attachments for rendering.
+- Rendered attached images directly inside user messages and added a lightweight click-to-enlarge lightbox with close controls.
+- Adjusted provider payload construction so image-only messages do not inject empty text parts.
+- Expanded regression coverage for the new image-only send path, message-linked attachments, and updated node-chat UI affordances.
+- Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0005_nodeattachment_source_message.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for the ChatGPT-style composer and message-image rendering cleanup
+- Push status:
+  - not pushed yet; session changes are verified and ready to commit
+
+### Current Status
+- The node-chat image workflow now matches the current product direction much more closely: one image, real preview before send, image-only send support, and images rendered back into the chat transcript.
+
+### Next Recommended Step
+- Let the human re-check the node-chat UI in the browser, then decide whether the next multimodal slice should focus on routing visibility or graph-side comparison for image-based branches.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+- local uploaded media artifacts may appear during browser testing and should not be committed.
+
+
 ## Session 2026-04-13 10:55
 
 ### Session Goal

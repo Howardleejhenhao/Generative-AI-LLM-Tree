@@ -30,7 +30,9 @@ def _build_contents(messages: list[ContextMessage]) -> list[dict]:
 
 
 def _build_parts(message: ContextMessage) -> list[dict]:
-    parts: list[dict] = [{"text": message.content}]
+    parts: list[dict] = []
+    if message.content:
+        parts.append({"text": message.content})
     for attachment in message.attachments:
         data_url = encode_attachment_as_data_url(
             file_path=attachment.file_path,

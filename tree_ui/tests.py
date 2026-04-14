@@ -104,6 +104,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Edit as variant")
         self.assertContains(response, "Create edited variant")
         self.assertContains(response, "Edit and branch")
+        self.assertContains(response, 'id="chat-image-lightbox"')
+        self.assertContains(response, "Enter sends. Shift + Enter adds a new line.")
         self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
 
@@ -131,6 +133,8 @@ class WorkspaceGraphViewTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "Attached to this node")
                 self.assertContains(response, "diagram.png")
+                self.assertContains(response, 'id="chat-image-input"')
+                self.assertNotContains(response, "multiple hidden")
 
     @patch("tree_ui.views.ensure_workspace_memory")
     def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self, mock_ensure_workspace_memory):
@@ -722,8 +726,49 @@ class WorkspaceGraphViewTests(TestCase):
                 streamed = b"".join(response.streaming_content).decode("utf-8")
                 self.assertIn('"attachment_count": 1', streamed)
                 self.assertEqual(NodeAttachment.objects.filter(node=node).count(), 1)
+                user_message = NodeMessage.objects.get(node=node, role=NodeMessage.Role.USER)
+                self.assertEqual(user_message.content, "Describe this image.")
+                self.assertEqual(user_message.attachments.count(), 1)
                 self.assertEqual(mock_stream_text.call_args.kwargs["messages"][-1].attachments[0].name, "photo.png")
                 self.assertEqual(mock_stream_text.call_args.kwargs["messages"][-1].attachments[0].content_type, "image/png")
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_can_stream_node_message_with_image_only_via_api(self, mock_stream_text):
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                workspace = Workspace.objects.create(name="Main", slug="main")
+                node = ConversationNode.objects.create(
+                    workspace=workspace,
+                    title="Vision node",
+                    summary="",
+                    provider=ConversationNode.Provider.OPENAI,
+                    model_name="gpt-4.1-mini",
+                )
+                mock_stream_text.return_value = iter(["Vision only"])
+
+                response = self.client.post(
+                    reverse("stream_node_message", args=[workspace.slug, node.id]),
+                    data={
+                        "prompt": "",
+                        "images": [
+                            SimpleUploadedFile(
+                                "photo.png",
+                                b"fake-image-bytes",
+                                content_type="image/png",
+                            )
+                        ],
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                streamed = b"".join(response.streaming_content).decode("utf-8")
+                self.assertIn('"attachment_count": 1', streamed)
+                user_message = NodeMessage.objects.get(node=node, role=NodeMessage.Role.USER)
+                self.assertEqual(user_message.content, "")
+                self.assertEqual(user_message.attachments.count(), 1)
+                self.assertEqual(mock_stream_text.call_args.kwargs["messages"][-1].content, "")
+                self.assertEqual(len(mock_stream_text.call_args.kwargs["messages"][-1].attachments), 1)
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
@@ -832,6 +877,47 @@ class WorkspaceGraphViewTests(TestCase):
                 "Continue selected branch",
             ],
         )
+
+    def test_build_generation_messages_keeps_attachments_on_original_user_message(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                workspace = Workspace.objects.create(name="Main", slug="main")
+                node = ConversationNode.objects.create(
+                    workspace=workspace,
+                    title="Root",
+                    summary="",
+                    provider=ConversationNode.Provider.OPENAI,
+                    model_name="gpt-4.1-mini",
+                )
+                user_message = NodeMessage.objects.create(
+                    node=node,
+                    role=NodeMessage.Role.USER,
+                    content="Describe the attached image.",
+                    order_index=0,
+                )
+                NodeMessage.objects.create(
+                    node=node,
+                    role=NodeMessage.Role.ASSISTANT,
+                    content="I can see the screenshot.",
+                    order_index=1,
+                )
+                NodeAttachment.objects.create(
+                    node=node,
+                    source_message=user_message,
+                    file=SimpleUploadedFile("diagram.png", b"fake-image-bytes", content_type="image/png"),
+                    original_name="diagram.png",
+                    content_type="image/png",
+                    size_bytes=16,
+                )
+
+                messages = build_generation_messages(
+                    parent=node,
+                    prompt="Continue selected branch",
+                )
+
+                self.assertEqual(messages[0].content, "Describe the attached image.")
+                self.assertEqual(messages[0].attachments[0].name, "diagram.png")
+                self.assertEqual(messages[1].attachments, ())
 
     @patch("tree_ui.services.node_creation.refresh_workspace_preference_memory")
     @patch("tree_ui.services.node_creation.generate_text")
