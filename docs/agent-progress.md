@@ -11,6 +11,75 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 23:09
+
+### Session Goal
+- Integrate the delegated MCP source management UI, apply the review fix for dispatcher cache refresh, and land the accepted result on the main feature branch.
+
+### Planned Tasks
+- commit the delegated management UI work and report on its working branch
+- apply the dispatcher refresh fix, merge the branch into `feature/v2-tool-use-groundwork`, and rerun verification
+- update the progress log with the integration outcome
+
+### Milestone Area
+- MCP source management UI
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- adds a user-facing management surface for `MCPSource` records and closes the runtime consistency gap between source CRUD operations and the cached dispatcher
+
+### Demo Readiness Impact
+- the project now has a usable MCP settings page for manual source management, making the existing MCP groundwork easier to demonstrate without using Django shell
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-14-0845.md` and the delegated branch `feature/v2-mcp-source-management-ui`.
+- Accepted the new `MCPSourceForm`, management views, routes, templates, and entry points from the graph and node chat pages.
+- Identified and fixed one review finding: source create/edit/delete updated the database but did not refresh the lazy dispatcher cache, so runtime tool availability could become stale.
+- Updated `mcp_source_create`, `mcp_source_edit`, and `mcp_source_delete` to call `default_dispatcher.refresh()`.
+- Added regression coverage to verify that UI-based source creation updates dispatcher-visible tool availability immediately.
+- Committed the accepted UI work as `6c4bc9e` (`feat: implement MCP source management UI`) and the review fix as `634b2d1` (`fix: refresh dispatcher after source updates`) on `feature/v2-mcp-source-management-ui`.
+- Pushed `feature/v2-mcp-source-management-ui` to `origin/feature/v2-mcp-source-management-ui`.
+- Fast-forward merged `feature/v2-mcp-source-management-ui` into `feature/v2-tool-use-groundwork`.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 84 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0845.md`
+- `tree_ui/forms.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/mcp_source_form.html`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-mcp-source-management-ui`
+- New branch created/switched:
+  - used delegated branch `feature/v2-mcp-source-management-ui` for commit/push
+  - switched back to `feature/v2-tool-use-groundwork` for integration
+- Commits made:
+  - `6c4bc9e` on `feature/v2-mcp-source-management-ui` - `feat: implement MCP source management UI`
+  - `634b2d1` on `feature/v2-mcp-source-management-ui` - `fix: refresh dispatcher after source updates`
+- Push status:
+  - `feature/v2-mcp-source-management-ui` pushed to `origin/feature/v2-mcp-source-management-ui`
+  - `feature/v2-tool-use-groundwork` integration push pending until this progress-log update is committed
+
+### Current Status
+- MCP source management UI is now merged into `feature/v2-tool-use-groundwork` and verified on the main feature branch.
+
+### Next Recommended Step
+- decide whether the next slice should be a real stdio-backed remote MCP client, a lighter source-status/readiness surface, or a graph-side workflow that actually consumes MCP-managed sources
+
+### Known Issues / Blockers / Tech Debt
+- The management UI relies on a raw JSON textarea for config editing; it is functional but not user-friendly.
+- The new pages use inline styling rather than shared app-level components, so visual consistency can be improved later.
+
 ## Session 2026-04-14 22:46
 
 ### Session Goal
