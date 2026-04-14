@@ -11,6 +11,72 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 15:24
+
+### Session Goal
+- Review the delegated MCP-compatible adapter foundation, fix any integration gaps, and land the accepted work back onto the main feature branch.
+
+### Planned Tasks
+- inspect `task_reports/REPORT-2026-04-14-0715.md` against the delegated branch changes
+- identify any missing standardized metadata or compatibility gaps
+- fix accepted issues directly, merge the delegated branch into `feature/v2-tool-use-groundwork`, and rerun verification
+- update the progress log with the review outcome and push results
+
+### Milestone Area
+- MCP groundwork
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- establishes an MCP-compatible internal tool adapter layer on the main feature branch and preserves standardized trace metadata needed for future external MCP integration
+
+### Demo Readiness Impact
+- the product still has no MCP-specific UI, but the backend foundation is now cleaner and more extensible for future demos involving tool source abstraction
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-14-0715.md` against the delegated branch `feature/v2-mcp-adapter-foundation`.
+- Accepted the new `tree_ui/services/mcp/` abstraction layer, internal adapter, dispatcher, and the `node_creation.py` refactor to route tool execution through the dispatcher.
+- Identified one review finding: `tool_type` was being persisted but not exposed in serialized node payloads, which left the standardized trace metadata incomplete for downstream consumers.
+- Fixed the serialized trace payload to include `tool_type` and added a regression assertion covering it.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 65 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Fast-forward merged `feature/v2-mcp-adapter-foundation` into `feature/v2-tool-use-groundwork`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0715.md`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/mcp/__init__.py`
+- `tree_ui/services/mcp/base.py`
+- `tree_ui/services/mcp/dispatcher.py`
+- `tree_ui/services/mcp/internal_adapter.py`
+- `tree_ui/services/mcp/schema.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-mcp-adapter-foundation`
+- New branch created/switched:
+  - reviewed and patched on `feature/v2-mcp-adapter-foundation`
+  - switched back to `feature/v2-tool-use-groundwork` for integration
+- Commits made:
+  - `4d357c6` on `feature/v2-mcp-adapter-foundation` - `fix: expose tool type in serialized traces`
+- Push status:
+  - `feature/v2-mcp-adapter-foundation` pushed to `origin/feature/v2-mcp-adapter-foundation`
+  - `feature/v2-tool-use-groundwork` integration push pending until this progress-log update is committed
+
+### Current Status
+- The delegated MCP adapter groundwork has been reviewed, patched, and merged into `feature/v2-tool-use-groundwork`.
+
+### Next Recommended Step
+- push the updated main feature branch, then start the next MCP slice around actual external-server-compatible plumbing or server registration flow
+
+### Known Issues / Blockers / Tech Debt
+- Tool trace payloads now expose `tool_type`, but there is still no user-facing surface for MCP source inspection.
+- This remains an internal MCP-compatible foundation only; no remote MCP server connection or credential management exists yet.
+
 ## Session 2026-04-14 15:07
 
 ### Session Goal
