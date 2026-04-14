@@ -61,4 +61,16 @@ urlpatterns = [
         views.create_edited_node_variant,
         name="create_edited_node_variant",
     ),
+    path("mcp-sources/", views.mcp_source_list, name="mcp_source_list"),
+    path("mcp-sources/add/", views.mcp_source_create, name="mcp_source_create"),
+    path(
+        "mcp-sources/<int:source_id>/edit/",
+        views.mcp_source_edit,
+        name="mcp_source_edit",
+    ),
+    path(
+        "mcp-sources/<int:source_id>/delete/",
+        views.mcp_source_delete,
+        name="mcp_source_delete",
+    ),
 ]

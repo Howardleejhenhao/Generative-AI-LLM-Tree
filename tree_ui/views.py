@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from tree_ui.models import ConversationMemory, ConversationNode, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, Workspace, MCPSource
+from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.router import route_model
@@ -554,3 +555,65 @@ def stream_node_message(request, slug: str, node_id: int):
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
     return response
+
+def mcp_source_list(request):
+    workspace = list_workspaces().first() or get_or_create_default_workspace()
+    sources = MCPSource.objects.all().order_by("created_at")
+    return render(
+        request,
+        "tree_ui/mcp_source_list.html",
+        {
+            "sources": sources,
+            "workspace": workspace,
+            "workspace_list": _serialize_workspace_list(workspace),
+        },
+    )
+
+def mcp_source_create(request):
+    workspace = list_workspaces().first() or get_or_create_default_workspace()
+    if request.method == "POST":
+        form = MCPSourceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("mcp_source_list"))
+    else:
+        form = MCPSourceForm()
+
+    return render(
+        request,
+        "tree_ui/mcp_source_form.html",
+        {
+            "form": form,
+            "title": "Add MCP Source",
+            "workspace": workspace,
+            "workspace_list": _serialize_workspace_list(workspace),
+        },
+    )
+
+def mcp_source_edit(request, source_id: int):
+    workspace = list_workspaces().first() or get_or_create_default_workspace()
+    source = get_object_or_404(MCPSource, pk=source_id)
+    if request.method == "POST":
+        form = MCPSourceForm(request.POST, instance=source)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("mcp_source_list"))
+    else:
+        form = MCPSourceForm(instance=source)
+
+    return render(
+        request,
+        "tree_ui/mcp_source_form.html",
+        {
+            "form": form,
+            "title": f"Edit Source: {source.name}",
+            "workspace": workspace,
+            "workspace_list": _serialize_workspace_list(workspace),
+        },
+    )
+
+@require_POST
+def mcp_source_delete(request, source_id: int):
+    source = get_object_or_404(MCPSource, pk=source_id)
+    source.delete()
+    return HttpResponseRedirect(reverse("mcp_source_list"))

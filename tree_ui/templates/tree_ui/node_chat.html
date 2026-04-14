@@ -8,6 +8,7 @@
     <header class="chat-shell-header">
       <div class="chat-shell-links">
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+        <a class="ghost-link" href="{% url 'mcp_source_list' %}">MCP Settings</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
         <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>

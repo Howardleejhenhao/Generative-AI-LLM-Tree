@@ -7,7 +7,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
-from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace, MCPSource
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.memory_drafting import (
     WORKSPACE_MEMORY_FALLBACK_CONTENT,
@@ -2116,3 +2116,73 @@ class RemoteMCPAdapterTests(TestCase):
         result = adapter.execute_tool("any", {})
         self.assertTrue(result.is_error)
         self.assertIn("Remote MCP execution failed: Server crashed", result.content[0]["text"])
+
+class MCPSourceManagementTests(TestCase):
+    def test_mcp_source_list_page_renders(self):
+        MCPSource.objects.create(
+            name="Test Source",
+            source_id="test-source",
+            source_type=MCPSource.SourceType.INTERNAL,
+            is_enabled=True,
+        )
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Source")
+        self.assertContains(response, "test-source")
+        self.assertContains(response, "Internal Registry")
+
+    def test_can_create_mcp_source(self):
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "New Remote",
+            "source_id": "new-remote",
+            "source_type": "mcp_server",
+            "is_enabled": True,
+            "description": "A new remote source",
+            "config_json": json.dumps({"transport_kind": "sse", "endpoint": "http://localhost:8080"})
+        })
+        self.assertEqual(response.status_code, 302)
+        source = MCPSource.objects.get(source_id="new-remote")
+        self.assertEqual(source.name, "New Remote")
+        self.assertEqual(source.config["transport_kind"], "sse")
+
+    def test_can_edit_mcp_source(self):
+        source = MCPSource.objects.create(
+            name="Old Name",
+            source_id="old-source",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+        response = self.client.post(reverse("mcp_source_edit", args=[source.id]), {
+            "name": "Updated Name",
+            "source_id": "old-source",
+            "source_type": "mock",
+            "is_enabled": False,
+            "description": "Updated",
+            "config_json": "{}"
+        })
+        self.assertEqual(response.status_code, 302)
+        source.refresh_from_db()
+        self.assertEqual(source.name, "Updated Name")
+        self.assertFalse(source.is_enabled)
+
+    def test_invalid_json_config_returns_error(self):
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "Invalid Config",
+            "source_id": "invalid-config",
+            "source_type": "mcp_server",
+            "is_enabled": True,
+            "config_json": "{ invalid json"
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invalid JSON format.")
+        self.assertEqual(MCPSource.objects.filter(source_id="invalid-config").count(), 0)
+
+    def test_can_delete_mcp_source(self):
+        source = MCPSource.objects.create(
+            name="To Delete",
+            source_id="to-delete",
+            source_type=MCPSource.SourceType.MOCK,
+        )
+        response = self.client.post(reverse("mcp_source_delete", args=[source.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(MCPSource.objects.filter(pk=source.id).exists())

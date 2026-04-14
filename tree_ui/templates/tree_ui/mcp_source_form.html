@@ -1,0 +1,130 @@
+{% extends "tree_ui/base.html" %}
+{% block title %}{{ title }} - LLM-Tree{% endblock %}
+
+{% block content %}
+<div class="workspace-shell">
+  <aside class="workspace-sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <h1>MCP Management</h1>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="section-header">
+        <span class="label">Navigation</span>
+      </div>
+      <div class="workspace-list">
+        <a href="{% url 'mcp_source_list' %}" class="workspace-item">
+          <span class="name">Back to List</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="workspace-main">
+    <div class="graph-canvas-shell">
+      <div style="padding: 2rem; max-width: 800px; margin: 0 auto; color: var(--text-color);">
+        <h2 style="margin-bottom: 2rem;">{{ title }}</h2>
+
+        <form method="post" style="background: var(--node-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 2rem;">
+          {% csrf_token %}
+          
+          {% if form.non_field_errors %}
+          <div style="background: rgba(255, 82, 82, 0.1); border: 1px solid #ff5252; color: #ff5252; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+            {{ form.non_field_errors }}
+          </div>
+          {% endif %}
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">{{ form.name.label }}</label>
+              {{ form.name }}
+              {% if form.name.errors %}<div style="color: #ff5252; font-size: 0.85rem; margin-top: 0.2rem;">{{ form.name.errors }}</div>{% endif %}
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">{{ form.source_id.label }}</label>
+              {{ form.source_id }}
+              {% if form.source_id.errors %}<div style="color: #ff5252; font-size: 0.85rem; margin-top: 0.2rem;">{{ form.source_id.errors }}</div>{% endif %}
+              <small style="display: block; color: var(--text-muted); margin-top: 0.2rem;">Unique slug for this source.</small>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">{{ form.source_type.label }}</label>
+              {{ form.source_type }}
+              {% if form.source_type.errors %}<div style="color: #ff5252; font-size: 0.85rem; margin-top: 0.2rem;">{{ form.source_type.errors }}</div>{% endif %}
+            </div>
+            <div style="display: flex; align-items: flex-end; padding-bottom: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer;">
+                {{ form.is_enabled }}
+                {{ form.is_enabled.label }}
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">{{ form.description.label }}</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div style="color: #ff5252; font-size: 0.85rem; margin-top: 0.2rem;">{{ form.description.errors }}</div>{% endif %}
+          </div>
+
+          <div style="margin-bottom: 2rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">{{ form.config_json.label }}</label>
+            {{ form.config_json }}
+            {% if form.config_json.errors %}<div style="color: #ff5252; font-size: 0.85rem; margin-top: 0.2rem;">{{ form.config_json.errors }}</div>{% endif %}
+            <small style="display: block; color: var(--text-muted); margin-top: 0.2rem;">{{ form.config_json.help_text }}</small>
+            <div id="config-hints" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); background: var(--bg-color); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+              <strong>Common fields for mcp_server:</strong> 
+              <code>"transport_kind": "stub" | "sse" | "stdio"</code>, 
+              <code>"endpoint": "URL"</code>, 
+              <code>"label": "Display Name"</code>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+            <a href="{% url 'mcp_source_list' %}" style="padding: 0.5rem 1.5rem; text-decoration: none; color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px;">Cancel</a>
+            <button type="submit" class="action-btn" style="padding: 0.5rem 2rem;">Save Source</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<style>
+  .action-btn {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+  .action-btn:hover {
+    opacity: 0.9;
+  }
+  .form-control {
+    width: 100%;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .form-select {
+    width: 100%;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .font-monospace {
+    font-family: monospace;
+  }
+</style>
+{% endblock %}
