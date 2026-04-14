@@ -11,6 +11,1214 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+
+## Session 2026-04-14 02:46
+
+### Session Goal
+- Merge the completed `feature/v2-image-first-multimodal` work back into `main` so the next session can continue from the integrated branch state.
+
+### Planned Tasks
+- confirm the feature branch is clean and merge-ready
+- update the persistent progress log before and after the merge
+- merge `feature/v2-image-first-multimodal` into `main`
+- push the updated `main` branch
+
+### Milestone Area
+- Git workflow
+- Integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- moves the completed multimodal attachment work onto the default branch for follow-up development
+
+### Demo Readiness Impact
+- keeps the main branch aligned with the current demoable multimodal chat experience
+
+### Work Completed
+- in progress
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: pending merge into `main`
+- Commits made:
+  - pending docs commit for merge-session tracking
+- Push status:
+  - not pushed yet; merge in progress
+
+### Current Status
+- The feature branch is clean and ready to merge into `main`.
+
+### Next Recommended Step
+- Finish the merge and push `main`, then continue future work from the integrated branch state.
+
+### Known Issues / Blockers / Tech Debt
+- none for the merge itself
+
+
+## Session 2026-04-14 02:28
+
+### Session Goal
+- Keep local upload artifacts out of git by ignoring the runtime `media/` directory.
+
+### Planned Tasks
+- add `media/` to `.gitignore`
+- keep the change isolated from unrelated local modifications
+- push the ignore update so future browser-upload testing stays out of version control
+
+### Milestone Area
+- Cleanup
+- Repo hygiene
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- prevents uploaded test assets from polluting the worktree during multimodal development
+
+### Demo Readiness Impact
+- keeps the repo clean while continuing browser-side attachment testing
+
+### Work Completed
+- Added `media/` to `.gitignore`.
+
+### Files Changed
+- `.gitignore`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for media ignore cleanup
+- Push status:
+  - not pushed yet; cleanup change ready to commit
+
+### Current Status
+- Local uploaded files under `media/` are now excluded from git once this ignore update is committed.
+
+### Next Recommended Step
+- Continue the next v2 feature slice without local attachment artifacts appearing in `git status`.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` already had a local `.codex` ignore change in progress before this session and it remains part of the current file state.
+
+
+## Session 2026-04-14 02:10
+
+### Session Goal
+- Extend the existing image-first multimodal chat flow to support PDF attachments in a way that still uses multimodal model understanding instead of text-only extraction.
+
+### Planned Tasks
+- add PDF attachment support to the current node-chat composer and message rendering path
+- convert attached PDFs into page images before provider generation so the existing multimodal adapters can reason over them
+- keep the UI aligned with the existing chat composer by showing PDFs as compact file cards instead of image thumbnails
+
+### Milestone Area
+- Multimodal
+- PDF
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- broadens the multimodal demo beyond image-only prompts without changing the current chat architecture
+
+### Demo Readiness Impact
+- the product can now accept PDF teaching materials or slide decks and pass them through a real multimodal path using rendered page images
+
+### Work Completed
+- Added `pdf` as a supported `NodeAttachment.Kind`.
+- Extended attachment validation to accept both image files and PDF files.
+- Added PDF page rendering through `pdftoppm`, returning page images as data URLs for provider requests.
+- Extended context building so PDF attachments are expanded into image attachments before generation, letting the existing OpenAI and Gemini multimodal adapters consume them.
+- Updated provider payload builders to accept attachments that already carry prebuilt data URLs.
+- Updated the node-chat composer input to accept PDFs alongside images.
+- Updated the staged attachment preview so PDFs display as compact file cards instead of broken image previews.
+- Updated chat message attachment rendering so saved PDF attachments appear as clickable file cards in the transcript.
+- Updated transcript rendering so a just-submitted PDF also shows as a file card during streaming preview, before the final node payload arrives.
+- Added regression coverage for the PDF upload path and PDF-to-image multimodal expansion.
+- Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `Dockerfile`
+- `llm_tree_project/settings.py`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0006_nodeattachment_pdf_kind.py`
+- `tree_ui/services/attachments.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for PDF multimodal support
+- Push status:
+  - not pushed yet; implementation is verified and ready to commit
+
+### Current Status
+- Node chat now supports both image and PDF attachments, with PDFs flowing through the multimodal provider path as rendered page images.
+
+### Next Recommended Step
+- Let the human inspect the PDF card UI in the browser and verify whether the current compact card treatment is close enough to the desired ChatGPT-style presentation.
+
+### Known Issues / Blockers / Tech Debt
+- The PDF multimodal path currently renders up to a configured page limit and does not yet expose per-page metadata in the UI.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+- local uploaded media artifacts may appear during browser testing and should not be committed.
+
+
+## Session 2026-04-14 00:05
+
+### Session Goal
+- Fix the multimodal composer UI bug and refactor the image-upload control into a compact ChatGPT-style attachment interaction.
+
+### Planned Tasks
+- replace the visible file input block with a compact `+` attachment button
+- tighten composer spacing so the bottom bar stops dominating the node-chat layout
+- verify the updated node-chat UI with targeted tests and frontend parsing checks
+
+### Milestone Area
+- Multimodal
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- keeps the new image-first multimodal capability usable instead of letting the attachment control overwhelm the node-chat experience
+
+### Demo Readiness Impact
+- the node chat should feel much closer to a modern chat product, with image upload available but visually lightweight
+
+### Work Completed
+- Refined the node-chat composer into a compact chat-style input bar with a dedicated attach button, multiline textarea, and stable bottom layout.
+- Changed image upload from multi-file selection to single-image behavior, where a new pick replaces the previous image.
+- Added true pre-send thumbnail preview with an immediate remove action instead of filename-only chips.
+- Updated keyboard behavior so `Enter` sends and `Shift + Enter` inserts a newline.
+- Allowed image-only sends while preserving the existing streaming request flow.
+- Added a minimal `source_message` relation on `NodeAttachment` so uploaded images can be attached to the correct user message.
+- Updated node serialization so each chat message now carries its own attachments for rendering.
+- Rendered attached images directly inside user messages and added a lightweight click-to-enlarge lightbox with close controls.
+- Adjusted provider payload construction so image-only messages do not inject empty text parts.
+- Expanded regression coverage for the new image-only send path, message-linked attachments, and updated node-chat UI affordances.
+- Followed up on browser feedback by removing the separate node-attachment gallery from node chat, shrinking the composer preview to a thumbnail chip, and bumping CSS/JS asset versions so the corrected UI actually reaches the browser.
+- Followed up again on composer behavior so submitting clears the current text immediately and the attachment flow now supports multiple images instead of only one.
+- Corrected the multi-image UX so repeated attachment picks accumulate on the client instead of replacing the previous selection.
+- Added clipboard image paste support in the node-chat textarea so pasted screenshots join the same staged attachment flow as uploaded images.
+- Re-ran `node --check` for `node-chat.js` and `node-panel.js`, plus `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0005_nodeattachment_source_message.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-image-first-multimodal`
+- New branch created/switched: none
+- Commits made:
+  - `9a40921` - `feat: refine multimodal chat composer UX`
+  - `1910ba5` - `docs: update agent progress log`
+  - pending docs follow-up commit for the finalized push status
+- Push status:
+  - pushed to `origin/feature/v2-image-first-multimodal`
+
+### Current Status
+- The node-chat image workflow now matches the current product direction much more closely: one image, real preview before send, image-only send support, and images rendered back into the chat transcript.
+
+### Next Recommended Step
+- Let the human re-check the node-chat UI in the browser, then decide whether the next multimodal slice should focus on routing visibility or graph-side comparison for image-based branches.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+- local uploaded media artifacts may appear during browser testing and should not be committed.
+
+
+## Session 2026-04-13 10:55
+
+### Session Goal
+- Start the v2 image-first multimodal milestone with a real end-to-end attachment slice.
+
+### Planned Tasks
+- add an image attachment data model and storage configuration for workspace nodes
+- wire node-chat image upload into the existing conversation flow
+- extend generation payload construction so prompt images can travel through the provider layer
+- add visible attachment indicators plus regression coverage before pushing
+
+### Milestone Area
+- Multimodal
+- Image-first
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- begins the required v2 multimodal capability with a concrete node/image workflow instead of placeholder UI
+
+### Demo Readiness Impact
+- the product now has a real image-anchored reasoning path that can be demonstrated from the node chat view and inspected back in the graph
+
+### Work Completed
+- Added a new `NodeAttachment` model plus migration for image attachments.
+- Added `MEDIA_URL` / `MEDIA_ROOT` development serving so uploaded images can be rendered back in the UI.
+- Added attachment serialization so nodes now carry image metadata into graph and chat payloads.
+- Extended context building so a user prompt can carry image attachments through the provider layer.
+- Updated both OpenAI and Gemini payload builders to include attached images in multimodal request parts.
+- Updated the node-chat composer to accept image uploads, show selected file chips, and send multipart requests when images are present.
+- Added a node-chat image gallery for attachments already linked to the current node.
+- Added a lightweight graph badge showing image counts on nodes with attachments.
+- Expanded regression coverage for node-chat attachment rendering and multipart streaming requests with images.
+- Re-ran `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `llm_tree_project/settings.py`
+- `llm_tree_project/urls.py`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0004_nodeattachment.py`
+- `tree_ui/services/attachments.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/streaming.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: `feature/v2-image-first-multimodal`
+- Commits made:
+  - pending commit for the first image-first multimodal slice
+- Push status:
+  - not pushed yet; implementation is verified and ready to commit
+
+### Current Status
+- The node chat flow now supports image attachments end-to-end and the provider request path is image-aware for OpenAI and Gemini.
+
+### Next Recommended Step
+- Let the human inspect the node-chat image upload flow in the browser, then decide whether the next multimodal slice should focus on graph-level comparison for image branches or routing behavior for image prompts.
+
+### Known Issues / Blockers / Tech Debt
+- Attachments are currently node-scoped rather than message-scoped, so a multi-turn node with several user prompts still shares one attachment set at the node level.
+- There is not yet any image-specific routing mode or provider observability UI beyond the visible attachment badges.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-13 00:02
+
+### Session Goal
+- Finalize the v2 long-term memory slice around the now-approved workspace-only memory design.
+
+### Planned Tasks
+- remove obsolete manual or node-level long-term memory entry points that no longer match the product direction
+- tighten the workspace-memory presentation on the main graph page so its read-only auto-sync behavior is explicit
+- update regression coverage and verify the full Django test suite before pushing
+
+### Milestone Area
+- Memory
+- Cleanup
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- consolidates long-term memory around one stable workspace-level memory block instead of leaving old manual-memory paths around
+
+### Demo Readiness Impact
+- the memory story now reads cleanly in demos: one workspace, one auto-maintained memory, visible on the main graph page, reused for future replies, and no competing manual-memory UI left behind
+
+### Work Completed
+- Removed the obsolete node-memory draft API route and the unused dedicated node-memory template/JS implementation.
+- Simplified the long-term memory surface so the remaining manual-memory endpoint now clearly rejects edits and points to the workspace-only design.
+- Added source-node metadata to serialized workspace memory so the main graph page can show where the latest memory refresh came from.
+- Updated the workspace-memory panel copy to make its read-only auto-sync behavior explicit and show the last source node link when available.
+- Expanded regression coverage for the new workspace-memory presentation and the updated manual-memory rejection response.
+- Re-ran `python3 manage.py test tree_ui.tests` successfully.
+
+### Files Changed
+- `tree_ui/views.py`
+- `tree_ui/urls.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for long-term memory cleanup and presentation polish
+- Push status:
+  - not pushed yet; cleanup is verified and ready to commit
+
+### Current Status
+- Long-term memory is now presented as a single workspace-level, read-only, automatically refreshed summary with no active manual branch-memory UI path remaining.
+
+### Next Recommended Step
+- Summarize the completed long-term memory deliverable and, if v2 continues, move on to the next major milestone area instead of further memory churn.
+
+### Known Issues / Blockers / Tech Debt
+- The codebase still retains lower-level memory helper functions for possible future expansion, but the active product surface is now workspace-only.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:31
+
+### Session Goal
+- Implement the node-chat UI flow for editing an old node transcript and branching again from the edited state.
+
+### Planned Tasks
+- add an `Edit as variant` entry point in the node-focused chat view
+- wire the existing edited-variant API into a usable client-side form and redirect flow
+- add regression coverage for the new node-chat editing affordances
+- verify the affected JS and Django tests before pushing
+
+### Milestone Area
+- Graph Interaction
+- Edit / Re-branch
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- strengthens the required v2 graph workflow for version-safe node editing and re-branching
+
+### Demo Readiness Impact
+- Historical nodes can now be edited directly from the node-focused chat page and forked into a new variant without overwriting the original branch.
+
+### Work Completed
+- Added an `Edit as variant` action to the node-focused chat header.
+- Added an inline edit panel that clones the current node transcript into editable textareas plus a variant title field.
+- Wired the panel to the existing `create_edited_node_variant` API and redirect flow so successful edits open the new variant's chat page immediately.
+- Added lightweight node-chat styling for the edit panel so the new flow stays readable without turning the page into a second app surface.
+- Expanded chat-page regression coverage and re-ran the full `tree_ui.tests` suite.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - `5550ac0` - `feat: add node chat edited variant flow`
+- Push status:
+  - pushed to `origin/feature/v2-memory-foundation` after the feature commit
+  - progress-log update still pending commit in the working tree
+
+### Current Status
+- Node chat now supports a practical edit-old-node and re-branch workflow on top of the existing backend variant model.
+
+### Next Recommended Step
+- Let the human review the edit-variant flow in the browser, then decide whether the next slice should be inline variant creation from the graph workspace or richer variant comparison metadata.
+
+### Known Issues / Blockers / Tech Debt
+- The edit-variant form currently edits the entire transcript at once; it does not yet support adding or deleting message rows.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:24
+
+### Session Goal
+- Fix the browser still loading stale frontend modules after the node-rename and markdown-renderer updates.
+
+### Planned Tasks
+- bump version strings for the main workspace script and markdown-related module imports
+- verify the JavaScript modules still parse correctly
+- push the cache-busting update
+
+### Milestone Area
+- UI-UX
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Browser review should now reflect the latest graph interaction and markdown rendering fixes without requiring guesswork about stale assets.
+
+### Work Completed
+- Updated the graph workspace script tag version so the browser fetches the latest `app.js`.
+- Updated markdown-related module import version strings so node-chat and memory rendering stop using stale cached markdown code.
+- Verified the affected JS modules with `node --check`.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for frontend cache-busting updates
+- Push status:
+  - not pushed yet; cache-busting fix is ready to commit
+
+### Current Status
+- The browser should now load the newest rename and markdown-list fixes instead of cached older modules.
+
+### Next Recommended Step
+- Have the human refresh the page and confirm the rename button is now interactive.
+
+### Known Issues / Blockers / Tech Debt
+- The current frontend still relies on manual version strings for cache busting.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:19
+
+### Session Goal
+- Fix two UI bugs reported during browser review:
+  - selected node title should be renameable
+  - ordered lists in rendered answers should keep `1. 2. 3. 4.` numbering instead of restarting at `1.`
+
+### Planned Tasks
+- add a node-title update API and expose a rename action in the main workspace UI
+- adjust markdown list parsing so ordered items with nested bullets remain part of one ordered list
+- verify both behaviors and push the fix
+
+### Milestone Area
+- UI-UX
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The graph workspace is now easier to correct during demos because node titles can be renamed in place.
+- Rendered teaching content now preserves normal ordered numbering for top-level lists.
+
+### Work Completed
+- Added `update_node_title` API support for workspace nodes.
+- Added a `Rename node` action to the main workspace toolbar for the current selection.
+- Added regression coverage for title updates and blank-title normalization.
+- Reworked the markdown list parser so ordered list items can contain nested bullet content without restarting numbering at `1.` for each top-level item.
+- Verified the markdown fix with a direct Node render check and re-ran `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/markdown.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for node rename and ordered-list rendering fixes
+- Push status:
+  - not pushed yet; fixes are ready to commit
+
+### Current Status
+- Selected nodes can now be renamed from the main workspace UI.
+- Ordered list rendering now preserves a single `<ol>` block with sequential numbering even when each item includes nested bullet points.
+
+### Next Recommended Step
+- Let the human verify both fixes in the browser, then continue with the next v2 interaction bug they find.
+
+### Known Issues / Blockers / Tech Debt
+- The node rename flow currently uses a browser prompt for speed; it can be upgraded later to an inline edit control if you want a cleaner interaction.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:14
+
+### Session Goal
+- Move the workspace-memory panel to the bottom of the main workspace page.
+
+### Planned Tasks
+- relocate the workspace-memory section in the workspace template
+- verify the main workspace page still renders and initializes memory correctly
+- push the UI adjustment
+
+### Milestone Area
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The main graph page now keeps the graph and creation controls visually primary, with workspace memory moved to the bottom as a secondary reference block.
+
+### Work Completed
+- Moved the `Workspace memory` panel from above the graph stage to the bottom of the main workspace page.
+- Verified the main workspace page still renders and auto-creates workspace memory correctly with targeted tests.
+
+### Files Changed
+- `tree_ui/templates/tree_ui/index.html`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for moving workspace memory panel lower in the workspace page
+- Push status:
+  - not pushed yet; UI adjustment is ready to commit
+
+### Current Status
+- Workspace memory remains fully functional but is now placed at the bottom of the workspace page.
+
+### Next Recommended Step
+- Let the human review the new placement and decide whether the memory block should also be visually collapsed by default.
+
+### Known Issues / Blockers / Tech Debt
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:12
+
+### Session Goal
+- Fix the case where workspace memory still shows the placeholder even though the workspace already has real dialogue.
+- Ensure memory refresh falls back to a local summary instead of an empty placeholder when provider generation fails.
+
+### Planned Tasks
+- inspect the affected workspace data directly
+- replace placeholder fallback behavior with a transcript-based local summary
+- add regression coverage for provider-failure fallback behavior
+- push the fix after verifying the full test suite
+
+### Milestone Area
+- Memory
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Workspace memory no longer appears broken when provider-backed summarization is unavailable.
+
+### Work Completed
+- Inspected the real `C語言學習` workspace data and confirmed it had nodes/messages but was stuck on placeholder memory.
+- Added a transcript-based local workspace summary fallback so memory refresh now produces a usable stored summary even when provider generation fails.
+- Manually re-ran `ensure_workspace_memory(...)` for the affected workspace so its stored memory now contains a real summary immediately.
+- Added regression coverage for provider-failure fallback behavior.
+- Verified the fix with `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for local workspace-memory fallback summary
+- Push status:
+  - not pushed yet; fix is ready to commit
+
+### Current Status
+- The affected workspace now has a non-placeholder stored memory entry.
+- Future refreshes no longer depend entirely on provider-backed summarization success.
+
+### Next Recommended Step
+- Let the human confirm the new workspace memory content is visible and useful, then refine the summary wording if needed.
+
+### Known Issues / Blockers / Tech Debt
+- The local fallback summary is intentionally simple and should be improved if you want more polished memory wording.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 22:05
+
+### Session Goal
+- Fix the case where a workspace with existing dialogue still shows the old fallback workspace-memory text.
+- Make sure stored fallback memory is automatically replaced by a real summary as soon as conversation history exists.
+
+### Planned Tasks
+- update workspace-memory initialization to detect stale fallback content
+- regenerate workspace memory when fallback content is found alongside real conversation history
+- add regression coverage for the stale-fallback replacement case
+- verify the full test suite and push the fix
+
+### Milestone Area
+- Memory
+- Bug Fix
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- Existing workspaces no longer get stuck showing the fallback message after conversation history has already accumulated.
+
+### Work Completed
+- Added a `WORKSPACE_MEMORY_FALLBACK_CONTENT` constant so placeholder-state detection is explicit and consistent.
+- Updated `ensure_workspace_memory(...)` so if the stored workspace memory is still the fallback text but the workspace now has conversation history, it immediately regenerates and overwrites the placeholder.
+- Added regression coverage for the stale-fallback replacement case and updated fallback assertions to use the shared constant.
+- Verified the fix with `python3 -m py_compile tree_ui/services/memory_drafting.py tree_ui/tests.py` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for stale workspace-memory fallback replacement
+- Push status:
+  - not pushed yet; fix is ready to commit
+
+### Current Status
+- Workspace memory is initialized by default.
+- Workspaces with older placeholder memory now auto-replace that placeholder with a real summary once dialogue exists.
+- Repeated viewing still stays stable when nothing new has changed.
+
+### Next Recommended Step
+- Let the human confirm the placeholder is gone for the affected workspace, then continue tuning the summary wording if necessary.
+
+### Known Issues / Blockers / Tech Debt
+- The summarization quality itself may still need product tuning even though the initialization and refresh flow is now correct.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 21:55
+
+### Session Goal
+- Make workspace memory exist by default instead of waiting for the human to create or trigger it manually.
+- Ensure revisiting the workspace memory view does not regenerate content unless new dialogue has actually been added.
+
+### Planned Tasks
+- add a helper that guarantees a stored workspace memory record exists when opening a workspace
+- create a persisted fallback memory for empty workspaces
+- keep post-dialogue refresh behavior so completed replies still re-check and update workspace memory
+- add regression coverage and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The workspace memory behavior is now simpler and more deterministic for demos: the panel is never empty because of missing initialization, and repeated viewing no longer causes surprise changes.
+
+### Work Completed
+- Added `ensure_workspace_memory(...)` so opening a workspace guarantees there is one persisted workspace memory record.
+- For workspaces that already have conversation history but no saved memory yet, the first workspace open now auto-generates and stores the memory block.
+- For truly empty workspaces, the first workspace open now stores a fallback `Workspace memory` record instead of leaving the panel uninitialized.
+- Kept the existing post-dialogue refresh path, so each completed conversation turn still re-checks and updates workspace memory when needed.
+- Added tests for automatic memory creation on workspace open and for stable fallback creation in empty workspaces.
+- Verified the slice with `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - pending commit for default workspace-memory initialization
+- Push status:
+  - not pushed yet; feature update is ready to commit
+
+### Current Status
+- Workspace memory now exists by default.
+- Revisiting the workspace page reuses the stored memory instead of regenerating it when nothing has changed.
+- New dialogue still refreshes the stored workspace memory after completion.
+
+### Next Recommended Step
+- Let the human verify whether the auto-generated workspace memory wording is the right level of abstraction, then tune summarization quality if needed.
+
+### Known Issues / Blockers / Tech Debt
+- The first-load initialization currently happens in the Django view path, which is practical for now but could later move to a more explicit workspace lifecycle hook.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+
+## Session 2026-04-12 15:59
+
+### Session Goal
+- Replace the current multi-surface memory workflow with a single consolidated workspace memory.
+- Show that workspace memory directly in the main graph workspace instead of relying on a separate memory editing page.
+- Ensure the stored memory stays stable when revisiting the UI and only changes after new dialogue is added.
+
+### Planned Tasks
+- simplify retrieval so generation uses one canonical workspace memory entry
+- update workspace-memory refresh to summarize the whole workspace conversation state
+- move the primary memory display into the main workspace page and remove the old memory-page path from the main flow
+- update regression coverage, commit the slice, and push the branch
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The v2 memory behavior is now much easier to explain: one workspace, one stored memory block, visible on the main graph page and reused for future replies.
+
+### Work Completed
+- Changed long-term memory retrieval so new generations now use one canonical workspace memory entry instead of mixing workspace and branch memory lists.
+- Updated workspace-memory refresh so it summarizes the full workspace conversation snapshot into a single stored memory block titled `Workspace memory`.
+- Added a read-only workspace-memory panel directly to the main graph workspace UI.
+- Changed the node-chat memory link to jump back to the main workspace memory panel.
+- Redirected the old node-memory route back to the workspace memory panel so repeated viewing does not regenerate content.
+- Locked manual memory creation behind a read-only response so the UI model is consistently automatic.
+- Verified the slice with `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_service.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, `node --check tree_ui/static/tree_ui/js/app.js`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/services/memory_service.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - `a5cd54a` - `feat: consolidate workspace long-term memory`
+  - pending docs update commit for this progress log entry
+- Push status:
+  - not pushed yet; feature commit is ready and docs update is still being recorded
+
+### Current Status
+- Each workspace now has one primary long-term memory block.
+- The memory shown on the main graph page is stored content, not freshly regenerated view output.
+- New dialogue continues to auto-refresh that stored workspace memory after message append.
+
+### Next Recommended Step
+- Let the human review the main graph workspace memory panel, then tune the memory summarization quality and wording if needed.
+
+### Known Issues / Blockers / Tech Debt
+- Old branch-memory draft endpoints still exist in the codebase even though the main product flow no longer uses them.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commits.
+
+## Session 2026-04-12 10:52
+
+### Session Goal
+- Remove the remaining manual workspace-memory update behavior.
+- Make workspace memory refresh automatically whenever new dialogue is added.
+
+### Planned Tasks
+- connect workspace-memory refresh into the node message append flow
+- remove the manual refresh control and endpoint from the dedicated memory page flow
+- add/update tests so workspace-memory refresh is validated as automatic behavior
+- update the progress log and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The long-term memory story is simpler to explain: workspace memory updates itself from conversation activity rather than waiting for user action.
+
+### Work Completed
+- Connected workspace-memory refresh to the post-message append flow so new dialogue automatically triggers workspace preference memory regeneration.
+- Removed the manual workspace-memory refresh control from the dedicated memory page.
+- Removed the now-unnecessary workspace-memory refresh endpoint.
+- Updated regression coverage so the chat append flow now asserts that workspace memory refresh is triggered automatically.
+- Re-ran the full `tree_ui.tests` suite after the change.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; automatic workspace-memory refresh slice is ready to commit
+
+### Current Status
+- Workspace memory is no longer manually refreshed by the user.
+- New dialogue now automatically updates the workspace-level long-term memory profile.
+
+### Next Recommended Step
+- Let the human review the new behavior, then improve the quality and structure of the workspace preference profile itself.
+
+### Known Issues / Blockers / Tech Debt
+- Workspace memory is still one consolidated preference profile rather than multiple structured slots.
+- `.gitignore` currently has an unrelated local change and should remain outside the feature commit.
+
+## Session 2026-04-12 10:35
+
+### Session Goal
+- Align the long-term memory behavior with the user's clarified intent:
+  - workspace memory should be model-managed and read-only
+  - user edits should only apply to branch-level notes
+- Remove the appearance of incomplete memory drafts ending in `...`
+
+### Planned Tasks
+- inspect the current dedicated memory page and identify the minimum changes to separate workspace memory from user-editable branch memory
+- add a workspace-memory refresh flow managed by the model
+- reject manual workspace-memory creation from the user-facing save flow
+- normalize draft output so it no longer looks cut off
+- add regression coverage, update the progress log, and push the slice
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The memory feature is now easier to explain as two clearer behaviors:
+  - model-maintained workspace preference memory
+  - user-maintained branch notes
+
+### Work Completed
+- Updated the memory drafting logic so drafts no longer intentionally end with ellipsis and have more output room.
+- Added a workspace-memory refresh path that lets the model auto-organize a read-only workspace preference profile from workspace conversations.
+- Added a new workspace-memory refresh API endpoint.
+- Changed the dedicated memory page so:
+  - workspace memory is explicitly read-only and model-managed
+  - branch memory remains the manual note area
+  - the workspace section has a dedicated refresh action
+- Prevented manual workspace-memory creation from the user-facing memory save endpoint.
+- Added regression coverage for:
+  - read-only workspace-memory wording on the dedicated memory page
+  - workspace-memory refresh API behavior
+  - rejection of manual workspace-memory creation
+  - workspace preference memory refresh behavior
+  - draft normalization that removes trailing ellipsis
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-memory.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; read-only workspace-memory slice is ready to commit
+
+### Current Status
+- Workspace memory is now implemented as model-managed read-only preference memory.
+- User edits are now limited to branch-level memory notes.
+
+### Next Recommended Step
+- Let the human review the new dedicated memory behavior, then decide whether the next slice should improve preference extraction quality, add memory history/versioning, or expose workspace memory in the graph view.
+
+### Known Issues / Blockers / Tech Debt
+- Workspace memory currently refreshes one consolidated preference profile rather than multiple structured preference entries.
+- Memory editing/deletion is still not implemented.
+
+## Session 2026-04-12 10:21
+
+### Session Goal
+- Move long-term memory out of the cramped node-chat sidebar into a dedicated page.
+- Change the memory flow so the model prepares a first draft and the user refines it before saving.
+
+### Planned Tasks
+- inspect the current memory/chat implementation and identify the smallest clean split into a dedicated memory page
+- add a dedicated node memory route, template, and frontend module
+- add a draft-generation endpoint so the page can prefill a memory draft automatically
+- simplify the node chat page back to chat-first behavior with a single memory entry link
+- add tests, update the progress log, and push the slice once stable
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The long-term memory workflow is now easier to explain and demo because memory is a dedicated screen with an explicit draft-review-save flow.
+
+### Work Completed
+- Reworked the memory UX based on human feedback that the node-chat sidebar was too cramped and manual-first.
+- Removed the memory UI from the node-chat page and restored node chat to a simpler chat-first layout with an `Open memory` entry link.
+- Added a dedicated memory page for each node.
+- Added an automatic memory draft flow so the memory page requests one suggested memory draft from the current node provider/model and pre-fills the form for user refinement.
+- Added a new `memory_drafting` service with:
+  - provider-backed draft generation
+  - strict JSON parsing
+  - fallback draft generation when provider output is unavailable or malformed
+- Added a draft-generation API endpoint for the memory page.
+- Added regression coverage for:
+  - dedicated memory page rendering
+  - memory draft API
+  - structured memory draft generation
+  - node chat still rendering as a chat-first view
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `node --check tree_ui/static/tree_ui/js/node-memory.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/memory_drafting.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/memory_drafting.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-memory.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/templates/tree_ui/node_memory.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet; dedicated memory page slice is ready to commit
+
+### Current Status
+- Long-term memory is no longer embedded into the node-chat UI.
+- The current v2 memory workflow is now: open dedicated memory page -> review model draft -> edit -> save.
+
+### Next Recommended Step
+- Let the human review the dedicated memory page, then decide whether the next slice should add draft history, edit/delete memory operations, or graph-visible memory summaries.
+
+### Known Issues / Blockers / Tech Debt
+- Draft generation currently returns one suggested memory at a time rather than multiple candidates.
+- Memory editing/deletion is still not implemented.
+
+## Session 2026-04-11 21:10
+
+### Session Goal
+- Turn the v2 memory foundation into the first user-visible memory workflow.
+- Add a memory inspector and save/pin flow that the human can inspect in the UI.
+
+### Planned Tasks
+- inspect the current node-chat UI and API boundaries for the first visible memory surface
+- add node-chat memory inspector UI and memory creation API support
+- connect retrieved long-term memory into generation instructions while keeping it visibly separate from branch-local transcript context
+- add regression coverage, update progress log, and push the slice once stable
+
+### Milestone Area
+- Memory
+- UI-UX
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- The system now has a visible v2 feature the user can inspect directly in the browser: memory preview, saved memories, and message-to-memory flow.
+
+### Work Completed
+- Inspected the current node-chat page and selected it as the first stable place to expose long-term memory UI.
+- Added a node-chat memory inspector sidebar with:
+  - a retrieved-memory preview block
+  - a manual memory creation form
+  - workspace-memory and branch-memory lists
+  - message-level `Use as memory` actions that load transcript content into the save form
+- Added a new memory creation API endpoint so the frontend can save manual notes and pinned message-derived memories.
+- Added server-side memory payload building for the node-chat view so the UI can render current workspace, branch, and retrieved memory state.
+- Connected retrieved long-term memory into generation system instructions while keeping it explicitly separated from branch-local transcript context.
+- Added regression coverage for:
+  - node-chat memory UI visibility
+  - memory creation API behavior
+  - generation instructions including retrieved long-term memory
+- Verified the slice with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 -m py_compile tree_ui/views.py tree_ui/services/context_builder.py tree_ui/services/node_creation.py tree_ui/tests.py`, and `python3 manage.py test tree_ui.tests`.
+- Followed up on human review by simplifying the node-chat memory UI structure and styling:
+  - collapsed the sidebar into a single plain panel
+  - reduced headings and helper copy
+  - separated the crowded form row into a cleaner layout
+  - toned down memory cards and message action buttons
+  - kept the existing memory behavior unchanged while making the UI easier to scan
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-memory-foundation`
+- New branch created/switched: none
+- Commits made:
+  - `e1c8a3b` - `feat: add v2 memory inspector UI`
+- Push status:
+  - pushed to `origin/feature/v2-memory-foundation`
+
+### Current Status
+- The v2 memory foundation is now visible and inspectable in the node-chat UI.
+- The user can review actual memory content in the browser instead of only backend structures.
+- The branch contains both the foundational memory schema slice and the first visible memory UI slice.
+- The memory UI has been simplified after first visual feedback and is ready for another round of human review.
+
+### Next Recommended Step
+- After human review, refine the memory sidebar UX and decide whether the next slice should add memory deletion/editing, graph-side memory visibility, or auto/semi-auto extraction.
+
+### Known Issues / Blockers / Tech Debt
+- Memory editing/deletion is not implemented yet.
+- The first visible memory UI lives on the node-chat page; graph-side memory inspector work is still pending.
+
+## Session 2026-04-11 21:05
+
+### Session Goal
+- Start the v2 milestone from the first priority area: long-term memory foundation.
+- Add the core data-model and service boundaries needed for workspace memory and branch memory without breaking the existing branch-local short-term context rule.
+
+### Planned Tasks
+- review current repository state, `AGENTS.md`, latest progress log entry, and active git branch before editing
+- create or switch to a dedicated v2 memory branch
+- add foundational Django models and service helpers for workspace-scoped and branch-scoped memories
+- add migrations and regression coverage for the new v2 memory layer
+- update this progress log with v2-specific status, git results, and next recommended step
+
+### Milestone Area
+- Memory
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- none in this slice
+
+### Demo Readiness Impact
+- This slice is foundational rather than immediately visual; it prepares later visible memory save/retrieval and inspector flows.
+
+### Work Completed
+- Session started; `AGENTS.md`, repository state, and the latest progress log were reviewed.
+- Confirmed the v2 addendum priority order and selected `memory data model foundation` as the first v2 slice.
+- Switched from `main` to `feature/v2-memory-foundation`.
+- Added a new `ConversationMemory` model to represent long-term memory separately from branch-local short-term transcript context.
+- Implemented the initial memory service layer for:
+  - creating validated workspace-scoped memories
+  - creating validated branch-scoped memories anchored to a node in the same workspace
+  - retrieving workspace + current-lineage branch memories for future generation use
+  - formatting retrieved memories into an explicit long-term-memory block for later prompt/debug visibility
+- Added the `0003_conversationmemory` migration.
+- Added focused regression coverage to verify:
+  - workspace memory creation
+  - branch memory anchor validation
+  - sibling branch memories are excluded from retrieval
+  - retrieved long-term memory remains an explicit separate block
+- Verified the slice with `python3 manage.py test tree_ui.tests.MemoryFoundationTests tree_ui.tests.WorkspaceGraphViewTests.test_branch_local_context_uses_selected_lineage_only` and `python3 manage.py test tree_ui.tests`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/services/memory_service.py`
+- `tree_ui/migrations/0003_conversationmemory.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/graph-node-inspector`
+- New branch created/switched: `feature/v2-memory-foundation` from `main`
+- Commits made:
+  - `3acea29` - `feat: add v2 memory foundation`
+- Push status:
+  - pushed to `origin/feature/v2-memory-foundation`
+
+### Current Status
+- v2 work has started.
+- The implementation target for this session is the memory foundation layer, not the older UI polish stream.
+- The codebase now has a dedicated long-term memory model/service layer, but no user-facing memory save/retrieval UI yet.
+- The first v2 feature branch is pushed and ready for follow-up slices.
+
+### Next Recommended Step
+- Build the next v2 memory slice on top of this foundation:
+  - memory save / pin flow
+  - visible memory retrieval surface or inspector
+  - prompt integration that keeps short-term lineage and long-term memory visibly separate
+
+### Known Issues / Blockers / Tech Debt
+- The current slice is foundational only; retrieved memories are not yet surfaced in the UI or injected into live generation requests.
+
 ## Session 2026-03-24 21:37
 
 ### Session Goal

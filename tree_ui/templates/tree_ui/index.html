@@ -89,6 +89,9 @@
             <div class="workspace-selection-flags">
               <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
               <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+              <button class="detail-toggle-button detail-toggle-button-quiet" id="node-rename-button" type="button" disabled>
+                Rename node
+              </button>
               <button class="detail-toggle-button detail-toggle-button-danger" id="node-delete-button" type="button" disabled>
                 Delete node
               </button>
@@ -240,11 +243,40 @@
           <span class="legend-pill legend-pill-gemini">Gemini branch</span>
         </div>
       </section>
+      <section class="workspace-memory-panel" id="workspace-memory-panel" aria-label="Workspace memory">
+        <div class="workspace-memory-header">
+          <div>
+            <p class="panel-kicker">Workspace Memory</p>
+            <h3>Shared summary for this workspace</h3>
+            <p>Read-only. Auto-updated after each new reply and reused as long-term reference for future replies in this workspace.</p>
+          </div>
+          <div class="workspace-summary-strip">
+            {% if workspace_memory %}
+              <span class="workspace-summary-pill">Synced {{ workspace_memory.updated_at|date:"Y-m-d H:i" }}</span>
+            {% endif %}
+            <span class="workspace-summary-pill">Read only</span>
+          </div>
+        </div>
+        <div class="workspace-memory-content">
+          {% if workspace_memory %}
+            {{ workspace_memory.content }}
+          {% else %}
+            No workspace memory yet. Start a conversation in this workspace.
+          {% endif %}
+        </div>
+        {% if workspace_memory and workspace_memory.source_node_title %}
+          <p class="workspace-memory-source">
+            Last refreshed from
+            <a href="{{ workspace_memory.source_node_url }}">{{ workspace_memory.source_node_title }}</a>.
+          </p>
+        {% endif %}
+      </section>
     </div>
   </section>
 
   <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
   <div id="node-delete-url-template" data-node-delete-url-template="{% url 'delete_workspace_node' graph_payload.workspace.slug 999999 %}" hidden></div>
+  <div id="node-title-update-url-template" data-node-title-update-url-template="{% url 'update_node_title' graph_payload.workspace.slug 999999 %}" hidden></div>
   <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
     <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
     <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">
@@ -310,5 +342,5 @@
   </section>
 
   {{ graph_payload|json_script:"graph-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260322-graph-hint-fix"></script>
+  <script type="module" src="{% static 'tree_ui/js/app.js' %}?v=20260413-image-badges"></script>
 {% endblock %}

@@ -6,7 +6,11 @@
 {% block content %}
   <section class="chat-page chat-page-minimal chat-page-immersive" id="chat-page">
     <header class="chat-shell-header">
-      <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+      <div class="chat-shell-links">
+        <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
+        <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
+        <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
+      </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
         <h1 id="chat-node-title">{{ node_payload.title }}</h1>
         <p class="chat-shell-meta">{{ workspace.name }} · {{ node_payload.provider|title }} / {{ node_payload.model_name }}</p>
@@ -25,6 +29,33 @@
       </div>
     </header>
 
+    <section class="chat-edit-shell" id="chat-edit-shell" hidden>
+      <form
+        class="chat-edit-form"
+        id="edit-variant-form"
+        data-edit-variant-url="{% url 'create_edited_node_variant' workspace.slug node_payload.id %}"
+      >
+        {% csrf_token %}
+        <div class="chat-edit-header">
+          <div>
+            <p class="chat-edit-kicker">Edit and branch</p>
+            <h2>Create an edited variant</h2>
+            <p class="chat-edit-note">Adjust this node's messages, keep the original history unchanged, then open the new edited branch.</p>
+          </div>
+          <button class="chat-shell-action" id="edit-variant-cancel-button" type="button">Cancel</button>
+        </div>
+        <label class="form-field chat-edit-title-field">
+          <span>Variant title</span>
+          <input id="edit-variant-title" name="title" type="text" value="{{ node_payload.title }} (Edited)" maxlength="160">
+        </label>
+        <div class="editor-list chat-edit-editor-list" id="edit-variant-editors"></div>
+        <div class="chat-edit-actions">
+          <p class="form-feedback" id="edit-variant-feedback" role="status" aria-live="polite"></p>
+          <button class="primary-button" id="edit-variant-submit-button" type="submit">Create edited variant</button>
+        </div>
+      </form>
+    </section>
+
     <section class="chat-thread-panel chat-thread-panel-minimal{% if not can_append_in_place %} chat-thread-panel-history{% endif %}">
       <div class="chat-content-column">
         <div class="chat-content-shell">
@@ -32,48 +63,63 @@
           <button class="chat-jump-button" id="chat-jump-button" type="button" hidden>
             Jump to latest
           </button>
-        </div>
-      </div>
-      <div class="chat-composer-wrap">
-        <form
-          class="chat-composer chat-composer-minimal{% if not can_append_in_place %} chat-composer-branching{% endif %}"
-          id="chat-form"
-          data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
-        >
-          {% csrf_token %}
-          <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
-          {% if not can_append_in_place %}
-            <p class="chat-composer-kicker">Continue in new child</p>
-          {% endif %}
-          <label class="form-field chat-input-shell">
-            <span>Reply</span>
-            <textarea
-              id="chat-prompt-input"
-              name="prompt"
-              rows="1"
-              placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
-            ></textarea>
-          </label>
-          <div class="chat-composer-actions">
-            <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
-            <button class="primary-button" id="chat-submit-button" type="submit">
-              {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
-            </button>
-          </div>
-          <div class="chat-composer-meta">
-            <p class="chat-composer-note">
-              {% if can_append_in_place %}
-                Use <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to send.
-              {% else %}
-                This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
+          <div class="chat-composer-wrap">
+            <form
+              class="chat-composer chat-composer-minimal{% if not can_append_in_place %} chat-composer-branching{% endif %}"
+              id="chat-form"
+              data-node-message-stream-url="{% url 'stream_node_message' workspace.slug node_payload.id %}"
+            >
+              {% csrf_token %}
+              <input type="hidden" id="chat-csrf-token" value="{{ csrf_token }}">
+              {% if not can_append_in_place %}
+                <p class="chat-composer-kicker">Continue in new child</p>
               {% endif %}
-            </p>
+              <div class="chat-input-row">
+                <button class="chat-attach-button" id="chat-attach-button" type="button" aria-label="Attach images">+</button>
+                <label class="form-field chat-input-shell">
+                  <span>Reply</span>
+                  <textarea
+                    id="chat-prompt-input"
+                    name="prompt"
+                    rows="1"
+                    placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
+                  ></textarea>
+                </label>
+              </div>
+              <label class="sr-only" for="chat-image-input">Attach images</label>
+              <input id="chat-image-input" name="images" type="file" accept="image/*,application/pdf" multiple hidden>
+              <div class="chat-selected-files" id="chat-selected-files" hidden></div>
+              <div class="chat-composer-actions">
+                <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
+                <button class="primary-button" id="chat-submit-button" type="submit">
+                  {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
+                </button>
+              </div>
+              <div class="chat-composer-meta">
+                <p class="chat-composer-note">
+                  {% if can_append_in_place %}
+                    Enter sends. Shift + Enter adds a new line.
+                  {% else %}
+                    This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
+                  {% endif %}
+                </p>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </section>
   </section>
 
-  {{ node_payload|json_script:"node-chat-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260324-markdown-rendering"></script>
+  <div class="chat-lightbox" id="chat-image-lightbox" hidden>
+    <button class="chat-lightbox-backdrop" id="chat-image-lightbox-backdrop" type="button" aria-label="Close image preview"></button>
+    <div class="chat-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Image preview">
+      <button class="chat-lightbox-close" id="chat-image-lightbox-close" type="button" aria-label="Close image preview">×</button>
+      <img id="chat-image-lightbox-image" alt="">
+      <p class="chat-lightbox-caption" id="chat-image-lightbox-caption"></p>
+    </div>
+  </div>
+
+  {{ node_payload|json_script:"node-chat-node-payload" }}
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer-fix2"></script>
 {% endblock %}

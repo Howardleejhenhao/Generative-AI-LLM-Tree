@@ -5,9 +5,11 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from tree_ui.models import ConversationNode, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, Workspace
+from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
+from tree_ui.services.memory_drafting import ensure_workspace_memory
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.node_creation import (
     append_messages_to_node_with_reply,
@@ -48,6 +50,25 @@ def _build_lineage(node: ConversationNode) -> list[ConversationNode]:
     return list(reversed(lineage))
 
 
+def _serialize_workspace_memory(memory: ConversationMemory | None, *, workspace: Workspace) -> dict | None:
+    if memory is None:
+        return None
+
+    return {
+        "id": memory.id,
+        "title": memory.title,
+        "content": memory.content,
+        "updated_at": memory.updated_at,
+        "source_node_id": memory.source_node_id,
+        "source_node_title": memory.source_node.title if memory.source_node_id else "",
+        "source_node_url": (
+            reverse("workspace_node_chat", args=[workspace.slug, memory.source_node_id])
+            if memory.source_node_id
+            else ""
+        ),
+    }
+
+
 def workspace_home(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     return HttpResponseRedirect(reverse("workspace_graph", args=[workspace.slug]))
@@ -56,12 +77,14 @@ def workspace_home(request):
 def workspace_graph(request, slug: str):
     workspace = get_object_or_404(Workspace, slug=slug)
     graph_payload = serialize_workspace(workspace)
+    workspace_memory = ensure_workspace_memory(workspace)
     return render(
         request,
         "tree_ui/index.html",
         {
             "graph_payload": graph_payload,
             "workspace_list": _serialize_workspace_list(workspace),
+            "workspace_memory": _serialize_workspace_memory(workspace_memory, workspace=workspace),
         },
     )
 
@@ -70,8 +93,9 @@ def workspace_node_chat(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
         ConversationNode.objects.select_related("workspace", "parent", "edited_from").prefetch_related(
-            "messages",
+            "messages__attachments",
             "children",
+            "attachments",
         ),
         pk=node_id,
         workspace=workspace,
@@ -87,6 +111,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
             "workspace": workspace,
             "workspace_list": _serialize_workspace_list(workspace),
             "node_payload": serialize_node(node),
+            "workspace_memory_url": f"{reverse('workspace_graph', args=[workspace.slug])}#workspace-memory-panel",
             "lineage_items": [
                 {
                     "id": item.id,
@@ -137,6 +162,11 @@ def workspace_node_chat(request, slug: str, node_id: int):
         },
     )
 
+
+def workspace_node_memory(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+    return HttpResponseRedirect(f"{reverse('workspace_graph', args=[workspace.slug])}#workspace-memory-panel")
 
 def _parse_node_request(request, slug: str) -> tuple[Workspace, ConversationNode | None, dict]:
     workspace = get_object_or_404(Workspace, slug=slug)
@@ -286,6 +316,11 @@ def create_workspace_node(request, slug: str):
 
 
 @require_POST
+def create_workspace_memory_view(request, slug: str):
+    return HttpResponseBadRequest("Manual long-term memory editing has been removed. Workspace memory is automatic and read only.")
+
+
+@require_POST
 def delete_workspace_node(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
@@ -344,6 +379,29 @@ def create_edited_node_variant(request, slug: str, node_id: int):
 
 
 @require_POST
+def update_node_title(request, slug: str, node_id: int):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
+
+    try:
+        payload = _parse_json_payload(request)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    raw_title = payload.get("title", "")
+    if not isinstance(raw_title, str):
+        return HttpResponseBadRequest("Title must be a string.")
+
+    normalized_title = raw_title.strip() or "Untitled conversation"
+    if len(normalized_title) > 160:
+        return HttpResponseBadRequest("Title must be 160 characters or fewer.")
+
+    node.title = normalized_title
+    node.save(update_fields=["title", "updated_at"])
+    return JsonResponse({"node": serialize_node(node)})
+
+
+@require_POST
 def update_node_position(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(ConversationNode, pk=node_id, workspace=workspace)
@@ -377,18 +435,26 @@ def stream_workspace_node(request, slug: str):
 def stream_node_message(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
-        ConversationNode.objects.prefetch_related("messages"),
+        ConversationNode.objects.prefetch_related("messages__attachments", "attachments"),
         pk=node_id,
         workspace=workspace,
     )
 
-    try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON payload.")
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        payload = {"prompt": request.POST.get("prompt", "")}
+        uploaded_images = request.FILES.getlist("images")
+    else:
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return HttpResponseBadRequest("Invalid JSON payload.")
+        uploaded_images = []
 
     try:
-        resolved_inputs = resolve_message_append_inputs(prompt=payload.get("prompt", ""))
+        resolved_inputs = resolve_message_append_inputs(
+            prompt=payload.get("prompt", ""),
+            has_attachments=bool(uploaded_images),
+        )
     except ValueError as exc:
         return HttpResponseBadRequest(str(exc))
 
@@ -400,6 +466,11 @@ def stream_node_message(request, slug: str, node_id: int):
             title=resolved_inputs["summary"],
         )
         created_new_branch = True
+
+    try:
+        prompt_attachments = create_node_attachments(node=target_node, files=uploaded_images)
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
 
     def event_stream():
         try:
@@ -419,6 +490,7 @@ def stream_node_message(request, slug: str, node_id: int):
                     "created_new_branch": created_new_branch,
                     "source_node_id": node.id,
                     "node_chat_url": reverse("workspace_node_chat", args=[workspace.slug, target_node.id]),
+                    "attachment_count": len(prompt_attachments),
                 },
             )
             for chunk in stream_assistant_reply(
@@ -430,6 +502,7 @@ def stream_node_message(request, slug: str, node_id: int):
                 temperature=target_node.temperature,
                 top_p=target_node.top_p,
                 max_output_tokens=target_node.max_output_tokens,
+                prompt_attachments=prompt_attachments,
             ):
                 assistant_chunks.append(chunk)
                 yield _sse_event("delta", {"delta": chunk})
@@ -437,6 +510,7 @@ def stream_node_message(request, slug: str, node_id: int):
                 node=target_node,
                 prompt=resolved_inputs["prompt"],
                 assistant_reply="".join(assistant_chunks),
+                prompt_attachments=prompt_attachments,
             )
             yield _sse_event(
                 "node",

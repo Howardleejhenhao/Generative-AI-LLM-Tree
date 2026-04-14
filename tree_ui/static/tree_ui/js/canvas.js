@@ -155,6 +155,11 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     messageCount.className = "graph-node-count";
     messageCount.textContent = `${node.messages.length} ${node.messages.length === 1 ? "msg" : "msgs"}`;
 
+    const attachmentCount = document.createElement("span");
+    attachmentCount.className = "graph-node-count";
+    attachmentCount.textContent = `${node.attachments.length} img`;
+    attachmentCount.hidden = node.attachments.length === 0;
+
     const title = document.createElement("span");
     title.className = "graph-node-title";
     title.textContent = node.title;
@@ -180,7 +185,7 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
       state.textContent = "Root conversation";
     }
 
-    topLine.append(providerBadge, messageCount);
+    topLine.append(providerBadge, messageCount, attachmentCount);
     footer.append(state);
     button.append(topLine, title, meta, summary, footer);
 

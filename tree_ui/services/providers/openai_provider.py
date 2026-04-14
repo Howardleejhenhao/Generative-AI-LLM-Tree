@@ -5,6 +5,7 @@ from typing import Iterator
 from urllib import error, request
 
 from tree_ui.services.context_builder import ContextMessage
+from tree_ui.services.attachments import encode_attachment_as_data_url
 from tree_ui.services.providers.base import (
     BaseProvider,
     GenerationResult,
@@ -49,7 +50,7 @@ def _build_payload(
         "input": [
             {
                 "role": message.role,
-                "content": message.content,
+                "content": _build_content_parts(message),
             }
             for message in messages
         ],
@@ -63,6 +64,26 @@ def _build_payload(
     if max_output_tokens is not None:
         payload["max_output_tokens"] = max_output_tokens
     return payload
+
+
+def _build_content_parts(message: ContextMessage) -> list[dict]:
+    parts: list[dict] = []
+    if message.content:
+        parts.append({"type": "input_text", "text": message.content})
+    for attachment in message.attachments:
+        parts.append(
+            {
+                "type": "input_image",
+                "image_url": (
+                    attachment.data_url
+                    or encode_attachment_as_data_url(
+                        file_path=attachment.file_path,
+                        content_type=attachment.content_type,
+                    )
+                ),
+            }
+        )
+    return parts
 
 
 def _extract_stream_delta(event_data: dict) -> str:
