@@ -1445,6 +1445,7 @@ class RoutingTests(TestCase):
             data=json.dumps({
                 "title": "Auto node",
                 "routing_mode": "auto-quality",
+                "provider": "", # Explicitly allow cross-provider
             }),
             content_type="application/json",
         )
@@ -1459,12 +1460,12 @@ class RoutingTests(TestCase):
     @patch("tree_ui.services.node_creation.stream_text")
     def test_first_message_triggers_re_routing_if_auto_mode(self, mock_stream_text):
         workspace = Workspace.objects.create(name="Main", slug="main")
-        # Create node in auto-fast mode (defaults to OpenAI gpt-4.1-mini for text)
+        # Create node in auto-fast mode with NO provider restriction
         node = ConversationNode.objects.create(
             workspace=workspace,
             title="Auto node",
             routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
-            provider=ConversationNode.Provider.OPENAI,
+            provider="", # No restriction
             model_name="gpt-4.1-mini",
         )
         mock_stream_text.return_value = iter(["Reply"])
@@ -1484,3 +1485,24 @@ class RoutingTests(TestCase):
                 self.assertEqual(node.provider, ConversationNode.Provider.GEMINI)
                 self.assertEqual(node.model_name, "gemini-2.5-flash")
                 self.assertIn("multimodal", node.routing_decision)
+
+    def test_auto_routing_restricted_to_provider(self):
+        # Restricted to OpenAI
+        result = route_model(
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+            provider=ConversationNode.Provider.OPENAI,
+            has_attachments=True # Normally Gemini Flash would be picked for attachments
+        )
+        self.assertEqual(result.provider, ConversationNode.Provider.OPENAI)
+        self.assertEqual(result.model, "gpt-4.1-mini")
+        self.assertIn("(Openai)", result.decision)
+
+        # Restricted to Gemini
+        result = route_model(
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+            provider=ConversationNode.Provider.GEMINI,
+            has_attachments=False # Normally OpenAI would be picked for text
+        )
+        self.assertEqual(result.provider, ConversationNode.Provider.GEMINI)
+        self.assertEqual(result.model, "gemini-2.5-flash")
+        self.assertIn("(Gemini)", result.decision)

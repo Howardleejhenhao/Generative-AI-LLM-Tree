@@ -40,9 +40,9 @@ const workspaceCreateButton = document.getElementById("workspace-create-button")
 const workspaceCreateFeedback = document.getElementById("workspace-create-feedback");
 const nodeTitleInput = document.getElementById("node-title-input");
 const routingModeInput = document.getElementById("node-routing-mode-input");
-const manualModelRow = document.getElementById("node-manual-model-row");
 const providerInput = document.getElementById("node-provider-input");
 const modelInput = document.getElementById("node-model-input");
+const modelLabel = document.getElementById("node-model-label");
 const systemPromptInput = document.getElementById("node-system-prompt-input");
 const temperatureInput = document.getElementById("node-temperature-input");
 const topPInput = document.getElementById("node-top-p-input");
@@ -56,9 +56,9 @@ const quickCreatePanel = document.getElementById("graph-quick-create-panel");
 const quickCreateLabel = document.getElementById("graph-quick-create-label");
 const quickTitleInput = document.getElementById("quick-node-title-input");
 const quickRoutingModeInput = document.getElementById("quick-node-routing-mode-input");
-const quickManualModelRow = document.getElementById("quick-node-manual-model-row");
 const quickProviderInput = document.getElementById("quick-node-provider-input");
 const quickModelInput = document.getElementById("quick-node-model-input");
+const quickModelLabel = document.getElementById("quick-node-model-label");
 const quickSystemPromptInput = document.getElementById("quick-node-system-prompt-input");
 const quickTemperatureInput = document.getElementById("quick-node-temperature-input");
 const quickTopPInput = document.getElementById("quick-node-top-p-input");
@@ -961,10 +961,10 @@ updateWorkspaceSummary();
 
 function updateRoutingModeVisibility() {
   const isManual = routingModeInput.value === "manual";
-  manualModelRow.hidden = !isManual;
+  if (modelLabel) modelLabel.hidden = !isManual;
 
   const isQuickManual = quickRoutingModeInput.value === "manual";
-  quickManualModelRow.hidden = !isQuickManual;
+  if (quickModelLabel) quickModelLabel.hidden = !isQuickManual;
 }
 
 routingModeInput.addEventListener("change", updateRoutingModeVisibility);

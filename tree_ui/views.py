@@ -477,6 +477,7 @@ def stream_node_message(request, slug: str, node_id: int):
         if node.routing_mode != ConversationNode.RoutingMode.MANUAL and node.messages.count() == 0:
             routing_result = route_model(
                 routing_mode=node.routing_mode,
+                provider=node.provider,
                 has_attachments=bool(uploaded_images),
                 prompt_length=len(resolved_inputs["prompt"]),
             )

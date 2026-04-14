@@ -189,6 +189,7 @@ def resolve_node_creation_inputs(
         # Routing with available signals.
         routing_result = route_model(
             routing_mode=routing_mode,
+            provider=provider,
             has_attachments=has_attachments,
             prompt_length=len(prompt),
         )
