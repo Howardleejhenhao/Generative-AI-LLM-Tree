@@ -37,24 +37,27 @@
 - keeps the main branch aligned with the current demoable multimodal chat experience
 
 ### Work Completed
-- in progress
+- Confirmed the feature branch was merge-ready and had no tracked worktree changes blocking integration.
+- Merged `feature/v2-image-first-multimodal` into `main`.
+- Pushed the updated `main` branch to origin.
 
 ### Files Changed
 - `docs/agent-progress.md`
 
 ### Git Workflow
 - Current branch at session start: `feature/v2-image-first-multimodal`
-- New branch created/switched: pending merge into `main`
+- New branch created/switched: switched to `main` for merge
 - Commits made:
-  - pending docs commit for merge-session tracking
+  - `354d359` - `docs: update agent progress log`
+  - `df37207` - `Merge branch 'feature/v2-image-first-multimodal'`
 - Push status:
-  - not pushed yet; merge in progress
+  - pushed to `origin/main`
 
 ### Current Status
-- The feature branch is clean and ready to merge into `main`.
+- `main` now includes the full multimodal attachment work from `feature/v2-image-first-multimodal`.
 
 ### Next Recommended Step
-- Finish the merge and push `main`, then continue future work from the integrated branch state.
+- Start the next session from `main` and continue the next v2 milestone slice there.
 
 ### Known Issues / Blockers / Tech Debt
 - none for the merge itself
