@@ -442,7 +442,7 @@ def stream_node_message(request, slug: str, node_id: int):
 
     if request.content_type and request.content_type.startswith("multipart/form-data"):
         payload = {"prompt": request.POST.get("prompt", "")}
-        uploaded_images = request.FILES.getlist("images")[-1:]
+        uploaded_images = request.FILES.getlist("images")
     else:
         try:
             payload = json.loads(request.body.decode("utf-8"))

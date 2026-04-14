@@ -30,7 +30,7 @@ const editVariantSubmitButton = document.getElementById("edit-variant-submit-but
 const editVariantFeedback = document.getElementById("edit-variant-feedback");
 const PROMPT_MAX_HEIGHT = 176;
 let selectedPreviewUrls = [];
-let pendingPreviewAttachment = null;
+let pendingPreviewAttachments = [];
 
 function resizePromptInput() {
   promptInput.style.height = "auto";
@@ -62,14 +62,7 @@ function renderTranscript(extraMessages = []) {
 }
 
 function renderSelectedFiles() {
-  const files = Array.from(imageInput.files || []).slice(-1);
-  if ((imageInput.files || []).length > 1) {
-    const transfer = new DataTransfer();
-    if (files[0]) {
-      transfer.items.add(files[0]);
-    }
-    imageInput.files = transfer.files;
-  }
+  const files = Array.from(imageInput.files || []);
   for (const url of selectedPreviewUrls) {
     URL.revokeObjectURL(url);
   }
@@ -80,26 +73,27 @@ function renderSelectedFiles() {
     return;
   }
 
-  const [file] = files;
-  const card = document.createElement("div");
-  card.className = "chat-selected-file";
+  for (const [index, file] of files.entries()) {
+    const card = document.createElement("div");
+    card.className = "chat-selected-file";
 
-  const preview = document.createElement("img");
-  preview.className = "chat-selected-file-preview";
-  const previewUrl = URL.createObjectURL(file);
-  selectedPreviewUrls.push(previewUrl);
-  preview.src = previewUrl;
-  preview.alt = file.name;
+    const preview = document.createElement("img");
+    preview.className = "chat-selected-file-preview";
+    const previewUrl = URL.createObjectURL(file);
+    selectedPreviewUrls.push(previewUrl);
+    preview.src = previewUrl;
+    preview.alt = file.name;
 
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.className = "chat-selected-file-remove";
-  removeButton.setAttribute("aria-label", `Remove ${file.name}`);
-  removeButton.textContent = "×";
-  removeButton.addEventListener("click", () => removeSelectedFile(0));
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "chat-selected-file-remove";
+    removeButton.setAttribute("aria-label", `Remove ${file.name}`);
+    removeButton.textContent = "×";
+    removeButton.addEventListener("click", () => removeSelectedFile(index));
 
-  card.append(preview, removeButton);
-  selectedFiles.append(card);
+    card.append(preview, removeButton);
+    selectedFiles.append(card);
+  }
 }
 
 function removeSelectedFile(removeIndex) {
@@ -111,6 +105,7 @@ function removeSelectedFile(removeIndex) {
   }
   imageInput.files = transfer.files;
   renderSelectedFiles();
+  updateComposerState();
 }
 
 function renderAttachmentPanel() {
@@ -147,7 +142,7 @@ function closeImageLightbox() {
 function resetComposer({ focus = true } = {}) {
   promptInput.value = "";
   imageInput.value = "";
-  pendingPreviewAttachment = null;
+  pendingPreviewAttachments = [];
   renderSelectedFiles();
   resizePromptInput();
   if (focus) {
@@ -191,7 +186,7 @@ async function handleSubmit(event) {
   event.preventDefault();
   feedback.textContent = "";
   const submittedPrompt = promptInput.value;
-  const selectedImages = Array.from(imageInput.files || []).slice(-1);
+  const selectedImages = Array.from(imageInput.files || []);
   const trimmedPrompt = submittedPrompt.trim();
   if (!trimmedPrompt && !selectedImages.length) {
     feedback.textContent = "Type a message or attach an image.";
@@ -204,18 +199,17 @@ async function handleSubmit(event) {
     }
     const formData = new FormData();
     formData.append("prompt", submittedPrompt);
-    formData.append("images", selectedImages[0]);
+    for (const file of selectedImages) {
+      formData.append("images", file);
+    }
     return formData;
   })();
-  if (selectedImages[0]) {
-    pendingPreviewAttachment = {
-      kind: "image",
-      name: selectedImages[0].name,
-      url: URL.createObjectURL(selectedImages[0]),
-    };
-  } else {
-    pendingPreviewAttachment = null;
-  }
+  pendingPreviewAttachments = selectedImages.map((file) => ({
+    kind: "image",
+    name: file.name,
+    url: URL.createObjectURL(file),
+  }));
+  resetComposer({ focus: false });
   submitButton.disabled = true;
   let previewPrompt = "";
   let assistantText = "";
@@ -237,7 +231,7 @@ async function handleSubmit(event) {
             {
               role: "user",
               content: previewPrompt,
-              attachments: pendingPreviewAttachment ? [pendingPreviewAttachment] : [],
+              attachments: pendingPreviewAttachments,
             },
             {
               role: "assistant",
@@ -252,7 +246,7 @@ async function handleSubmit(event) {
             {
               role: "user",
               content: previewPrompt,
-              attachments: pendingPreviewAttachment ? [pendingPreviewAttachment] : [],
+              attachments: pendingPreviewAttachments,
             },
             {
               role: "assistant",
@@ -271,8 +265,8 @@ async function handleSubmit(event) {
           payload.messages = data.node.messages;
           payload.attachments = data.node.attachments || [];
           feedback.textContent = "Reply added to this node.";
-          if (pendingPreviewAttachment?.url) {
-            URL.revokeObjectURL(pendingPreviewAttachment.url);
+          for (const attachment of pendingPreviewAttachments) {
+            URL.revokeObjectURL(attachment.url);
           }
           resetComposer();
           renderAttachmentPanel();
@@ -285,14 +279,16 @@ async function handleSubmit(event) {
       },
     );
   } catch (error) {
-    if (pendingPreviewAttachment?.url) {
-      URL.revokeObjectURL(pendingPreviewAttachment.url);
+    for (const attachment of pendingPreviewAttachments) {
+      URL.revokeObjectURL(attachment.url);
     }
-    pendingPreviewAttachment = null;
+    pendingPreviewAttachments = [];
     promptInput.value = submittedPrompt;
-    if (selectedImages[0]) {
+    if (selectedImages.length) {
       const transfer = new DataTransfer();
-      transfer.items.add(selectedImages[0]);
+      for (const file of selectedImages) {
+        transfer.items.add(file);
+      }
       imageInput.files = transfer.files;
       renderSelectedFiles();
     }

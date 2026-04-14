@@ -133,8 +133,7 @@ class WorkspaceGraphViewTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'id="chat-image-input"')
                 self.assertNotContains(response, "Attached to this node")
-                self.assertContains(response, 'id="chat-image-input"')
-                self.assertNotContains(response, "multiple hidden")
+                self.assertContains(response, "multiple hidden")
 
     @patch("tree_ui.views.ensure_workspace_memory")
     def test_workspace_page_renders_saved_workspace_memory_without_regeneration(self, mock_ensure_workspace_memory):
@@ -731,6 +730,48 @@ class WorkspaceGraphViewTests(TestCase):
                 self.assertEqual(user_message.attachments.count(), 1)
                 self.assertEqual(mock_stream_text.call_args.kwargs["messages"][-1].attachments[0].name, "photo.png")
                 self.assertEqual(mock_stream_text.call_args.kwargs["messages"][-1].attachments[0].content_type, "image/png")
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_can_stream_node_message_with_multiple_image_attachments_via_api(self, mock_stream_text):
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                workspace = Workspace.objects.create(name="Main", slug="main")
+                node = ConversationNode.objects.create(
+                    workspace=workspace,
+                    title="Vision node",
+                    summary="",
+                    provider=ConversationNode.Provider.OPENAI,
+                    model_name="gpt-4.1-mini",
+                )
+                mock_stream_text.return_value = iter(["Vision ", "reply"])
+
+                response = self.client.post(
+                    reverse("stream_node_message", args=[workspace.slug, node.id]),
+                    data={
+                        "prompt": "Describe these images.",
+                        "images": [
+                            SimpleUploadedFile(
+                                "photo-1.png",
+                                b"fake-image-bytes-1",
+                                content_type="image/png",
+                            ),
+                            SimpleUploadedFile(
+                                "photo-2.png",
+                                b"fake-image-bytes-2",
+                                content_type="image/png",
+                            ),
+                        ],
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                streamed = b"".join(response.streaming_content).decode("utf-8")
+                self.assertIn('"attachment_count": 2', streamed)
+                self.assertEqual(NodeAttachment.objects.filter(node=node).count(), 2)
+                user_message = NodeMessage.objects.get(node=node, role=NodeMessage.Role.USER)
+                self.assertEqual(user_message.attachments.count(), 2)
+                self.assertEqual(len(mock_stream_text.call_args.kwargs["messages"][-1].attachments), 2)
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
