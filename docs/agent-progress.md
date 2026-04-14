@@ -11,6 +11,65 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-14 14:59
+
+### Session Goal
+- Review the delegated node inspector implementation, fix any integration issues, and land the accepted inspector work cleanly on the current feature branch.
+
+### Planned Tasks
+- review `task_reports/REPORT-2026-04-14-0640.md` against the actual worktree changes
+- identify any correctness or security issues in the inspector implementation
+- fix accepted issues directly, re-run tests, and integrate the feature into versioned history
+- update the progress log with the review outcome and push results
+
+### Milestone Area
+- Graph inspector UX
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- adds a demo-ready node inspector surface for routing and tool metadata, while preserving the existing graph-first workspace and strengthening delegated-agent workflow rules
+
+### Demo Readiness Impact
+- users can now inspect node-level routing and tool traces directly from the graph workspace, which makes the current v2 tool-use slice much easier to demo and explain
+
+### Work Completed
+- Session started on branch `feature/v2-tool-use-groundwork`.
+- Reviewed `task_reports/REPORT-2026-04-14-0640.md` against the actual worktree and accepted the inspector direction.
+- Identified one review finding: the inspector rendered tool names through `innerHTML`, which created an XSS risk if a tool name contained hostile markup.
+- Fixed the inspector header rendering to use DOM nodes with `textContent` instead of interpolated HTML.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 60 tests passed.
+- Integrated the node inspector UI, metadata synchronization, and regression tests in commit `07a0ec0` (`feat: add node inspector for tool metadata`).
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0640.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - `07a0ec0` - `feat: add node inspector for tool metadata`
+- Push status:
+  - feature commit created locally; documentation and final push are pending
+
+### Current Status
+- The delegated inspector work has been reviewed, one security issue has been corrected, and the feature portion is now committed locally.
+
+### Next Recommended Step
+- commit the documentation / workflow updates, push the branch, and then run manual demo checks for the new inspector
+
+### Known Issues / Blockers / Tech Debt
+- Inspector behavior is covered mainly by backend and payload tests; direct browser-level UI assertions are still not present.
+
 ## Session 2026-04-14 14:39
 
 ### Session Goal

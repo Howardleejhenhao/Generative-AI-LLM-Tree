@@ -362,6 +362,8 @@ After another agent completes the work and the user returns with the result, the
 Rules for delegated implementation handoffs:
 
 * the handoff prompt must explicitly state that the other agent is **not allowed to merge**
+* the handoff prompt must explicitly state that the other agent is **not allowed to modify** `docs/agent-progress.md`; that file is maintained only by this coding agent during review / integration
+* the handoff prompt must explicitly state that the other agent is **not responsible for git operations**; branch creation, commit creation, push, merge, and other final git workflow steps are handled by this coding agent
 * the other agent may implement, test, and report results, but must leave final approval and merge decisions to this coding agent
 * after review is complete and the work is confirmed correct, this coding agent is responsible for merging the accepted changes back into `main`
 
