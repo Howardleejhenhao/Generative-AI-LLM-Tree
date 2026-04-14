@@ -65,6 +65,17 @@ function renderMessageAttachments(container, attachments) {
   }
 }
 
+function renderToolBlock(container, data, type) {
+  const details = document.createElement("details");
+  details.className = `chat-tool-block chat-tool-${type}`;
+  const summary = document.createElement("summary");
+  summary.textContent = type === "call" ? `🛠️ Tool Call: ${data.name}` : `✅ Tool Result: ${data.name}`;
+  const pre = document.createElement("pre");
+  pre.textContent = JSON.stringify(data.args || data.result, null, 2);
+  details.append(summary, pre);
+  container.append(details);
+}
+
 export function renderNodeDetails(container, messages) {
   container.innerHTML = "";
 
@@ -144,6 +155,15 @@ export function renderChatTranscript(container, messages, options = {}) {
   }
 
   for (const message of messages) {
+    if (message.tool_call) {
+      renderToolBlock(container, message.tool_call, "call");
+      continue;
+    }
+    if (message.tool_result) {
+      renderToolBlock(container, message.tool_result, "result");
+      continue;
+    }
+
     const article = document.createElement("article");
     article.className = "chat-message";
     article.dataset.role = message.role;

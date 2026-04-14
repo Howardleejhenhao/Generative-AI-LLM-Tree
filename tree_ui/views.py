@@ -97,6 +97,7 @@ def workspace_node_chat(request, slug: str, node_id: int):
             "messages__attachments",
             "children",
             "attachments",
+            "tool_invocations",
         ),
         pk=node_id,
         workspace=workspace,
@@ -438,7 +439,7 @@ def stream_workspace_node(request, slug: str):
 def stream_node_message(request, slug: str, node_id: int):
     workspace = get_object_or_404(Workspace, slug=slug)
     node = get_object_or_404(
-        ConversationNode.objects.prefetch_related("messages__attachments", "attachments"),
+        ConversationNode.objects.prefetch_related("messages__attachments", "attachments", "tool_invocations"),
         pk=node_id,
         workspace=workspace,
     )
@@ -523,8 +524,13 @@ def stream_node_message(request, slug: str, node_id: int):
                 max_output_tokens=target_node.max_output_tokens,
                 prompt_attachments=prompt_attachments,
             ):
-                assistant_chunks.append(chunk)
-                yield _sse_event("delta", {"delta": chunk})
+                if chunk.text:
+                    assistant_chunks.append(chunk.text)
+                    yield _sse_event("delta", {"delta": chunk.text})
+                if chunk.tool_call:
+                    yield _sse_event("tool_call", chunk.tool_call)
+                if chunk.tool_result:
+                    yield _sse_event("tool_result", chunk.tool_result)
             updated_node = append_messages_to_node_with_reply(
                 node=target_node,
                 prompt=resolved_inputs["prompt"],

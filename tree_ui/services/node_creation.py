@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import json
 import time
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Iterator
 
 from django.conf import settings
 from django.db import transaction
 
-from tree_ui.models import ConversationNode, NodeAttachment, NodeMessage, Workspace
+from tree_ui.models import ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace
 from tree_ui.services.context_builder import (
     build_system_instruction,
     build_branch_lineage,
@@ -17,6 +19,14 @@ from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.memory_service import format_memories_for_prompt, retrieve_memories_for_generation
 from tree_ui.services.providers import ProviderError, generate_text, stream_text
 from tree_ui.services.router import route_model
+from tree_ui.services.tools import default_registry
+
+
+@dataclass(frozen=True)
+class ReplyChunk:
+    text: str = ""
+    tool_call: dict | None = None
+    tool_result: dict | None = None
 
 
 def _build_summary(prompt: str) -> str:
@@ -127,19 +137,46 @@ def generate_assistant_reply(
                 parent=parent,
             )
         )
+    
+    system_instruction = build_system_instruction(
+        system_prompt,
+        retrieved_memory_text=memory_text,
+    )
+    tools = default_registry.get_tool_schemas()
+
     try:
+        # Simple non-streaming tool handling (one-shot for MVP)
         result = generate_text(
             provider_name=provider,
             model_name=model_name,
             messages=context_messages,
-            system_instruction=build_system_instruction(
-                system_prompt,
-                retrieved_memory_text=memory_text,
-            ),
+            system_instruction=system_instruction,
+            tools=tools,
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
         )
+        
+        if result.tool_calls:
+            # Execute first tool call for MVP
+            tc = result.tool_calls[0]
+            tool = default_registry.get_tool(tc.name)
+            if tool:
+                context = {"workspace": parent.workspace} if parent else {}
+                tool_result = tool.execute(context=context, **tc.arguments)
+                # Persist invocation
+                if parent:
+                    ToolInvocation.objects.create(
+                        node=parent,
+                        tool_name=tc.name,
+                        invocation_payload=json.dumps(tc.arguments),
+                        result_payload=json.dumps(tool_result),
+                        success="error" not in tool_result,
+                    )
+                # In a real multi-turn we'd append and call generate_text again.
+                # For now just return a mention that it happened.
+                return f"[Tool Call: {tc.name} executed. Result: {json.dumps(tool_result)[:100]}...]"
+
         return result.text
     except ProviderError as exc:
         return _build_fallback_assistant_message(
@@ -261,13 +298,12 @@ def stream_assistant_reply(
     top_p: float | None = None,
     max_output_tokens: int | None = None,
     prompt_attachments: list[NodeAttachment] | None = None,
-):
+) -> Iterator[ReplyChunk]:
     context_messages = build_generation_messages(
         parent=parent,
         prompt=prompt,
         prompt_attachments=prompt_attachments,
     )
-    emitted_chunk = False
     memory_text = ""
     if parent is not None:
         memory_text = format_memories_for_prompt(
@@ -277,33 +313,88 @@ def stream_assistant_reply(
             )
         )
 
-    try:
-        for chunk in stream_text(
-            provider_name=provider,
-            model_name=model_name,
-            messages=context_messages,
-            system_instruction=build_system_instruction(
-                system_prompt,
-                retrieved_memory_text=memory_text,
-            ),
-            temperature=temperature,
-            top_p=top_p,
-            max_output_tokens=max_output_tokens,
-        ):
-            emitted_chunk = True
-            yield chunk
-    except ProviderError as exc:
-        if emitted_chunk:
-            raise
+    system_instruction = build_system_instruction(
+        system_prompt,
+        retrieved_memory_text=memory_text,
+    )
+    tools = default_registry.get_tool_schemas()
 
-        fallback_message = _build_fallback_assistant_message(
-            parent=parent,
-            provider=provider,
-            model_name=model_name,
-            prompt=prompt,
-            reason=str(exc),
-        )
-        yield from iter_text_chunks(fallback_message)
+    # Multi-turn tool execution loop
+    active_messages = list(context_messages)
+    emitted_anything = False
+
+    while True:
+        tool_call_id = ""
+        tool_name = ""
+        tool_args_str = ""
+
+        try:
+            for delta in stream_text(
+                provider_name=provider,
+                model_name=model_name,
+                messages=active_messages,
+                system_instruction=system_instruction,
+                tools=tools,
+                temperature=temperature,
+                top_p=top_p,
+                max_output_tokens=max_output_tokens,
+            ):
+                emitted_anything = True
+                if delta.text:
+                    yield ReplyChunk(text=delta.text)
+                if delta.tool_call:
+                    if not tool_name:
+                        tool_name = delta.tool_call.name
+                        tool_call_id = delta.tool_call.call_id
+                        yield ReplyChunk(tool_call={"name": tool_name, "id": tool_call_id})
+                    tool_args_str += delta.tool_call.arguments
+        except ProviderError as exc:
+            if emitted_anything:
+                raise
+
+            fallback_message = _build_fallback_assistant_message(
+                parent=parent,
+                provider=provider,
+                model_name=model_name,
+                prompt=prompt,
+                reason=str(exc),
+            )
+            for chunk in iter_text_chunks(fallback_message):
+                yield ReplyChunk(text=chunk)
+            return
+
+        if not tool_name:
+            break
+
+        # Execute tool
+        try:
+            args = json.loads(tool_args_str) if tool_args_str else {}
+        except json.JSONDecodeError:
+            args = {"error": "Invalid tool arguments JSON", "raw": tool_args_str}
+
+        tool = default_registry.get_tool(tool_name)
+        if tool:
+            context = {"workspace": parent.workspace} if parent else {}
+            result = tool.execute(context=context, **args)
+            success = "error" not in result
+        else:
+            result = {"error": f"Tool '{tool_name}' not found."}
+            success = False
+
+        # Persist invocation
+        if parent:
+            ToolInvocation.objects.create(
+                node=parent,
+                tool_name=tool_name,
+                invocation_payload=tool_args_str,
+                result_payload=json.dumps(result),
+                success=success,
+            )
+
+        yield ReplyChunk(tool_result={"name": tool_name, "result": result})
+
+        # Feed back to model (Simplified: stop after one tool call for MVP)
+        break
 
 
 def create_node(

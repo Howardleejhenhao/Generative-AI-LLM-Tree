@@ -1999,6 +1999,48 @@ body.lightbox-open {
   justify-content: flex-end;
 }
 
+.chat-tool-block {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.chat-tool-block summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--muted);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-tool-block summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-tool-block pre {
+  margin: 10px 0 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.chat-tool-call {
+  border-left: 4px solid #f6d38d;
+}
+
+.chat-tool-result {
+  border-left: 4px solid #1d6b56;
+}
+
 .workspace-summary-strip {
   display: flex;
   flex-wrap: wrap;

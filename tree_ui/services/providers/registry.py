@@ -7,7 +7,7 @@ from django.conf import settings
 from tree_ui.models import ConversationNode
 from tree_ui.services.context_builder import ContextMessage
 from tree_ui.services.model_catalog import resolve_model_name
-from tree_ui.services.providers.base import GenerationResult, ProviderError
+from tree_ui.services.providers.base import GenerationResult, ProviderDelta, ProviderError
 from tree_ui.services.providers.gemini_provider import GeminiProvider
 from tree_ui.services.providers.openai_provider import OpenAIProvider
 
@@ -34,6 +34,7 @@ def generate_text(
     model_name: str,
     messages: list[ContextMessage],
     system_instruction: str,
+    tools: list[dict] | None = None,
     temperature: float | None = None,
     top_p: float | None = None,
     max_output_tokens: int | None = None,
@@ -44,6 +45,7 @@ def generate_text(
         model_name=resolved_model_name,
         messages=messages,
         system_instruction=system_instruction,
+        tools=tools,
         temperature=temperature,
         top_p=top_p,
         max_output_tokens=max_output_tokens,
@@ -56,16 +58,18 @@ def stream_text(
     model_name: str,
     messages: list[ContextMessage],
     system_instruction: str,
+    tools: list[dict] | None = None,
     temperature: float | None = None,
     top_p: float | None = None,
     max_output_tokens: int | None = None,
-) -> Iterator[str]:
+) -> Iterator[ProviderDelta]:
     provider = _get_provider(provider_name)
     resolved_model_name = resolve_model_name(provider=provider_name, model_name=model_name)
     return provider.generate_stream(
         model_name=resolved_model_name,
         messages=messages,
         system_instruction=system_instruction,
+        tools=tools,
         temperature=temperature,
         top_p=top_p,
         max_output_tokens=max_output_tokens,

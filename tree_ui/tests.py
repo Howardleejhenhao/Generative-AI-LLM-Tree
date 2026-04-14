@@ -7,7 +7,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
-from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, Workspace
+from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.memory_drafting import (
     WORKSPACE_MEMORY_FALLBACK_CONTENT,
@@ -23,7 +23,7 @@ from tree_ui.services.memory_service import (
 from tree_ui.services.node_creation import append_messages_to_node
 from tree_ui.services.node_editing import create_edited_variant
 from tree_ui.services.providers import ProviderError
-from tree_ui.services.providers.base import GenerationResult
+from tree_ui.services.providers.base import GenerationResult, ProviderDelta, ToolCallDelta
 from tree_ui.services.providers.registry import generate_text as registry_generate_text
 from tree_ui.services.router import route_model
 
@@ -667,7 +667,7 @@ class WorkspaceGraphViewTests(TestCase):
             top_p=0.9,
             max_output_tokens=300,
         )
-        mock_stream_text.return_value = iter(["Streamed ", "reply"])
+        mock_stream_text.return_value = iter([ProviderDelta(text="Streamed "), ProviderDelta(text="reply")])
 
         response = self.client.post(
             reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -709,7 +709,7 @@ class WorkspaceGraphViewTests(TestCase):
                     provider=ConversationNode.Provider.OPENAI,
                     model_name="gpt-4.1-mini",
                 )
-                mock_stream_text.return_value = iter(["Vision ", "reply"])
+                mock_stream_text.return_value = iter([ProviderDelta(text="Vision "), ProviderDelta(text="reply")])
 
                 response = self.client.post(
                     reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -748,7 +748,7 @@ class WorkspaceGraphViewTests(TestCase):
                     provider=ConversationNode.Provider.OPENAI,
                     model_name="gpt-4.1-mini",
                 )
-                mock_stream_text.return_value = iter(["Vision ", "reply"])
+                mock_stream_text.return_value = iter([ProviderDelta(text="Vision "), ProviderDelta(text="reply")])
 
                 response = self.client.post(
                     reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -795,7 +795,7 @@ class WorkspaceGraphViewTests(TestCase):
                     provider=ConversationNode.Provider.OPENAI,
                     model_name="gpt-4.1-mini",
                 )
-                mock_stream_text.return_value = iter(["PDF ", "reply"])
+                mock_stream_text.return_value = iter([ProviderDelta(text="PDF "), ProviderDelta(text="reply")])
                 mock_render_pdf_attachment_as_data_urls.return_value = [
                     "data:image/png;base64,ZmFrZS1wYWdlLTE=",
                     "data:image/png;base64,ZmFrZS1wYWdlLTI=",
@@ -838,7 +838,7 @@ class WorkspaceGraphViewTests(TestCase):
                     provider=ConversationNode.Provider.OPENAI,
                     model_name="gpt-4.1-mini",
                 )
-                mock_stream_text.return_value = iter(["Vision only"])
+                mock_stream_text.return_value = iter([ProviderDelta(text="Vision only")])
 
                 response = self.client.post(
                     reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -882,7 +882,7 @@ class WorkspaceGraphViewTests(TestCase):
             provider=ConversationNode.Provider.OPENAI,
             model_name="gpt-4.1-mini",
         )
-        mock_stream_text.return_value = iter(["Branch ", "reply"])
+        mock_stream_text.return_value = iter([ProviderDelta(text="Branch "), ProviderDelta(text="reply")])
 
         response = self.client.post(
             reverse("stream_node_message", args=[workspace.slug, node.id]),
@@ -1468,7 +1468,7 @@ class RoutingTests(TestCase):
             provider="", # No restriction
             model_name="gpt-4.1-mini",
         )
-        mock_stream_text.return_value = iter(["Reply"])
+        mock_stream_text.return_value = iter([ProviderDelta(text="Reply")])
 
         # Send a message WITH attachments. Auto-fast should re-route to Gemini Flash.
         with tempfile.TemporaryDirectory() as media_root:
@@ -1506,3 +1506,157 @@ class RoutingTests(TestCase):
         self.assertEqual(result.provider, ConversationNode.Provider.GEMINI)
         self.assertEqual(result.model, "gemini-2.5-flash")
         self.assertIn("(Gemini)", result.decision)
+
+class ToolUseTests(TestCase):
+    def test_compare_branches_tool_registered(self):
+        from tree_ui.services.tools import default_registry
+        tool = default_registry.get_tool("compare_branches")
+        self.assertIsNotNone(tool)
+        self.assertEqual(tool.name, "compare_branches")
+
+    def test_compare_branches_workspace_boundary(self):
+        workspace_a = Workspace.objects.create(name="A", slug="a")
+        workspace_b = Workspace.objects.create(name="B", slug="b")
+        
+        node_a = ConversationNode.objects.create(
+            workspace=workspace_a, title="Node A", provider="openai", model_name="gpt-4.1-mini"
+        )
+        node_b = ConversationNode.objects.create(
+            workspace=workspace_b, title="Node B", provider="openai", model_name="gpt-4.1-mini"
+        )
+        
+        from tree_ui.services.tools.branch_comparison import BranchComparisonTool
+        tool = BranchComparisonTool()
+        
+        # Test with context from workspace A
+        result = tool.execute(context={"workspace": workspace_a}, node_id_a=node_a.id, node_id_b=node_b.id)
+        self.assertIn("error", result)
+        self.assertIn("different workspace", result["error"])
+        
+        # Test with nodes in same workspace but no context (fallback check)
+        node_a2 = ConversationNode.objects.create(
+            workspace=workspace_a, title="Node A2", provider="openai", model_name="gpt-4.1-mini"
+        )
+        result = tool.execute(node_id_a=node_a.id, node_id_b=node_a2.id)
+        self.assertNotIn("error", result)
+        self.assertEqual(result["branch_a"]["title"], "Node A")
+
+    @patch("tree_ui.services.node_creation.generate_text")
+    def test_tool_invocation_persistence(self, mock_generate_text):
+        from tree_ui.services.providers.base import ToolCall
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        
+        mock_generate_text.return_value = GenerationResult(
+            text="",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
+        )
+        
+        from tree_ui.services.node_creation import generate_assistant_reply
+        generate_assistant_reply(
+            parent=node,
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            prompt="Compare branches"
+        )
+        
+        self.assertEqual(ToolInvocation.objects.count(), 1)
+        inv = ToolInvocation.objects.get()
+        self.assertEqual(inv.tool_name, "compare_branches")
+        self.assertEqual(inv.node, node)
+        self.assertTrue(inv.success)
+
+    def test_serialize_node_includes_tool_invocations(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        ToolInvocation.objects.create(
+            node=node,
+            tool_name="test_tool",
+            invocation_payload='{"arg": 1}',
+            result_payload='{"res": "ok"}',
+            success=True
+        )
+        
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        self.assertEqual(len(data["tool_invocations"]), 1)
+        self.assertEqual(data["tool_invocations"][0]["name"], "test_tool")
+        self.assertEqual(data["tool_invocations"][0]["args"], {"arg": 1})
+
+    @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
+    @patch("tree_ui.services.node_creation.stream_text")
+    def test_streaming_tool_call_events(self, mock_stream_text):
+        from tree_ui.services.providers.base import ProviderDelta, ToolCallDelta
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        
+        mock_stream_text.return_value = iter([
+            ProviderDelta(tool_call=ToolCallDelta(call_id="c1", name="compare_branches", arguments='{"node_id_a":')),
+            ProviderDelta(tool_call=ToolCallDelta(call_id="c1", name="", arguments=' 1, "node_id_b": 1}')),
+        ])
+        
+        response = self.client.post(
+            reverse("stream_node_message", args=[workspace.slug, node.id]),
+            data=json.dumps({"prompt": "test tool"}),
+            content_type="application/json",
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        streamed = b"".join(response.streaming_content).decode("utf-8")
+        self.assertIn("event: tool_call", streamed)
+        self.assertIn("event: tool_result", streamed)
+        self.assertIn("compare_branches", streamed)
+
+    def test_openai_tool_call_parsing(self):
+        from tree_ui.services.providers.openai_provider import _extract_tool_calls
+        response_data = {
+            "output": [
+                {
+                    "type": "tool_calls",
+                    "tool_calls": [
+                        {
+                            "id": "call_abc",
+                            "function": {
+                                "name": "compare_branches",
+                                "arguments": '{"node_id_a": 123, "node_id_b": 456}'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        tool_calls = _extract_tool_calls(response_data)
+        self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(tool_calls[0].name, "compare_branches")
+        self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)
+
+    def test_gemini_tool_call_parsing(self):
+        from tree_ui.services.providers.gemini_provider import _extract_tool_calls
+        response_data = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "functionCall": {
+                                    "name": "compare_branches",
+                                    "args": {"node_id_a": 123, "node_id_b": 456}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        tool_calls = _extract_tool_calls(response_data)
+        self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(tool_calls[0].name, "compare_branches")
+        self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)

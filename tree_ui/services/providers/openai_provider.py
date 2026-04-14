@@ -9,7 +9,10 @@ from tree_ui.services.attachments import encode_attachment_as_data_url
 from tree_ui.services.providers.base import (
     BaseProvider,
     GenerationResult,
+    ProviderDelta,
     ProviderError,
+    ToolCall,
+    ToolCallDelta,
     iter_sse_events,
 )
 
@@ -29,9 +32,23 @@ def _extract_text(response_data: dict) -> str:
                 fragments.append(text.strip())
 
     combined = "\n".join(fragments).strip()
-    if not combined:
-        raise ProviderError("OpenAI response did not contain text output.")
     return combined
+
+
+def _extract_tool_calls(response_data: dict) -> list[ToolCall]:
+    tool_calls: list[ToolCall] = []
+    # This is speculative based on standard OpenAI patterns
+    for item in response_data.get("output", []):
+        if item.get("type") == "tool_calls":
+            for tc in item.get("tool_calls", []):
+                tool_calls.append(
+                    ToolCall(
+                        call_id=tc.get("id", ""),
+                        name=tc.get("function", {}).get("name", ""),
+                        arguments=json.loads(tc.get("function", {}).get("arguments", "{}")),
+                    )
+                )
+    return tool_calls
 
 
 def _build_payload(
@@ -40,6 +57,7 @@ def _build_payload(
     messages: list[ContextMessage],
     system_instruction: str,
     stream: bool,
+    tools: list[dict] | None,
     temperature: float | None,
     top_p: float | None,
     max_output_tokens: int | None,
@@ -57,6 +75,8 @@ def _build_payload(
     }
     if stream:
         payload["stream"] = True
+    if tools:
+        payload["tools"] = tools
     if temperature is not None:
         payload["temperature"] = temperature
     if top_p is not None:
@@ -86,11 +106,21 @@ def _build_content_parts(message: ContextMessage) -> list[dict]:
     return parts
 
 
-def _extract_stream_delta(event_data: dict) -> str:
+def _extract_stream_delta(event_data: dict) -> ProviderDelta | None:
     event_type = event_data.get("type", "")
 
     if event_type == "response.output_text.delta":
-        return event_data.get("delta", "")
+        return ProviderDelta(text=event_data.get("delta", ""))
+
+    if event_type == "response.tool_call.delta":
+        delta = event_data.get("delta", {})
+        return ProviderDelta(
+            tool_call=ToolCallDelta(
+                call_id=event_data.get("call_id", ""),
+                name=delta.get("name", ""),
+                arguments=delta.get("arguments", ""),
+            )
+        )
 
     if event_type in {"error", "response.failed"}:
         message = (
@@ -100,7 +130,7 @@ def _extract_stream_delta(event_data: dict) -> str:
         )
         raise ProviderError(message)
 
-    return ""
+    return None
 
 
 class OpenAIProvider(BaseProvider):
@@ -117,6 +147,7 @@ class OpenAIProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        tools: list[dict] | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
@@ -129,6 +160,7 @@ class OpenAIProvider(BaseProvider):
             messages=messages,
             system_instruction=system_instruction,
             stream=False,
+            tools=tools,
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
@@ -138,6 +170,7 @@ class OpenAIProvider(BaseProvider):
             text=_extract_text(response_data),
             provider=self.provider_name,
             model_name=model_name,
+            tool_calls=_extract_tool_calls(response_data),
         )
 
     def generate_stream(
@@ -146,10 +179,11 @@ class OpenAIProvider(BaseProvider):
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        tools: list[dict] | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
-    ) -> Iterator[str]:
+    ) -> Iterator[ProviderDelta]:
         if not self.api_key:
             raise ProviderError("OpenAI API key is not configured.")
 
@@ -158,6 +192,7 @@ class OpenAIProvider(BaseProvider):
             messages=messages,
             system_instruction=system_instruction,
             stream=True,
+            tools=tools,
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
@@ -183,7 +218,7 @@ class OpenAIProvider(BaseProvider):
         except error.URLError as exc:
             raise ProviderError(f"OpenAI connection failed: {exc.reason}") from exc
 
-    def _post_sse(self, payload: dict) -> Iterator[str]:
+    def _post_sse(self, payload: dict) -> Iterator[ProviderDelta]:
         http_request = request.Request(
             self.endpoint,
             data=json.dumps(payload).encode("utf-8"),
@@ -195,14 +230,14 @@ class OpenAIProvider(BaseProvider):
             method="POST",
         )
 
-        emitted_delta = False
+        emitted_any = False
         try:
             with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
                 for event in iter_sse_events(response):
                     delta = _extract_stream_delta(event["data"])
-                    if not delta:
+                    if delta is None:
                         continue
-                    emitted_delta = True
+                    emitted_any = True
                     yield delta
         except error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="ignore")
@@ -210,5 +245,5 @@ class OpenAIProvider(BaseProvider):
         except error.URLError as exc:
             raise ProviderError(f"OpenAI connection failed: {exc.reason}") from exc
 
-        if not emitted_delta:
-            raise ProviderError("OpenAI stream did not contain text output.")
+        if not emitted_any:
+            raise ProviderError("OpenAI stream did not contain output.")

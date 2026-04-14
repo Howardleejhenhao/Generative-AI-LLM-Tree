@@ -208,3 +208,23 @@ class ConversationMemory(models.Model):
 
     def __str__(self) -> str:
         return f"{self.scope}:{self.memory_type}:{self.title or self.pk}"
+
+
+class ToolInvocation(models.Model):
+    node = models.ForeignKey(
+        ConversationNode,
+        related_name="tool_invocations",
+        on_delete=models.CASCADE,
+    )
+    tool_name = models.CharField(max_length=120)
+    tool_type = models.CharField(max_length=40, default="internal")
+    invocation_payload = models.TextField(blank=True)
+    result_payload = models.TextField(blank=True)
+    success = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.node_id}:{self.tool_name}:{self.success}"

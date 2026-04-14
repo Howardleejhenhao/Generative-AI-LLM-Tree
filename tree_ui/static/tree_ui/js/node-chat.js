@@ -87,7 +87,16 @@ function updateJumpButton() {
 
 function renderTranscript(extraMessages = []) {
   const shouldStick = isNearBottom();
-  renderChatTranscript(transcript, [...payload.messages, ...extraMessages]);
+
+  const historicalItems = [...payload.messages];
+  if (payload.tool_invocations) {
+    for (const inv of payload.tool_invocations) {
+      historicalItems.push({ tool_call: { name: inv.name, args: inv.args } });
+      historicalItems.push({ tool_result: { name: inv.name, result: inv.result } });
+    }
+  }
+
+  renderChatTranscript(transcript, [...historicalItems, ...extraMessages]);
   if (shouldStick) {
     scrollToBottom();
   }
@@ -280,6 +289,7 @@ async function handleSubmit(event) {
   submitButton.disabled = true;
   let previewPrompt = "";
   let assistantText = "";
+  let extraStreamingMessages = [];
 
   try {
     await streamJSON(
@@ -294,7 +304,8 @@ async function handleSubmit(event) {
           feedback.textContent = data.created_new_branch
             ? `This node already has children. Continuing in a new child branch via ${data.provider} / ${data.model_name}${imageSuffix}...`
             : `Streaming reply from ${data.provider} / ${data.model_name}${imageSuffix}...`;
-          renderTranscript([
+          
+          extraStreamingMessages = [
             {
               role: "user",
               content: previewPrompt,
@@ -304,25 +315,30 @@ async function handleSubmit(event) {
               role: "assistant",
               content: "Generating...",
             },
-          ]);
+          ];
+          renderTranscript(extraStreamingMessages);
           scrollToBottom();
         },
         delta(data) {
           assistantText += data.delta;
-          renderTranscript([
-            {
-              role: "user",
-              content: previewPrompt,
-              attachments: pendingPreviewAttachments,
-            },
-            {
-              role: "assistant",
-              content: assistantText || "Generating...",
-            },
-          ]);
+          const assistantMsg = extraStreamingMessages.find(m => m.role === "assistant");
+          if (assistantMsg) {
+            assistantMsg.content = assistantText;
+          }
+          renderTranscript(extraStreamingMessages);
           if (isNearBottom()) {
             scrollToBottom();
           }
+        },
+        tool_call(data) {
+          extraStreamingMessages.push({ tool_call: data });
+          renderTranscript(extraStreamingMessages);
+          scrollToBottom();
+        },
+        tool_result(data) {
+          extraStreamingMessages.push({ tool_result: data });
+          renderTranscript(extraStreamingMessages);
+          scrollToBottom();
         },
         node(data) {
           if (data.created_new_branch && data.node_chat_url) {
@@ -331,6 +347,7 @@ async function handleSubmit(event) {
           }
           payload.messages = data.node.messages;
           payload.attachments = data.node.attachments || [];
+          payload.tool_invocations = data.node.tool_invocations || [];
 
           if (providerLabel) {
             providerLabel.textContent = data.node.provider.charAt(0).toUpperCase() + data.node.provider.slice(1);

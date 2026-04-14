@@ -1,10 +1,30 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterator
 
 from tree_ui.services.context_builder import ContextMessage
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    call_id: str
+    name: str
+    arguments: dict
+
+
+@dataclass(frozen=True)
+class ToolCallDelta:
+    call_id: str
+    name: str
+    arguments: str  # JSON fragment or complete JSON
+
+
+@dataclass(frozen=True)
+class ProviderDelta:
+    text: str = ""
+    tool_call: ToolCallDelta | None = None
 
 
 @dataclass(frozen=True)
@@ -12,6 +32,7 @@ class GenerationResult:
     text: str
     provider: str
     model_name: str
+    tool_calls: list[ToolCall] = field(default_factory=list)
     used_fallback: bool = False
     fallback_reason: str = ""
 
@@ -29,6 +50,7 @@ class BaseProvider:
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        tools: list[dict] | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
@@ -41,10 +63,11 @@ class BaseProvider:
         model_name: str,
         messages: list[ContextMessage],
         system_instruction: str,
+        tools: list[dict] | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
-    ) -> Iterator[str]:
+    ) -> Iterator[ProviderDelta]:
         raise NotImplementedError
 
 
