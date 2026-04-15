@@ -11,6 +11,73 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-15 10:05
+
+### Session Goal
+- Integrate the delegated stdio MCP transport skeleton, apply the review hardening fixes, and land the accepted result on the main feature branch.
+
+### Planned Tasks
+- commit the delegated stdio skeleton work and report on its working branch
+- apply review fixes for invalid stdio execution behavior and weak stdio config normalization
+- merge the branch into `feature/v2-tool-use-groundwork`, rerun verification, and document the integration
+
+### Milestone Area
+- Stdio MCP transport skeleton
+- Review / integration
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- adds a first real stdio-specific transport path on top of the MCP groundwork and hardens its validation/error behavior so it better represents future subprocess-backed integration
+
+### Demo Readiness Impact
+- the project still does not talk to a real stdio MCP server, but the transport layering is now more credible and the failure behavior is less misleading during demos and development checks
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-14-0915.md` and the delegated branch `feature/v2-mcp-stdio-skeleton`.
+- Accepted the new `StdioMCPClient`, stdio-specific adapter path, and the related test coverage.
+- Identified and fixed two review findings before integration:
+  - invalid stdio config could still produce a successful tool-call result
+  - stdio config parsing did not normalize malformed field shapes
+- Updated `StdioMCPClient.call_tool()` to return an error result when no stdio `command` is configured.
+- Updated stdio config parsing to normalize malformed `command`, `args`, `env`, and `cwd` values.
+- Added regression coverage for invalid stdio execution and malformed config normalization.
+- Committed the accepted stdio skeleton work as `71f37b1` (`feat: implement stdio MCP transport skeleton and client abstraction`) and the review hardening fixes as `6f46423` (`fix: harden stdio transport validation`) on `feature/v2-mcp-stdio-skeleton`.
+- Pushed `feature/v2-mcp-stdio-skeleton` to `origin/feature/v2-mcp-stdio-skeleton`.
+- Fast-forward merged `feature/v2-mcp-stdio-skeleton` into `feature/v2-tool-use-groundwork`.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 94 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `task_reports/REPORT-2026-04-14-0915.md`
+- `tree_ui/services/mcp/client.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-mcp-stdio-skeleton`
+- New branch created/switched:
+  - used delegated branch `feature/v2-mcp-stdio-skeleton` for commit/push
+  - switched back to `feature/v2-tool-use-groundwork` for integration
+- Commits made:
+  - `71f37b1` on `feature/v2-mcp-stdio-skeleton` - `feat: implement stdio MCP transport skeleton and client abstraction`
+  - `6f46423` on `feature/v2-mcp-stdio-skeleton` - `fix: harden stdio transport validation`
+- Push status:
+  - `feature/v2-mcp-stdio-skeleton` pushed to `origin/feature/v2-mcp-stdio-skeleton`
+  - `feature/v2-tool-use-groundwork` integration push pending until this progress-log update is committed
+
+### Current Status
+- Stdio MCP transport skeleton is now merged into `feature/v2-tool-use-groundwork` and verified on the main feature branch.
+
+### Next Recommended Step
+- choose between implementing the first real stdio subprocess handshake flow or improving the MCP settings page with source status/readiness diagnostics that reflect the new transport distinctions
+
+### Known Issues / Blockers / Tech Debt
+- `StdioMCPClient` is still a skeleton and does not yet perform a real subprocess protocol handshake.
+- The MCP settings UI can manage sources, but it still does not surface rich readiness/status diagnostics for each transport kind.
+
 ## Session 2026-04-14 23:09
 
 ### Session Goal
