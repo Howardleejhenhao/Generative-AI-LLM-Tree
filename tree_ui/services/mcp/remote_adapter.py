@@ -60,6 +60,15 @@ class RemoteMCPSourceAdapter(ToolSource):
             validated["env"] = validated.get("env", {})
             validated["cwd"] = validated.get("cwd", None)
 
+            if validated["command"] and not isinstance(validated["command"], str):
+                validated["command"] = ""
+            if not isinstance(validated["args"], list):
+                validated["args"] = []
+            if not isinstance(validated["env"], dict):
+                validated["env"] = {}
+            if validated["cwd"] is not None and not isinstance(validated["cwd"], str):
+                validated["cwd"] = None
+
         # Potential for tool filtering / subsetting
         validated["enabled_tools"] = validated.get("enabled_tools", [])
 

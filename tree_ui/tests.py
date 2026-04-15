@@ -2248,6 +2248,26 @@ class StdioMCPTransportTests(TestCase):
         self.assertEqual(status["config"]["args"], ["mcp-server.js"])
         self.assertEqual(status["config"]["cwd"], "/tmp")
 
+    def test_remote_adapter_normalizes_invalid_stdio_config_shapes(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        adapter = RemoteMCPSourceAdapter(
+            source_id="stdio-invalid",
+            name="Broken Stdio",
+            config={
+                "transport_kind": "stdio",
+                "command": 123,
+                "args": "server.py",
+                "env": ["DEBUG=1"],
+                "cwd": ["not-a-path"],
+            },
+        )
+        status = adapter.get_status()
+        self.assertEqual(status["config"]["command"], "")
+        self.assertEqual(status["config"]["args"], [])
+        self.assertEqual(status["config"]["env"], {})
+        self.assertIsNone(status["config"]["cwd"])
+
     def test_adapter_builds_stdio_client(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
         from tree_ui.services.mcp.client import StdioMCPClient
@@ -2301,6 +2321,14 @@ class StdioMCPTransportTests(TestCase):
         with self.assertRaises(ValueError) as cm:
             client.list_tools()
         self.assertIn("No command configured", str(cm.exception))
+
+    def test_invalid_stdio_config_call_tool_returns_error(self):
+        from tree_ui.services.mcp.client import StdioMCPClient
+
+        client = StdioMCPClient({"transport_kind": "stdio"})
+        result = client.call_tool("bad__unavailable", {})
+        self.assertTrue(result.is_error)
+        self.assertIn("No command configured for stdio transport", result.content[0]["text"])
 
     def test_sse_remains_unimplemented(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter

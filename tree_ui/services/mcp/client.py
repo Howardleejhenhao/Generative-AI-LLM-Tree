@@ -168,6 +168,16 @@ class StdioMCPClient(BaseMCPClient):
         """
         Placeholder for calling a tool on a subprocess-based server.
         """
+        if not self.command:
+            return ToolResult.from_error(
+                "No command configured for stdio transport.",
+                metadata={
+                    "transport": "stdio",
+                    "command": self.command,
+                    "status": "invalid_config",
+                },
+            )
+
         return ToolResult.from_text(
             f"Stdio transport skeleton for '{self.server_label}' received call to '{name}'. "
             "Actual subprocess execution is not yet implemented in this foundation version.",
