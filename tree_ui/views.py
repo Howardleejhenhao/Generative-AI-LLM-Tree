@@ -10,6 +10,7 @@ from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.mcp.dispatcher import default_dispatcher
+from tree_ui.services.mcp.source_status import describe_sources
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
@@ -560,11 +561,12 @@ def stream_node_message(request, slug: str, node_id: int):
 def mcp_source_list(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     sources = MCPSource.objects.all().order_by("created_at")
+    source_summaries = describe_sources(list(sources))
     return render(
         request,
         "tree_ui/mcp_source_list.html",
         {
-            "sources": sources,
+            "sources": source_summaries,
             "workspace": workspace,
             "workspace_list": _serialize_workspace_list(workspace),
         },

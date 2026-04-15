@@ -2135,6 +2135,7 @@ class MCPSourceManagementTests(TestCase):
         self.assertContains(response, "Test Source")
         self.assertContains(response, "test-source")
         self.assertContains(response, "Internal Registry")
+        self.assertContains(response, "Internal tool registry is active.")
 
     def test_can_create_mcp_source(self):
         response = self.client.post(reverse("mcp_source_create"), {
@@ -2212,6 +2213,51 @@ class MCPSourceManagementTests(TestCase):
         updated_tool_names = [t.name for t in default_dispatcher.list_tools()]
         self.assertIn("compare_branches", updated_tool_names)
         self.assertIn("external_echo", updated_tool_names)
+
+    def test_mcp_source_list_shows_remote_transport_status(self):
+        MCPSource.objects.create(
+            name="Remote Stub",
+            source_id="remote-stub",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "stub", "label": "Remote Stub"},
+        )
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Stub Ready")
+        self.assertContains(response, "transport=stub")
+        self.assertContains(response, "Stub transport is active")
+
+    def test_mcp_source_list_shows_stdio_skeleton_status(self):
+        MCPSource.objects.create(
+            name="Remote Stdio",
+            source_id="remote-stdio",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={
+                "transport_kind": "stdio",
+                "command": "python3",
+                "args": ["server.py"],
+                "label": "Remote Stdio",
+            },
+        )
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Skeleton")
+        self.assertContains(response, "transport=stdio")
+        self.assertContains(response, "Stdio transport skeleton is configured")
+
+    def test_mcp_source_list_shows_disabled_status(self):
+        MCPSource.objects.create(
+            name="Disabled Mock",
+            source_id="disabled-mock",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=False,
+        )
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Disabled")
+        self.assertContains(response, "will not be registered by the dispatcher")
 
 class StdioMCPTransportTests(TestCase):
     def setUp(self):

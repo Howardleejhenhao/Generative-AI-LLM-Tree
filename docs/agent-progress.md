@@ -11,6 +11,63 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-15 10:12
+
+### Session Goal
+- Add source status/readiness diagnostics to the MCP settings page so the current MCP management UI becomes useful for transport verification and demo workflows.
+
+### Planned Tasks
+- inspect the current MCP management views/templates and identify where source readiness should be summarized
+- add a backend summary layer for source status, transport kind, and tool availability
+- update the MCP settings UI to display meaningful status badges and diagnostics
+- add regression coverage and rerun tests
+
+### Milestone Area
+- MCP management UI
+- Source readiness diagnostics
+
+### GitHub Project V2 Update
+- not updated in this session
+
+### Deliverables Impact
+- adds MCP source readiness summaries to the management page so the existing MCP source CRUD surface also reflects transport state, tool availability, and disablement behavior
+
+### Demo Readiness Impact
+- makes the MCP settings page much more useful in demos because source records now expose whether they are disabled, stub-ready, stdio skeletons, or unavailable
+
+### Work Completed
+- Session started on branch `feature/v2-mcp-source-status`.
+- Added `tree_ui/services/mcp/source_status.py` to derive source summaries from registered `MCPSource` records and adapter/runtime state.
+- Updated `mcp_source_list` to render source diagnostics instead of raw model rows.
+- Updated the MCP source list template to display status labels, transport kind, tool count, and readiness messages.
+- Added regression coverage for internal, stub remote, stdio remote, and disabled-source status rendering.
+- Re-ran `python3 manage.py test tree_ui.tests`; all 97 tests passed.
+- Re-ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: `feature/v2-mcp-source-status`
+- Commits made:
+  - pending local commit
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP source readiness diagnostics are implemented locally and verified.
+
+### Next Recommended Step
+- commit and push the MCP source status branch, then decide whether the next slice should be real stdio subprocess exchange or richer source diagnostics/actions
+
+### Known Issues / Blockers / Tech Debt
+- the MCP settings page now shows readiness summaries, but it still does not offer active health checks or protocol-level verification buttons
+
 ## Session 2026-04-15 10:05
 
 ### Session Goal
