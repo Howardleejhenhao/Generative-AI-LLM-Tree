@@ -38,7 +38,7 @@ class UnsupportedTransportClient(BaseMCPClient):
 
     def list_tools(self) -> List[ToolDefinition]:
         raise NotImplementedError(
-            f"Transport '{self.transport_kind}' is recognized but not yet implemented."
+            f"Transport '{self.transport_kind}' is recognized but not yet implemented (unsupported)."
         )
 
     def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolResult:
@@ -119,4 +119,69 @@ class StubMCPClient(BaseMCPClient):
             "label": self.server_label,
             "transport": self.transport_kind,
             "status": "connected",
+        }
+
+
+class StdioMCPClient(BaseMCPClient):
+    """
+    Client for MCP servers running as local subprocesses via stdio.
+    This is a skeleton for the v2 foundation phase.
+    """
+
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.server_label = config.get("label", "Local Stdio Server")
+        self.transport_kind = "stdio"
+
+        # Stdio-specific config parsing
+        self.command = config.get("command", "")
+        self.args = config.get("args", [])
+        self.env = config.get("env", {})
+        self.cwd = config.get("cwd", None)
+        self.timeout = config.get("timeout", 30)
+
+    def list_tools(self) -> List[ToolDefinition]:
+        """
+        Placeholder for listing tools from a subprocess-based server.
+        For the skeleton phase, we return a transport-incomplete indicator.
+        """
+        if not self.command:
+            raise ValueError("No command configured for stdio transport.")
+
+        # In a real implementation, we would start the subprocess here
+        # or reuse an existing process, and perform the MCP handshake.
+        return [
+            ToolDefinition(
+                name=f"stdio_placeholder_{self.server_label.replace(' ', '_').lower()}",
+                description=(
+                    f"[{self.server_label}] Stdio transport skeleton is active. "
+                    "Full protocol exchange not yet implemented."
+                ),
+                input_schema={
+                    "type": "object",
+                    "properties": {},
+                },
+            )
+        ]
+
+    def call_tool(self, name: str, arguments: Dict[str, Any]) -> ToolResult:
+        """
+        Placeholder for calling a tool on a subprocess-based server.
+        """
+        return ToolResult.from_text(
+            f"Stdio transport skeleton for '{self.server_label}' received call to '{name}'. "
+            "Actual subprocess execution is not yet implemented in this foundation version.",
+            metadata={
+                "transport": "stdio",
+                "command": self.command,
+                "status": "skeleton_only",
+            },
+        )
+
+    def get_server_info(self) -> Dict[str, Any]:
+        return {
+            "label": self.server_label,
+            "transport": self.transport_kind,
+            "command": self.command,
+            "status": "skeleton",
         }

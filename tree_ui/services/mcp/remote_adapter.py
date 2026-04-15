@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from .base import ToolSource
-from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient
+from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient, StdioMCPClient
 from .schema import ToolDefinition, ToolResult
 
 
@@ -53,6 +53,13 @@ class RemoteMCPSourceAdapter(ToolSource):
         validated["endpoint"] = validated.get("endpoint", "")
         validated["timeout"] = validated.get("timeout", 30)
 
+        # Stdio-specific fields
+        if transport_kind == "stdio":
+            validated["command"] = validated.get("command", "")
+            validated["args"] = validated.get("args", [])
+            validated["env"] = validated.get("env", {})
+            validated["cwd"] = validated.get("cwd", None)
+
         # Potential for tool filtering / subsetting
         validated["enabled_tools"] = validated.get("enabled_tools", [])
 
@@ -63,6 +70,8 @@ class RemoteMCPSourceAdapter(ToolSource):
         transport_kind = config.get("transport_kind", "stub")
         if transport_kind == "stub":
             return StubMCPClient(config)
+        if transport_kind == "stdio":
+            return StdioMCPClient(config)
         return UnsupportedTransportClient(config)
 
     def list_tools(self) -> List[ToolDefinition]:

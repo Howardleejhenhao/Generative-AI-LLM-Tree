@@ -2212,3 +2212,107 @@ class MCPSourceManagementTests(TestCase):
         updated_tool_names = [t.name for t in default_dispatcher.list_tools()]
         self.assertIn("compare_branches", updated_tool_names)
         self.assertIn("external_echo", updated_tool_names)
+
+class StdioMCPTransportTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        default_dispatcher.refresh()
+
+    def test_stdio_client_initialization(self):
+        from tree_ui.services.mcp.client import StdioMCPClient
+        config = {
+            "command": "python3",
+            "args": ["server.py"],
+            "env": {"DEBUG": "1"},
+            "label": "Test Server"
+        }
+        client = StdioMCPClient(config)
+        self.assertEqual(client.command, "python3")
+        self.assertEqual(client.args, ["server.py"])
+        self.assertEqual(client.env, {"DEBUG": "1"})
+        self.assertEqual(client.server_label, "Test Server")
+        self.assertEqual(client.get_server_info()["status"], "skeleton")
+
+    def test_remote_adapter_config_validation_for_stdio(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+        config = {
+            "transport_kind": "stdio",
+            "command": "node",
+            "args": ["mcp-server.js"],
+            "cwd": "/tmp"
+        }
+        adapter = RemoteMCPSourceAdapter(source_id="stdio-test", name="Stdio Source", config=config)
+        status = adapter.get_status()
+        self.assertEqual(status["config"]["transport_kind"], "stdio")
+        self.assertEqual(status["config"]["command"], "node")
+        self.assertEqual(status["config"]["args"], ["mcp-server.js"])
+        self.assertEqual(status["config"]["cwd"], "/tmp")
+
+    def test_adapter_builds_stdio_client(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+        from tree_ui.services.mcp.client import StdioMCPClient
+        config = {"transport_kind": "stdio", "command": "ls"}
+        adapter = RemoteMCPSourceAdapter(source_id="ls-source", name="LS", config=config)
+        self.assertIsInstance(adapter._client, StdioMCPClient)
+
+    def test_stdio_client_list_tools_placeholder(self):
+        from tree_ui.services.mcp.client import StdioMCPClient
+        client = StdioMCPClient({"command": "echo", "label": "Echo Server"})
+        tools = client.list_tools()
+        self.assertEqual(len(tools), 1)
+        self.assertIn("stdio_placeholder_echo_server", tools[0].name)
+        self.assertIn("transport skeleton", tools[0].description)
+
+    def test_stdio_client_call_tool_placeholder(self):
+        from tree_ui.services.mcp.client import StdioMCPClient
+        client = StdioMCPClient({"command": "echo", "label": "Echo Server"})
+        result = client.call_tool("any_tool", {"arg": "val"})
+        self.assertFalse(result.is_error)
+        self.assertIn("transport skeleton", result.content[0]["text"])
+        self.assertEqual(result.metadata["transport"], "stdio")
+
+    def test_stdio_source_registration_in_dispatcher(self):
+        from tree_ui.models import MCPSource
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+
+        MCPSource.objects.all().delete()
+        MCPSource.objects.create(
+            name="Subprocess Server",
+            source_id="stdio-source",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            config={"transport_kind": "stdio", "command": "cat", "label": "Subprocess Server"},
+            is_enabled=True,
+        )
+
+        default_dispatcher.refresh()
+        tools = default_dispatcher.list_tools()
+        tool_names = [t.name for t in tools]
+        self.assertIn("stdio_placeholder_subprocess_server", tool_names)
+
+        # Execute it
+        result = default_dispatcher.execute_tool("stdio_placeholder_subprocess_server", {})
+        self.assertFalse(result.is_error)
+        self.assertIn("Subprocess Server", result.content[0]["text"])
+
+    def test_invalid_stdio_config_list_tools_fails(self):
+        from tree_ui.services.mcp.client import StdioMCPClient
+        # Missing command
+        client = StdioMCPClient({"transport_kind": "stdio"})
+        with self.assertRaises(ValueError) as cm:
+            client.list_tools()
+        self.assertIn("No command configured", str(cm.exception))
+
+    def test_sse_remains_unimplemented(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+        from tree_ui.services.mcp.client import UnsupportedTransportClient
+        config = {"transport_kind": "sse"}
+        adapter = RemoteMCPSourceAdapter(source_id="sse-test", name="SSE", config=config)
+        self.assertIsInstance(adapter._client, UnsupportedTransportClient)
+        
+        # list_tools handles Exception and returns an "unavailable" indicator
+        tools = adapter.list_tools()
+        self.assertEqual(len(tools), 1)
+        self.assertEqual(tools[0].source_id, "sse-test")
+        self.assertIn("unavailable", tools[0].name.lower())
+        self.assertIn("unsupported", tools[0].description.lower())
+        self.assertIn("recognized but not yet implemented", tools[0].description)
