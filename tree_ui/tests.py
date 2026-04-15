@@ -2219,7 +2219,7 @@ class StdioMCPTransportTests(TestCase):
         default_dispatcher.refresh()
 
     def test_stdio_client_initialization(self):
-        from tree_ui.services.mcp.client import StdioMCPClient
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
         config = {
             "command": "python3",
             "args": ["server.py"],
@@ -2268,67 +2268,160 @@ class StdioMCPTransportTests(TestCase):
         self.assertEqual(status["config"]["env"], {})
         self.assertIsNone(status["config"]["cwd"])
 
+    def test_remote_adapter_normalizes_invalid_timeout(self):
+        from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+
+        adapter = RemoteMCPSourceAdapter(
+            source_id="stdio-invalid-timeout",
+            name="Broken Timeout",
+            config={
+                "transport_kind": "stdio",
+                "command": "python3",
+                "timeout": "abc",
+            },
+        )
+        status = adapter.get_status()
+        self.assertEqual(status["config"]["timeout"], 30.0)
+
     def test_adapter_builds_stdio_client(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
-        from tree_ui.services.mcp.client import StdioMCPClient
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
         config = {"transport_kind": "stdio", "command": "ls"}
         adapter = RemoteMCPSourceAdapter(source_id="ls-source", name="LS", config=config)
         self.assertIsInstance(adapter._client, StdioMCPClient)
 
-    def test_stdio_client_list_tools_placeholder(self):
-        from tree_ui.services.mcp.client import StdioMCPClient
-        client = StdioMCPClient({"command": "echo", "label": "Echo Server"})
-        tools = client.list_tools()
-        self.assertEqual(len(tools), 1)
-        self.assertIn("stdio_placeholder_echo_server", tools[0].name)
-        self.assertIn("transport skeleton", tools[0].description)
+    def test_stdio_client_real_handshake_and_discovery(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        import os
+        server_path = os.path.join(os.path.dirname(__file__), "services/mcp/test_mcp_server.py")
+        client = StdioMCPClient({"command": "python3", "args": [server_path], "label": "Real Server"})
+        
+        try:
+            tools = client.list_tools()
+            self.assertEqual(len(tools), 1)
+            self.assertEqual(tools[0].name, "echo")
+            self.assertIn("Echoes back", tools[0].description)
+            
+            # Check server info
+            info = client.get_server_info()
+            self.assertEqual(info["status"], "connected")
+            self.assertEqual(info["server_info"]["name"], "Test Echo Server")
+        finally:
+            client._stop_process()
 
-    def test_stdio_client_call_tool_placeholder(self):
-        from tree_ui.services.mcp.client import StdioMCPClient
-        client = StdioMCPClient({"command": "echo", "label": "Echo Server"})
-        result = client.call_tool("any_tool", {"arg": "val"})
-        self.assertFalse(result.is_error)
-        self.assertIn("transport skeleton", result.content[0]["text"])
-        self.assertEqual(result.metadata["transport"], "stdio")
+    def test_stdio_client_real_call(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        import os
+        server_path = os.path.join(os.path.dirname(__file__), "services/mcp/test_mcp_server.py")
+        client = StdioMCPClient({"command": "python3", "args": [server_path], "label": "Real Server"})
+        
+        try:
+            result = client.call_tool("echo", {"message": "Hello World"})
+            self.assertFalse(result.is_error)
+            self.assertEqual(result.content[0]["text"], "Echo: Hello World")
+        finally:
+            client._stop_process()
 
-    def test_stdio_source_registration_in_dispatcher(self):
+    def test_stdio_source_registration_in_dispatcher_real(self):
         from tree_ui.models import MCPSource
         from tree_ui.services.mcp.dispatcher import default_dispatcher
+        import os
+        server_path = os.path.join(os.path.dirname(__file__), "services/mcp/test_mcp_server.py")
 
         MCPSource.objects.all().delete()
         MCPSource.objects.create(
-            name="Subprocess Server",
+            name="Real Subprocess Server",
             source_id="stdio-source",
             source_type=MCPSource.SourceType.MCP_SERVER,
-            config={"transport_kind": "stdio", "command": "cat", "label": "Subprocess Server"},
+            config={"transport_kind": "stdio", "command": "python3", "args": [server_path], "label": "Real Server"},
             is_enabled=True,
         )
 
         default_dispatcher.refresh()
         tools = default_dispatcher.list_tools()
         tool_names = [t.name for t in tools]
-        self.assertIn("stdio_placeholder_subprocess_server", tool_names)
+        self.assertIn("echo", tool_names)
 
         # Execute it
-        result = default_dispatcher.execute_tool("stdio_placeholder_subprocess_server", {})
+        result = default_dispatcher.execute_tool("echo", {"message": "Dispatcher Test"})
         self.assertFalse(result.is_error)
-        self.assertIn("Subprocess Server", result.content[0]["text"])
+        self.assertIn("Echo: Dispatcher Test", result.content[0]["text"])
+
+    def test_stdio_client_process_failure_path(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        # Use a non-existent command
+        client = StdioMCPClient({"command": "non_existent_command_12345", "label": "Fail Server"})
+        with self.assertRaises(RuntimeError) as cm:
+            client.list_tools()
+        self.assertIn("Failed to start subprocess", str(cm.exception))
+
+    def test_stdio_client_malformed_json_failure(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        import os
+        server_path = os.path.join(os.path.dirname(__file__), "services/mcp/malformed_mcp_server.py")
+        client = StdioMCPClient({"command": "python3", "args": [server_path], "label": "Malformed Server"})
+        
+        try:
+            with self.assertRaises(RuntimeError) as cm:
+                client.list_tools()
+            self.assertIn("Failed to parse JSON", str(cm.exception))
+        finally:
+            client._stop_process()
+
+    def test_stdio_client_timeout_failure(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        import os
+
+        server_path = os.path.join(os.path.dirname(__file__), "services/mcp/hanging_mcp_server.py")
+        client = StdioMCPClient(
+            {
+                "command": "python3",
+                "args": [server_path],
+                "label": "Hanging Server",
+                "timeout": 0.1,
+            }
+        )
+
+        try:
+            with self.assertRaises(RuntimeError) as cm:
+                client.list_tools()
+            self.assertIn("Timed out waiting for stdio MCP response", str(cm.exception))
+        finally:
+            client._stop_process()
+
+    def test_stdio_client_handshake_mismatch_failure(self):
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
+        import os
+        # Use cat as a server, it will just echo back our initialize request, 
+        # but it won't have an ID that matches what we expect if we expect result.
+        # Wait, cat will echo the line, so _read_json will get the request we sent.
+        # But our request has "id": 1, so _read_json will see "id": 1.
+        # But it won't have "result" or "error", so _request will fail or loop.
+        
+        client = StdioMCPClient({"command": "cat", "label": "Cat Server"})
+        try:
+            with self.assertRaises(RuntimeError) as cm:
+                # We expect it to fail because it doesn't return a valid initialize response
+                client.list_tools()
+            self.assertIn("Handshake failed", str(cm.exception))
+        finally:
+            client._stop_process()
 
     def test_invalid_stdio_config_list_tools_fails(self):
-        from tree_ui.services.mcp.client import StdioMCPClient
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
         # Missing command
         client = StdioMCPClient({"transport_kind": "stdio"})
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(RuntimeError) as cm:
             client.list_tools()
         self.assertIn("No command configured", str(cm.exception))
 
     def test_invalid_stdio_config_call_tool_returns_error(self):
-        from tree_ui.services.mcp.client import StdioMCPClient
+        from tree_ui.services.mcp.stdio_client import StdioMCPClient
 
         client = StdioMCPClient({"transport_kind": "stdio"})
         result = client.call_tool("bad__unavailable", {})
         self.assertTrue(result.is_error)
-        self.assertIn("No command configured for stdio transport", result.content[0]["text"])
+        self.assertIn("No command configured", result.content[0]["text"])
 
     def test_sse_remains_unimplemented(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter

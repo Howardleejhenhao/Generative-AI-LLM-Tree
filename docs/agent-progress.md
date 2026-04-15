@@ -5038,6 +5038,58 @@
 ### Known Issues / Blockers / Tech Debt
 - The refreshed MCP management templates still rely on inline style attributes for layout and spacing; they are visually improved but not yet extracted into a cleaner component-level stylesheet.
 
+## Session 2026-04-16 00:12
+
+### Session Goal
+- Integrate the delegated stdio MCP handshake implementation into the main v2 tool-use branch.
+- Close the review gaps around real timeout handling and invalid stdio timeout normalization.
+
+### Planned Tasks
+- inspect the delegated stdio MCP transport changes and verify the handshake, discovery, and tool-call paths
+- fix timeout handling so stdio requests can fail fast instead of blocking indefinitely
+- normalize invalid stdio timeout config so broken sources degrade cleanly instead of exploding during client construction
+- re-run Django tests and migration checks
+- commit and push the integrated stdio MCP transport work
+
+### Work Completed
+- Session started on `feature/v2-tool-use-groundwork` after reviewing repository state, delegated report output, and the current progress log.
+- Reviewed the delegated stdio MCP transport implementation and confirmed the new subprocess-backed handshake, tool discovery, and tool call flow were present.
+- Identified and fixed two integration issues:
+  - the configured stdio timeout was not actually used in the transport read path
+  - invalid timeout config could break client construction and trigger destructor-time exceptions
+- Added timeout-aware stdio reads using `selectors`, so stalled MCP subprocesses now fail with a clear timeout error and stop the subprocess.
+- Hardened stdio timeout normalization in both the remote adapter config path and the stdio client constructor.
+- Added a `hanging_mcp_server.py` test fixture plus regression tests for timeout behavior and invalid timeout normalization.
+- Verified the final state with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/client.py`
+- `tree_ui/services/mcp/hanging_mcp_server.py`
+- `tree_ui/services/mcp/malformed_mcp_server.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/services/mcp/stdio_client.py`
+- `tree_ui/services/mcp/test_mcp_server.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: `feature/v2-tool-use-groundwork`
+- Commits made:
+  - pending local commit for stdio MCP handshake, transport fixtures, and timeout hardening
+- Push status:
+  - pending push to `origin/feature/v2-tool-use-groundwork`
+
+### Current Status
+- `transport_kind=stdio` now uses a real subprocess-backed MCP path with initialize, tool discovery, and tool call support.
+- Timeout handling is now active rather than declarative, and broken timeout config no longer crashes source construction.
+
+### Next Recommended Step
+- Build the next MCP operability slice on top of the real stdio transport, such as source connection testing or clearer runtime diagnostics in the management UI.
+
+### Known Issues / Blockers / Tech Debt
+- The stdio MCP client is still a synchronous v1 implementation and does not yet support richer protocol behaviors such as concurrent outstanding requests or streaming-style server notifications.
+
 ## Session 2026-03-19 19:30
 
 ### Session Goal

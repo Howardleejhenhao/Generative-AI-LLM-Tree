@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from .base import ToolSource
-from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient, StdioMCPClient
+from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient
+from .stdio_client import StdioMCPClient
 from .schema import ToolDefinition, ToolResult
 
 
@@ -51,7 +52,11 @@ class RemoteMCPSourceAdapter(ToolSource):
         # Minimum metadata
         validated["label"] = validated.get("label", "Remote MCP Server")
         validated["endpoint"] = validated.get("endpoint", "")
-        validated["timeout"] = validated.get("timeout", 30)
+        try:
+            timeout = float(validated.get("timeout", 30))
+        except (TypeError, ValueError):
+            timeout = 30.0
+        validated["timeout"] = timeout if timeout > 0 else 30.0
 
         # Stdio-specific fields
         if transport_kind == "stdio":
