@@ -10,6 +10,7 @@ from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.mcp.dispatcher import default_dispatcher
+from tree_ui.services.mcp.source_status import diagnose_source
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
@@ -560,11 +561,19 @@ def stream_node_message(request, slug: str, node_id: int):
 def mcp_source_list(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     sources = MCPSource.objects.all().order_by("created_at")
+    source_diagnostics = request.session.pop("mcp_source_diagnostics", {})
+    source_rows = [
+        {
+            "source": source,
+            "diagnostic": source_diagnostics.get(str(source.id)),
+        }
+        for source in sources
+    ]
     return render(
         request,
         "tree_ui/mcp_source_list.html",
         {
-            "sources": sources,
+            "source_rows": source_rows,
             "workspace": workspace,
             "workspace_list": _serialize_workspace_list(workspace),
         },
@@ -620,4 +629,13 @@ def mcp_source_delete(request, source_id: int):
     source = get_object_or_404(MCPSource, pk=source_id)
     source.delete()
     default_dispatcher.refresh()
+    return HttpResponseRedirect(reverse("mcp_source_list"))
+
+
+@require_POST
+def mcp_source_test(request, source_id: int):
+    source = get_object_or_404(MCPSource, pk=source_id)
+    request.session["mcp_source_diagnostics"] = {
+        str(source.id): diagnose_source(source),
+    }
     return HttpResponseRedirect(reverse("mcp_source_list"))

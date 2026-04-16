@@ -73,4 +73,9 @@ urlpatterns = [
         views.mcp_source_delete,
         name="mcp_source_delete",
     ),
+    path(
+        "mcp-sources/<int:source_id>/test/",
+        views.mcp_source_test,
+        name="mcp_source_test",
+    ),
 ]

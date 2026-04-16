@@ -11,6 +11,150 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-16 08:20
+
+### Session Goal
+- Add a practical MCP source connection test flow on top of the new stdio transport.
+- Let the MCP Settings page run an actual source diagnostic instead of only showing static configuration.
+
+### Planned Tasks
+- inspect the MCP source management views, routes, and template structure
+- add a per-source test action that instantiates the adapter and runs a real diagnostic
+- surface the diagnostic result back on the MCP source list page
+- add management tests that cover successful and failing source checks
+- verify the change with Django tests and migration checks
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Reordered `docs/agent-progress.md` so session entries now run in clean reverse-chronological order, with the newest sessions first.
+- Added a dedicated MCP source diagnostic helper that instantiates a source adapter, runs a real readiness check, and summarizes tool discovery results.
+- Added a new `mcp_source_test` POST route and view flow so MCP Settings can execute a per-source connection test and redirect back to the list page.
+- Updated the MCP source list template to render the most recent diagnostic result, including readiness label, message, tool count, and tool names.
+- Added management-page tests covering both a successful mock-source diagnostic and a failing stdio-source diagnostic.
+- Verified the implementation with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: `feature/mcp-source-connection-check`
+- Commits made:
+  - pending local commit for MCP source connection diagnostics
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP Settings can now run an actual diagnostic pass against a source instead of only showing static configuration.
+
+### Next Recommended Step
+- Integrate this branch back into `feature/v2-tool-use-groundwork` and then extend MCP operability with richer connection history or source-level status caching if needed.
+
+### Known Issues / Blockers / Tech Debt
+- Diagnostics are currently single-shot results stored in session for the next page load; there is not yet a persistent connection-history model or live refresh UI.
+
+## Session 2026-04-16 00:12
+
+### Session Goal
+- Integrate the delegated stdio MCP handshake implementation into the main v2 tool-use branch.
+- Close the review gaps around real timeout handling and invalid stdio timeout normalization.
+
+### Planned Tasks
+- inspect the delegated stdio MCP transport changes and verify the handshake, discovery, and tool-call paths
+- fix timeout handling so stdio requests can fail fast instead of blocking indefinitely
+- normalize invalid stdio timeout config so broken sources degrade cleanly instead of exploding during client construction
+- re-run Django tests and migration checks
+- commit and push the integrated stdio MCP transport work
+
+### Work Completed
+- Session started on `feature/v2-tool-use-groundwork` after reviewing repository state, delegated report output, and the current progress log.
+- Reviewed the delegated stdio MCP transport implementation and confirmed the new subprocess-backed handshake, tool discovery, and tool call flow were present.
+- Identified and fixed two integration issues:
+  - the configured stdio timeout was not actually used in the transport read path
+  - invalid timeout config could break client construction and trigger destructor-time exceptions
+- Added timeout-aware stdio reads using `selectors`, so stalled MCP subprocesses now fail with a clear timeout error and stop the subprocess.
+- Hardened stdio timeout normalization in both the remote adapter config path and the stdio client constructor.
+- Added a `hanging_mcp_server.py` test fixture plus regression tests for timeout behavior and invalid timeout normalization.
+- Verified the final state with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/client.py`
+- `tree_ui/services/mcp/hanging_mcp_server.py`
+- `tree_ui/services/mcp/malformed_mcp_server.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/services/mcp/stdio_client.py`
+- `tree_ui/services/mcp/test_mcp_server.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: `feature/v2-tool-use-groundwork`
+- Commits made:
+  - pending local commit for stdio MCP handshake, transport fixtures, and timeout hardening
+- Push status:
+  - pending push to `origin/feature/v2-tool-use-groundwork`
+
+### Current Status
+- `transport_kind=stdio` now uses a real subprocess-backed MCP path with initialize, tool discovery, and tool call support.
+- Timeout handling is now active rather than declarative, and broken timeout config no longer crashes source construction.
+
+### Next Recommended Step
+- Build the next MCP operability slice on top of the real stdio transport, such as source connection testing or clearer runtime diagnostics in the management UI.
+
+### Known Issues / Blockers / Tech Debt
+- The stdio MCP client is still a synchronous v1 implementation and does not yet support richer protocol behaviors such as concurrent outstanding requests or streaming-style server notifications.
+
+## Session 2026-04-15 23:14
+
+### Session Goal
+- Refresh the MCP management color system without changing page structure or behavior.
+- Fix workspace header overflow so the title block and top-right actions stay inside the main surface.
+
+### Planned Tasks
+- inspect the MCP source management templates and shared workspace CSS
+- refresh the color tokens and management page styling while preserving existing structure
+- review the delegated UI diff for scope drift and restore the original type-column semantics
+- tighten workspace header spacing so the title and toolbar actions stop clipping the container edges
+- verify the updated UI with local Django tests and migration checks
+
+### Work Completed
+- Session started from the color-refresh working branch after reviewing repository state and the delegated implementation report.
+- Refreshed shared color tokens in `app.css` and applied higher-contrast surfaces, borders, buttons, and status colors across the MCP management UI.
+- Restyled the MCP source list and form templates to use the new palette while preserving the existing page structure and flows.
+- Reviewed the delegated template changes and reverted the `Type` column back to `{{ source.get_source_type_display }}` so the UI remained a color-only refresh rather than a semantic content change.
+- Added stable header padding and action spacing in the workspace panel so the workspace label/title no longer clips the left edge and the top-right action buttons no longer touch the container boundary.
+- Verified the final state with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/mcp_source_form.html`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+
+### Git Workflow
+- Current branch at session start: `feature/ui-color-system-refresh`
+- New branch created/switched: `feature/ui-color-system-refresh`
+- Commits made:
+  - pending local commit for the color refresh and workspace header spacing adjustments
+- Push status:
+  - pending integration push to `origin/feature/ui-color-system-refresh` and `origin/feature/v2-tool-use-groundwork`
+
+### Current Status
+- The MCP source management pages now use a clearer, higher-contrast palette without changing their structure.
+- The workspace header no longer overflows at the left title block or the right-side action cluster.
+
+### Next Recommended Step
+- Resume the MCP roadmap with a real stdio-backed transport follow-up or another MCP operability improvement after this UI pass is integrated.
+
+### Known Issues / Blockers / Tech Debt
+- The refreshed MCP management templates still rely on inline style attributes for layout and spacing; they are visually improved but not yet extracted into a cleaner component-level stylesheet.
+
 ## Session 2026-04-15 10:05
 
 ### Session Goal
@@ -2349,28 +2493,525 @@
 ### Known Issues / Blockers / Tech Debt
 - The README describes the current implementation accurately, but live browser validation against real provider keys is still the main remaining confidence check for streaming edge cases.
 
-## Session 2026-03-20 11:22
+## Session 2026-03-22 00:47
 
 ### Session Goal
-- Push the homepage toward an explicitly minimal presentation after feedback that it still contains too much text.
-- Preserve the current graph functionality while stripping down copy and visual explanation to the essentials.
+- Merge the completed workspace polish and deletion work back into `main`.
+- Keep git history explicit and push the merged `main` branch to origin.
 
 ### Planned Tasks
-- continue on `feature/workspace-ui-polish` with a homepage text-reduction pass
-- shorten the hero, workspace, and graph helper copy to minimal wording
-- update tests and validate the simplified homepage
+- confirm the current feature branch is clean and fully pushed
+- switch to `main` and update it from origin
+- merge `feature/delete-node-workspace-confirmation` into `main`
+- push the merged `main` branch and record the result
 
 ### Work Completed
-- Session started; branch state, latest progress log entries, and the current homepage template were reviewed before editing.
-- Reduced the homepage hero to a short title plus one CTA instead of a larger explanatory block.
-- Shortened workspace, graph, and selection helper copy so the homepage reads more like a control surface than a landing page.
-- Simplified the default search/status helper text and shortened the empty-state and detail-panel copy.
-- Updated tests to match the minimal homepage wording.
-- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Session started; current branch state and the latest progress-log context were reviewed before the merge workflow.
+- Pushed `feature/delete-node-workspace-confirmation` so the source branch was fully published before integrating it into `main`.
+- Switched to `main` and merged `feature/delete-node-workspace-confirmation` with a non-fast-forward merge commit.
+- Verified the merged `main` branch with `python3 manage.py check` and `python3 manage.py test`.
+- A follow-up `git pull origin main` was attempted after the merge had already been created locally; it failed because the working tree already contained the merge changes, but this did not leave the repository in a conflicted state.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: switched to `main` for merge
+- Commits made:
+  - `d616d14` - `docs: start merge session log`
+  - `61ced67` - `merge: integrate workspace polish and delete flows`
+  - `8986ba0` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/main`
+
+### Current Status
+- `main` now contains the merged workspace polish and deletion work.
+
+### Next Recommended Step
+- Push the merged `main` branch and finalize the progress-log entry.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-22 00:41
+
+### Session Goal
+- Finish the remaining workspace-header polish by collapsing the top `Workspaces / New workspace` area into a single lighter tool row.
+- Keep workspace switching and creation fully intact while reducing the feeling of two stacked cards.
+
+### Planned Tasks
+- reshape the top workspace toolbar into one unified inline control strip
+- compact the create-workspace form into a utility-style input/button row
+- update the stylesheet version and verify the polish with local checks/tests
+
+### Work Completed
+- Session started; current branch state, progress-log context, and the current workspace toolbar template/CSS were reviewed before editing.
+- Collapsed the top `Workspaces / Create Workspace` area into a single inline toolbar rather than two separate control cards.
+- Turned workspace creation into a utility-style input/button row so the section reads more like a tool strip than a landing panel.
+- Added responsive rules so the compressed toolbar still falls back cleanly to a vertical stack on narrow screens.
+- Bumped the stylesheet version and verified the polish with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `aab6277` - `style: compress workspace toolbar layout`
+  - `d6c8f05` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/delete-node-workspace-confirmation`
+
+### Current Status
+- The top workspace controls now read as a single compact toolbar.
+
+### Next Recommended Step
+- Do one browser pass to confirm the toolbar spacing feels finished, then decide if any further polish is still needed.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-22 00:32
+
+### Session Goal
+- Remove the remaining minimap and graph hint text after review that they are unnecessary.
+- Continue the final polish by tightening the graph node card typography and spacing.
+
+### Planned Tasks
+- remove the minimap markup and its frontend initialization path
+- remove the passive graph hint copy from the workspace
+- refine node card spacing and type hierarchy
+- validate the cleanup with local checks/tests
+
+### Work Completed
+- Session started; current branch state, latest progress-log entries, and the minimap/node-card code paths were reviewed before editing.
+- Removed the minimap markup and its app-level initialization path so the graph no longer renders an unnecessary secondary navigator.
+- Removed the passive `Drag nodes. Drag canvas to pan.` hint from the workspace.
+- Tightened node-card padding, chip sizing, title/meta hierarchy, and summary height so the cards read cleaner and lighter.
+- Updated stylesheet and script asset versions so the browser picks up the minimap removal and card refinements immediately.
+- Verified the cleanup with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- After browser feedback that the graph disappeared, fixed a frontend crash caused by `viewport.js` still dereferencing the removed `graph-hint` element during transform updates.
+- Bumped the workspace script/module version again so the fixed viewport module is forced through browser cache.
+- Re-verified the correction with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `90c62a7` - `style: remove minimap and tighten graph cards`
+  - `9bf0b7c` - `fix: restore graph after minimap removal`
+  - `803d887` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/delete-node-workspace-confirmation`
+
+### Current Status
+- The minimap/hint removal is complete, and the follow-up viewport crash has been corrected.
+
+### Next Recommended Step
+- Hard-refresh the workspace once to load the fixed script bundle, then resume any remaining visual polish from this stable state.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-22 00:24
+
+### Session Goal
+- Resume the final visual cleanup now that deletion flows are in place.
+- Reduce the visual weight of the workspace controls so the graph canvas reads more clearly as the primary surface.
+
+### Planned Tasks
+- lighten and compact the workspace switcher/create area
+- reduce the chrome around the workspace header and command bar
+- soften the bottom create dock so it feels like a utility strip rather than a second panel
+- validate the CSS/template polish with local checks/tests
+
+### Work Completed
+- Session started; current branch state, latest progress-log entries, and the current homepage/workspace CSS and template structure were reviewed before editing.
+- Reduced the top workspace switcher and create-workspace surfaces so they read more like lightweight control cards than hero-level panels.
+- Softened the workspace command bar and summary pills so the selection/search chrome competes less with the graph.
+- Reworked the bottom create dock into a slimmer translucent utility strip instead of a heavier second panel.
+- Tightened shared button, pill, and legend sizing so the overall workspace reads more minimal without changing functionality.
+- Bumped the stylesheet asset version and verified the pass with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `95db79f` - `style: soften workspace control chrome`
+  - `c1908dc` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/delete-node-workspace-confirmation`
+
+### Current Status
+- The workspace chrome is visibly lighter, and the graph should now dominate the page more clearly.
+
+### Next Recommended Step
+- Do a quick browser pass on spacing and readability, then decide whether any remaining polish should focus on node cards or the focused chat page.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-22 00:19
+
+### Session Goal
+- Simplify the new deletion modal from two confirmations down to a single confirmation step.
+- Keep the same delete API safety guard while reducing the UX friction.
+
+### Planned Tasks
+- remove the intermediate `Continue` step from the shared confirmation modal
+- keep workspace and node deletion messaging clear in the single confirm view
+- validate the UI change with local checks/tests
+
+### Work Completed
+- Session started; current branch status, latest progress-log state, and the delete-modal implementation were reviewed before editing.
+- Removed the intermediate `Continue` step from the shared delete modal so workspace and node deletion now require only one explicit confirmation click.
+- Kept the backend-side `confirm: true` requirement intact, so the UX is simpler without weakening API-side protection.
+- Updated the graph page asset version to force browsers to load the simplified confirmation flow.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/delete-node-workspace-confirmation`
+- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `d12df97` - `fix: simplify delete confirmation flow`
+  - `c0e840b` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/delete-node-workspace-confirmation`
+
+### Current Status
+- The delete modal now uses a single confirmation step.
+
+### Next Recommended Step
+- Do a quick browser pass to confirm the simplified modal copy feels right, then continue with the final visual cleanup pass.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-22 00:08
+
+### Session Goal
+- Add safe deletion flows for workspaces and nodes before the final visual cleanup pass.
+- Make node deletion recursive for non-leaf nodes and require a double-confirmation dialog before destructive actions run.
+
+### Planned Tasks
+- add backend delete endpoints for workspaces and nodes
+- ensure deleting a node removes its full descendant subtree
+- add regression tests for workspace deletion and recursive node deletion
+- wire graph UI delete controls with a two-step confirmation modal
+- validate with local checks/tests
+
+### Work Completed
+- Session started; `AGENTS.md`, the latest progress log state, current branch, and the existing graph/chat code paths were reviewed before implementation.
+- Switched from `feature/workspace-ui-polish` to `feature/delete-node-workspace-confirmation` for this destructive-flow feature slice.
+- Added backend delete endpoints for workspaces and nodes, both guarded by an explicit `confirm` requirement in the request payload.
+- Implemented recursive node-subtree deletion so deleting a non-leaf node removes all descendants while leaving unrelated branches intact.
+- Added regression coverage for workspace deletion, recursive node deletion, and missing-confirmation rejection paths.
+- Added graph-page delete controls for the current workspace and the currently selected node.
+- Built a shared two-step confirmation modal so both destructive actions require a double confirmation before the request is sent.
+- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: `feature/delete-node-workspace-confirmation`
+- Commits made:
+  - `5a8b711` - `feat: add confirmed workspace and node deletion`
+  - `ae0e163` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/delete-node-workspace-confirmation`
+
+### Current Status
+- Workspace and node deletion now work from the graph page with a shared double-confirmation modal.
+
+### Next Recommended Step
+- Run one browser pass on the new confirmation modal and delete controls, then resume the final visual cleanup.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-21 23:58
+
+### Session Goal
+- Remove the last homepage hero CTA and reduce the landing copy to a simple final project title plus one short description line.
+- Keep the workspace-first experience intact while making the homepage feel more finished and minimal.
+
+### Planned Tasks
+- remove the top `Canvas` action from the homepage hero
+- change the hero title to `LLM tree`
+- add one short, smaller descriptive sentence under the title
+- update tests and validate the homepage cleanup
+
+### Work Completed
+- Session started; current branch status, homepage template, stylesheet, tests, and latest progress log entries were reviewed before editing.
+- Removed the top `Canvas` CTA from the homepage hero so the landing area no longer competes with the workspace itself.
+- Replaced the old `Conversation graph.` headline with `LLM tree` and added a single short description line explaining that the project is a branching chat workspace rendered as a graph.
+- Simplified the hero layout back to a single-column block and removed the now-unused hero CTA styles from the stylesheet.
+- Updated the homepage regression test to match the final hero copy.
+- Verified the cleanup with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `4ff3395` - `feat: finalize homepage hero copy`
+  - `bf67db9` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The homepage hero now reads as a minimal finished project intro instead of a landing section with a leftover CTA.
+
+### Next Recommended Step
+- Do one last visual pass for any remaining empty chrome on the graph workspace, then consider the product polish phase complete.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-21 23:53
+
+### Session Goal
+- Tighten the spacing between the selected node and the branch handle so the `+` reads as attached to the node.
+
+### Planned Tasks
+- reduce the quick-create anchor offset in the graph positioning logic
+- shorten the branch-handle connector line in CSS
+- validate the small adjustment and update the progress log
+
+### Work Completed
+- Session started; the current quick-create positioning logic and branch-handle styling were reviewed after feedback that the `+` still sits too far from the node.
+- Reduced the quick-create anchor offset so the branch handle sits noticeably closer to the selected node.
+- Shortened the branch-handle connector line so the `+` reads as attached to the node instead of floating beside it.
+- Bumped the workspace asset versions again so the tighter branch-handle positioning is forced through browser cache.
+- Verified the adjustment with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The branch handle now sits closer to the selected node and should read more like a direct node extension.
+
+### Next Recommended Step
+- Review whether the branch handle should also be slightly smaller or inherit provider color accents from the selected node.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-21 23:45
+
+### Session Goal
+- Reduce the homepage top selection/search area so the graph reads more like the primary workspace.
+- Redesign the in-canvas `+` affordance so it feels more integrated with each selected node.
+
+### Planned Tasks
+- compress the workspace search/selection strip into a thinner command-style toolbar
+- restyle and reposition the quick-create control so it reads like a branch handle rather than a floating button
+- keep the existing graph interactions and node creation behavior intact
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the workspace template, graph quick-create logic, and current toolbar styling were reviewed before compressing the top strip and redesigning the node-adjacent `+` affordance.
+- Compressed the top search/selection area into a thinner command-style toolbar so the graph starts reading more like the main surface instead of sharing attention with a larger control block.
+- Shortened the default top-strip copy and reduced the passive search hint so the header chrome stays quieter.
+- Reworked the in-canvas quick-create control into a more node-attached branch handle with a connector line, softer branch-colored treatment, and a more centered alignment against the selected node.
+- Refined the quick-create panel styling so it feels like an extension of the node rather than a detached floating modal.
+- Bumped the graph workspace asset versions for the refreshed toolbar and quick-create styling pass.
+- Verified the changes with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph interactions remain stable, and the top toolbar plus node-adjacent quick-create affordance are visually more integrated into the workspace.
+
+### Next Recommended Step
+- Decide whether to downplay the bottom action dock further now that the node-adjacent branch handle is more usable.
+
+### Known Issues / Blockers / Tech Debt
+- The current quick-create control works functionally but still feels too detached from the node it belongs to.
+
+## Session 2026-03-21 23:41
+
+### Session Goal
+- Make non-leaf chat pages look explicitly like historical checkpoints instead of ordinary in-place chat sessions.
+- Turn the composer on non-leaf nodes into a clearer “continue in child” action surface.
+
+### Planned Tasks
+- inspect the current node chat template and composer styling
+- add stronger non-leaf visual treatment and explicit branching language
+- keep leaf-node chat pages visually unchanged
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the node chat template, stylesheet, and recent continuation-rule changes were reviewed before adjusting the non-leaf presentation.
+- Added a visible `History node` status badge in the chat header for non-leaf nodes.
+- Changed the non-leaf composer into a clearer branch action surface with a `Continue in new child` kicker, a `Continue in child` submit label, and more explicit copy explaining that the historical node itself will not be mutated.
+- Added a subtle historical-node marker above the transcript and warmer composer styling so non-leaf pages are visually distinct from ordinary leaf-node chats.
+- Bumped the shared stylesheet and node-chat script asset versions so the revised historical-node presentation is forced through browser cache.
+- Updated template coverage for the new non-leaf presentation and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- Non-leaf chat pages now read as historical checkpoints with explicit branch-continuation language instead of looking like ordinary append-in-place chat screens.
+
+### Next Recommended Step
+- Decide whether to further simplify leaf-node chat pages now that non-leaf pages carry a stronger alternate mode treatment.
+
+### Known Issues / Blockers / Tech Debt
+- The non-leaf flow still redirects only after streaming completes; that interaction could be made even clearer later with an earlier handoff into the child chat page.
+
+## Session 2026-03-21 23:35
+
+### Session Goal
+- Make node chat behavior lineage-safe by preventing in-place continuation on nodes that already have children.
+- Ensure continuing from a historical non-leaf node automatically creates a new child branch instead of mutating old history.
+
+### Planned Tasks
+- inspect the node chat streaming flow in both the frontend and backend
+- route non-leaf chat submissions into a newly created child node on the server
+- update the chat UI so the rule is visible to the user
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the node chat streaming flow, node creation service, and current tests were reviewed before changing the continuation rule.
+- Added a continuation-child helper in the node creation service so historical node continuation can branch without duplicating provider/model logic.
+- Updated `stream_node_message` so leaf nodes still append in place, while non-leaf nodes automatically create a new child and stream the reply into that new branch instead.
+- Extended the SSE payload with branch metadata so the frontend can detect when a reply is being written into a newly created child node.
+- Updated the node chat client to redirect into the new child chat after a non-leaf continuation finishes streaming.
+- Added an explicit composer note on non-leaf node chat pages so users know sending there opens a new child branch.
+- Added backend and template coverage for the new rule and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- Chat continuation is now lineage-safe: only leaf nodes append in place, and non-leaf nodes automatically continue into a new child branch.
+
+### Next Recommended Step
+- Decide whether non-leaf chat pages should stay writable with auto-branching or become explicitly read-only with a stronger “continue in new child” call to action.
+
+### Known Issues / Blockers / Tech Debt
+- The current non-leaf flow redirects only after the streamed reply completes; if desired, it could be refined later into an immediate branch handoff before streaming begins.
+
+## Session 2026-03-21 23:18
+
+### Session Goal
+- Move child-node creation closer to the selected node so the workspace feels more like a mind-mapping tool.
+- Reduce dependence on the bottom action dock for the primary branch-building action.
+
+### Planned Tasks
+- inspect the current graph node render structure and create-node flow
+- add an inline quick-add affordance beside the selected node
+- wire the quick-add interaction into the existing node creation API without duplicating backend logic
+- validate the frontend scripts and Django test suite, then update the progress log
+
+### Work Completed
+- Session started; the latest workspace interaction code and progress history were reviewed before implementing a node-adjacent quick-create flow.
+- Added a selected-node quick-create affordance inside the graph stage so a `+` button now appears near the active node instead of forcing the user back to the bottom dock for every child branch.
+- Built a compact floating child-creation panel with title, provider, model, and add controls, all wired to the existing node-creation API path.
+- Kept the bottom action dock for broader editing, but moved the primary "branch from this node" action closer to the canvas to better match a mind-mapping flow.
+- Updated the viewport interaction guard so using the floating quick-create panel does not accidentally trigger graph panning.
+- Added cache-busted graph asset references for the updated workspace interaction pass and extended the workspace page test to cover the quick-create affordance.
+- Fixed a follow-up runtime failure where the viewport controller fired before `nodesById` was initialized, which prevented the graph from rendering at all after the quick-create change.
+- Bumped the graph workspace asset versions again so browsers are forced off the broken quick-create build and onto the initialization fix.
+- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/templates/tree_ui/index.html`
 - `tree_ui/tests.py`
 
@@ -2380,17 +3021,532 @@
 - Commits made:
   - none yet
 - Push status:
-  - branch already exists on `origin`, additional work not pushed yet
+  - not pushed yet for this session
 
 ### Current Status
-- The homepage simplification pass is complete locally.
-- The goal of this session stayed focused on explicit reduction rather than another visual expansion.
+- Node selection and chat entry are working, and child creation now has a node-adjacent canvas affordance instead of relying only on the bottom dock.
 
 ### Next Recommended Step
-- Commit and push the minimal homepage wording pass, then continue only if more reduction is still needed after review.
+- Review the live browser feel of the new quick-create panel and decide whether to simplify the remaining top selection strip and bottom dock further.
+
+### Known Issues / Blockers / Tech Debt
+- The bottom action dock still does most of the creation work and feels more form-like than map-like.
+
+## Session 2026-03-21 23:06
+
+### Session Goal
+- Eliminate any remaining node-click failure caused by stale frontend assets or layer interception.
+- Ship a cache-busted, more robust graph interaction fix so the user does not need to guess whether the browser loaded the latest scripts.
+
+### Planned Tasks
+- inspect current static asset versioning for the workspace page
+- add cache busting for the graph workspace scripts involved in node interaction
+- harden graph layer pointer behavior so edges cannot interfere with node clicks
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; static asset versioning and graph layer CSS were reviewed after continued reports that node clicks still failed in the browser.
+- Added cache-busting query strings to the workspace stylesheet, graph workspace entry script, and the graph-related ES module imports so the browser is forced onto the latest interaction code.
+- Hardened the graph layer pointer behavior so the SVG edge layer cannot intercept clicks and the node layer stays on top for interaction.
+- Verified the refreshed frontend modules with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/minimap.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph workspace now has explicit cache busting on its interaction assets, and the graph layers are configured so nodes receive pointer interaction directly.
+
+### Next Recommended Step
+- Re-test in the browser after a hard refresh; if node clicks still fail after the forced asset refresh, inspect live browser events directly.
+
+### Known Issues / Blockers / Tech Debt
+- Static asset cache busting is currently inconsistent between the chat page and the graph workspace page.
+
+## Session 2026-03-21 23:00
+
+### Session Goal
+- Remove the now-redundant `Open chat` pill from the graph workspace.
+- Keep node entry minimal by relying on double-click and keyboard navigation instead of another visible button.
+
+### Planned Tasks
+- remove the `Open chat` workspace control from the selected-node strip
+- simplify the related CSS and JS state that only existed for that button
+- keep double-click and `C` shortcut behavior intact
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the current workspace template, CSS, JS, and tests were reviewed after confirming double-click node entry is the preferred interaction.
+- Removed the `Open chat` pill from the workspace selection strip so graph navigation now stays visually minimal.
+- Switched node opening behavior to a cross-render double-click detector because the first click re-renders the canvas and breaks a native DOM `dblclick` listener.
+- Fixed a follow-up regression where node selection could fail because the interaction still depended on a `click` path disrupted by `pointerdown`; selection and double-click open now resolve from `pointerup` based on drag distance instead.
+- Kept keyboard `C` navigation intact while moving the node chat URL source to a hidden template element instead of a visible button.
+- Updated tests to reflect the removed workspace chat pill and verified the change with `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph no longer shows the `Open chat` pill, and node chat entry now works through double-click or `C`.
+
+### Next Recommended Step
+- Decide whether the selected-node strip itself should be simplified further now that node entry is handled directly on the canvas.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
+
+## Session 2026-03-21 22:58
+
+### Session Goal
+- Make entering a node conversation more direct from the graph workspace.
+- Add a double-click shortcut on nodes so chat navigation no longer depends on the small `Open chat` action.
+
+### Planned Tasks
+- inspect the current graph node event handling
+- wire a double-click action from node cards to the existing node chat URL
+- validate the frontend scripts and test suite
+- update the progress log with the result
+
+### Work Completed
+- Session started; the current workspace interaction flow and graph node event handling were reviewed after user feedback that opening chat is not obvious enough.
+- Added direct double-click navigation on graph nodes so a node can open its focused chat view without relying on the smaller `Open chat` action.
+- Kept the existing single-click selection flow and keyboard `C` shortcut while routing both through the same node-chat navigation helper.
+- Verified the interaction update with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The graph now supports double-click-to-open on nodes, making entry into node chat much more direct.
+
+### Next Recommended Step
+- Review whether the `Open chat` pill should stay visible as a secondary affordance or be removed now that direct node entry is available.
+
+### Known Issues / Blockers / Tech Debt
+- None recorded yet for this session.
+
+## Session 2026-03-21 10:56
+
+### Session Goal
+- Remove the remaining empty workspace column so the graph surface fully occupies the available area.
+- Make the main canvas region stretch vertically in a more intentional full-workspace layout.
+
+### Planned Tasks
+- inspect the active workspace layout rules that still control the canvas width and height
+- replace the stale two-column workspace grid with a single full-width canvas layout
+- adjust the canvas panel and graph stage sizing so the workspace area fills the visible page more consistently
+- validate with checks/tests and update the progress log
+
+### Work Completed
+- Session started; the active workspace CSS and viewport/canvas sizing code were reviewed after the user reported empty unused area beside the graph.
+- Replaced the stale two-column workspace grid with a single full-width layout so the removed inspector no longer leaves an empty reserved column.
+- Converted the canvas panel into a full-height grid shell so the graph stage grows like the main workspace surface instead of feeling like a smaller box inside the page.
+- Retuned the graph stage and graph canvas sizing so the visible workspace area fills more of the page and keeps the canvas stretching to the available viewport.
+- Verified the layout-only change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet
+- Push status:
+  - not pushed yet for this session
+
+### Current Status
+- The empty reserved workspace area has been removed and the graph surface now occupies the available width more directly.
+
+### Next Recommended Step
+- Review the live browser result and decide whether the next step should be an even more XMind-like quick-create affordance near the selected node.
+
+### Known Issues / Blockers / Tech Debt
+- The stylesheet still contains legacy workspace/detail-panel rules from earlier layouts, which makes later overrides easy to miss.
+
+## Session 2026-03-21 10:28
+
+### Session Goal
+- Strip the workspace page down to a more minimal, graph-first composition.
+- Remove the heavy right-side inspector and rework node creation into a lighter, map-building style flow.
+
+### Planned Tasks
+- review the workspace template, canvas interactions, and detail-panel dependencies
+- remove non-essential node detail copy and the full inspector block from the main page
+- redesign node creation into a compact graph action tray that fits a more XMind-like build flow
+- update tests and validate the simplified workspace
+
+### Work Completed
+- Session started; current branch, clean worktree, latest progress notes, and the workspace UI files were reviewed before editing.
+- Removed the right-side node inspector from the workspace page so the graph is no longer split by a heavy detail column.
+- Simplified the workspace header and search/selection strip to keep only graph-level controls and the selected-node essentials.
+- Reworked node creation into a compact action dock below the canvas so adding a root or child feels closer to a map-building flow.
+- Kept node chat access from the main workspace through a small selected-node action instead of a full detail panel.
+- Updated the workspace JavaScript to stop depending on inspector-only DOM state and trimmed selection copy to minimal summaries.
+- Updated the workspace page test expectations and verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `04b60f5` - `feat: simplify graph workspace layout`
+  - `3bf1ef8` - `docs: update progress log for workspace simplification`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The workspace page is now materially more minimal and graph-first, with the inspector removed and creation moved into a lighter dock.
+
+### Next Recommended Step
+- Review the live browser layout and refine the node-creation dock further if you want it to feel even closer to XMind's quick child-creation workflow.
+
+### Known Issues / Blockers / Tech Debt
+- The main graph page no longer exposes edited-variant creation directly; that flow now remains in the focused chat view only.
+
+## Session 2026-03-21 10:22
+
+### Session Goal
+- Keep the conversation column exactly as before while moving only the scrollbar to the far right edge.
+
+### Planned Tasks
+- inspect the latest scrollbar-related CSS change
+- restore the centered message column width while leaving the scroll shell full width
+- verify the layout logic with checks/tests and push the minimal correction
+
+### Work Completed
+- Session started; the latest scrollbar-related CSS change was reviewed before editing.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The requested adjustment is now narrowed to restoring only the centered message-column width inside the full-width scroll shell.
+
+### Next Recommended Step
+- Keep the full-width scroll shell, but re-apply the previous centered message width inside it.
+
+### Known Issues / Blockers / Tech Debt
+- None newly recorded yet for this session.
+
+## Session 2026-03-21 10:20
+
+### Session Goal
+- Move the focused-chat scrollbar back to the far right edge of the viewport while keeping the conversation itself centered.
+
+### Planned Tasks
+- inspect which chat container currently owns the scrollbar
+- widen the scrollable shell back to full width while keeping inner chat content centered
+- verify that the transcript and composer alignment remain stable after the scrollbar move
+
+### Work Completed
+- Session started; the centered chat shell layout was reviewed before editing.
+- Changed the transcript shell back to full width so the scrollable container once again owns the full viewport width and the scrollbar can sit on the far right edge.
+- Kept the conversation content centered by leaving the message column width constraint on the transcript children instead of the outer scroll shell.
+- Repositioned the `Jump to latest` control against the centered chat column boundary so it stays visually associated with the conversation even after the scrollbar moves outward.
+- Verified the scrollbar-shell adjustment with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The chat scrollbar is now owned by the full-width transcript shell rather than the centered inner shell.
+
+### Next Recommended Step
+- Commit and push the scrollbar alignment fix, then verify it in the browser with a normal refresh.
+
+### Known Issues / Blockers / Tech Debt
+- None newly recorded yet for this session.
+
+## Session 2026-03-21 10:08
+
+### Session Goal
+- Fix the remaining perceived chat misalignment by changing the node-chat layout structure, not just tweaking spacing.
+- Make the transcript, jump button, and composer share the same centered content shell.
+
+### Planned Tasks
+- inspect the current node-chat template/CSS to identify why the page still reads as off-center
+- add a dedicated centered shell around the transcript region
+- align the jump button and composer to that same shell
+- validate with checks/tests and push the correction
+
+### Work Completed
+- Session started; the current node-chat template and stylesheet were reviewed before editing.
+- Added a dedicated centered `chat-content-shell` wrapper so the transcript area now has a single explicit alignment anchor instead of relying on padding math alone.
+- Bound the `Jump to latest` control to that same centered shell so it no longer floats relative to the full viewport width.
+- Re-aligned the composer wrapper to the same centered width as the transcript shell, making transcript, jump control, and composer share one visual center line.
+- Unified the chat header, transcript shell, and composer around the same shared shell-width variable instead of letting each area compute its own width independently.
+- Removed the remaining viewport-relative horizontal padding from the transcript so centering now comes from structure rather than spacing tricks.
+- Added static asset version query strings for the main stylesheet and node-chat script to force the browser to load the corrected CSS/JS instead of stale cached files.
+- Verified the structural centering fix with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - none yet in this session
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The header, transcript, jump button, and composer now share a centered shell-width system, and browser cache should no longer mask the updated styling.
+
+### Next Recommended Step
+- Commit and push the centering fix, then hard-refresh the exact page that previously looked off-center to confirm the cached assets have been replaced.
+
+### Known Issues / Blockers / Tech Debt
+- Pure padding-based centering has proven too brittle for this page layout.
+
+## Session 2026-03-21 09:40
+
+### Session Goal
+- Correct the broken node-chat redesign after browser feedback that the composer layout was malformed and the conversation still was not centered.
+- Remove the variant UI from the focused chat page for now and restore a stable, minimal chat experience.
+
+### Planned Tasks
+- review the current node-chat template, JavaScript, CSS, and test expectations
+- revert the unstable composer experiment to a reliable single-form layout
+- remove variant controls from the focused chat page
+- keep the immediate-clear-on-send behavior while centering the transcript column
+- validate with checks and tests, then commit and push
+
+### Work Completed
+- Session started; the current node-chat template, CSS, JavaScript, and tests were reviewed before editing.
+- Removed the unstable integrated tools composer and the focused-chat variant UI so the chat page is back to a single stable composer form.
+- Preserved the immediate-clear-on-send behavior and the restore-on-early-failure guard in the chat submit flow.
+- Centered the transcript content by constraining each transcript item to a shared centered column instead of letting the full-width message grid drift left.
+- Kept the composer width aligned to the same central chat column so the page now reads as one conversation surface.
+- Updated the chat-page test expectations to match the simplified focused-chat surface.
+- Verified the correction with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `1bceea7` - `fix: restore stable centered node chat layout`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The focused chat page is back on a stable single-form composer, and the conversation column is explicitly centered in CSS.
+
+### Next Recommended Step
+- Confirm in the browser that the visual centering now matches expectations, then trim any unused server-side context assembly if the leaner chat view remains the preferred direction.
+
+### Known Issues / Blockers / Tech Debt
+- The node-chat view still computes lineage and child-branch context on the server even though those blocks are no longer rendered in the template.
+
+## Session 2026-03-21 09:35
+
+### Session Goal
+- Rework the focused node chat layout after visual feedback that the conversation column is not centered.
+- Replace the bottom composer with a more ChatGPT-like single-shell input treatment while keeping the variant editor accessible.
+
+### Planned Tasks
+- review the current node-chat template, CSS, JavaScript, and tests
+- center the transcript column and header framing on wider screens
+- redesign the composer into a pill-shaped single-shell input with integrated tool and send controls
+- fold the variant editor into a toggleable tools panel tied to the composer
+- update tests and validate the new chat layout
+
+### Work Completed
+- Session started; the current node-chat template, chat stylesheet, JavaScript, and tests were reviewed before editing.
+- Re-centered the focused chat experience by constraining the header and transcript content to a consistent central column instead of letting the conversation drift left.
+- Reworked the composer into a ChatGPT-like shell with a left-side tool button, central rounded textarea, and right-side send button.
+- Moved the edited-variant workflow into a toggleable tools panel that expands from the composer area instead of living as a separate block below the transcript.
+- Updated placeholder and small helper copy so the composer feels more like a primary chat input than a generic form.
+- Updated tests to reflect the new composer markup and verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `00c020e` - `feat: redesign centered node chat composer`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The focused node chat is now centered and the composer has been redesigned into a more intentional single-shell chat control.
+
+### Next Recommended Step
+- Review the behavior in the browser and decide whether to simplify or expand the tools panel interactions further.
+
+### Known Issues / Blockers / Tech Debt
+- The tools button currently opens only the edited-variant workflow; additional tools could be added later if needed.
+
+## Session 2026-03-21 09:29
+
+### Session Goal
+- Tighten the node chat UX after user feedback.
+- Clear the reply textarea immediately on send and remove the unused right-side context dock from the focused chat page.
+
+### Planned Tasks
+- inspect the current chat template, JS, CSS, and related tests
+- change submit behavior so the composer clears immediately and restores only on failure
+- remove the right-side context panel and rebalance the chat layout
+- update tests and validate the simplified chat page
+
+### Work Completed
+- Session started; the current chat template, chat JavaScript, stylesheet, and tests were reviewed before editing.
+- Updated node-chat submit behavior so the reply textarea clears immediately after send instead of waiting for the streaming request to finish.
+- Added failure recovery so the original prompt is restored only if the request fails before any streamed preview begins.
+- Removed the right-side chat context dock and its toggle control to simplify the focused chat page into a cleaner single-column conversation layout.
+- Rebalanced the chat transcript spacing after removing the dock and trimmed the composer helper copy to match the simplified layout.
+- Updated the chat page test expectations to match the leaner focused-chat surface.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `636fe95` - `fix: simplify node chat composer workflow`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The focused node chat now clears the composer immediately on send and no longer shows the unused right-side context dock.
+
+### Next Recommended Step
+- Review the browser behavior on desktop and mobile, then remove any now-unused server-side context plumbing if it stays unnecessary.
+
+### Known Issues / Blockers / Tech Debt
+- The view still computes lineage and related context data server-side even though the right-side dock has been removed from the template.
+
+## Session 2026-03-21 09:24
+
+### Session Goal
+- Fix the Gemini runtime failure caused by the deprecated `gemini-2.0-flash` model string.
+- Update defaults and UI options to current supported Gemini models while keeping older saved nodes functional.
+
+### Planned Tasks
+- confirm the official replacement model from Gemini docs
+- inspect the repo for every remaining `gemini-2.0-flash` reference
+- add a compatibility mapping so legacy saved nodes transparently use a supported Gemini model
+- update tests, docs, and progress notes after validation
+
+### Work Completed
+- Session started; current branch, repository state, and progress log were reviewed before editing.
+- Confirmed from Google AI Developers documentation that `gemini-2.5-flash` is the current stable replacement to prefer over the deprecated `gemini-2.0-flash`.
+- Located remaining legacy Gemini model references in defaults, UI model selectors, quick-start presets, demo data, and tests.
+- Added a shared model-resolution layer so legacy Gemini model names are transparently upgraded before provider calls are made.
+- Updated serialized node payloads and node-chat metadata to surface the resolved Gemini model name in the UI instead of the deprecated stored alias.
+- Replaced new-node defaults and model-picker options so fresh Gemini nodes now use current supported models.
+- Updated quick-start presets, demo graph data, and tests to stop introducing deprecated Gemini model names.
+- Verified the fix with `node --check tree_ui/static/tree_ui/js/model-options.js`, `python3 manage.py check`, and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/demo_graph.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/model_catalog.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/static/tree_ui/js/model-options.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/workspace-ui-polish`
+- New branch created/switched: continuing on `feature/workspace-ui-polish`
+- Commits made:
+  - `921eb18` - `fix: upgrade deprecated gemini model defaults`
+- Push status:
+  - pushed to `origin/feature/workspace-ui-polish`
+
+### Current Status
+- The deprecated Gemini model issue is fixed in code for both new nodes and previously saved nodes that still carry the old alias.
+
+### Next Recommended Step
+- Re-test the browser flow against the real Gemini key and confirm that existing Gemini nodes now run without the 404 deprecation error.
+
+### Known Issues / Blockers / Tech Debt
+- Existing database rows may still store deprecated Gemini model strings, but the backend now maps them to supported replacements at runtime instead of failing.
 
 ## Session 2026-03-21 08:58
 
@@ -2455,297 +3611,28 @@
 ### Known Issues / Blockers / Tech Debt
 - Real upstream provider streaming is now wired in code, but it still needs browser-side confirmation against live OpenAI and Gemini credentials because the automated tests only cover mocked streaming paths.
 
-## Session 2026-03-21 09:24
+## Session 2026-03-20 11:22
 
 ### Session Goal
-- Fix the Gemini runtime failure caused by the deprecated `gemini-2.0-flash` model string.
-- Update defaults and UI options to current supported Gemini models while keeping older saved nodes functional.
+- Push the homepage toward an explicitly minimal presentation after feedback that it still contains too much text.
+- Preserve the current graph functionality while stripping down copy and visual explanation to the essentials.
 
 ### Planned Tasks
-- confirm the official replacement model from Gemini docs
-- inspect the repo for every remaining `gemini-2.0-flash` reference
-- add a compatibility mapping so legacy saved nodes transparently use a supported Gemini model
-- update tests, docs, and progress notes after validation
+- continue on `feature/workspace-ui-polish` with a homepage text-reduction pass
+- shorten the hero, workspace, and graph helper copy to minimal wording
+- update tests and validate the simplified homepage
 
 ### Work Completed
-- Session started; current branch, repository state, and progress log were reviewed before editing.
-- Confirmed from Google AI Developers documentation that `gemini-2.5-flash` is the current stable replacement to prefer over the deprecated `gemini-2.0-flash`.
-- Located remaining legacy Gemini model references in defaults, UI model selectors, quick-start presets, demo data, and tests.
-- Added a shared model-resolution layer so legacy Gemini model names are transparently upgraded before provider calls are made.
-- Updated serialized node payloads and node-chat metadata to surface the resolved Gemini model name in the UI instead of the deprecated stored alias.
-- Replaced new-node defaults and model-picker options so fresh Gemini nodes now use current supported models.
-- Updated quick-start presets, demo graph data, and tests to stop introducing deprecated Gemini model names.
-- Verified the fix with `node --check tree_ui/static/tree_ui/js/model-options.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/services/demo_graph.py`
-- `tree_ui/services/graph_payload.py`
-- `tree_ui/services/model_catalog.py`
-- `tree_ui/services/node_creation.py`
-- `tree_ui/services/providers/registry.py`
-- `tree_ui/static/tree_ui/js/model-options.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-- `tree_ui/views.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `921eb18` - `fix: upgrade deprecated gemini model defaults`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The deprecated Gemini model issue is fixed in code for both new nodes and previously saved nodes that still carry the old alias.
-
-### Next Recommended Step
-- Re-test the browser flow against the real Gemini key and confirm that existing Gemini nodes now run without the 404 deprecation error.
-
-### Known Issues / Blockers / Tech Debt
-- Existing database rows may still store deprecated Gemini model strings, but the backend now maps them to supported replacements at runtime instead of failing.
-
-## Session 2026-03-21 09:29
-
-### Session Goal
-- Tighten the node chat UX after user feedback.
-- Clear the reply textarea immediately on send and remove the unused right-side context dock from the focused chat page.
-
-### Planned Tasks
-- inspect the current chat template, JS, CSS, and related tests
-- change submit behavior so the composer clears immediately and restores only on failure
-- remove the right-side context panel and rebalance the chat layout
-- update tests and validate the simplified chat page
-
-### Work Completed
-- Session started; the current chat template, chat JavaScript, stylesheet, and tests were reviewed before editing.
-- Updated node-chat submit behavior so the reply textarea clears immediately after send instead of waiting for the streaming request to finish.
-- Added failure recovery so the original prompt is restored only if the request fails before any streamed preview begins.
-- Removed the right-side chat context dock and its toggle control to simplify the focused chat page into a cleaner single-column conversation layout.
-- Rebalanced the chat transcript spacing after removing the dock and trimmed the composer helper copy to match the simplified layout.
-- Updated the chat page test expectations to match the leaner focused-chat surface.
-- Verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/node-chat.js`
-- `tree_ui/templates/tree_ui/node_chat.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `636fe95` - `fix: simplify node chat composer workflow`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The focused node chat now clears the composer immediately on send and no longer shows the unused right-side context dock.
-
-### Next Recommended Step
-- Review the browser behavior on desktop and mobile, then remove any now-unused server-side context plumbing if it stays unnecessary.
-
-### Known Issues / Blockers / Tech Debt
-- The view still computes lineage and related context data server-side even though the right-side dock has been removed from the template.
-
-## Session 2026-03-21 09:35
-
-### Session Goal
-- Rework the focused node chat layout after visual feedback that the conversation column is not centered.
-- Replace the bottom composer with a more ChatGPT-like single-shell input treatment while keeping the variant editor accessible.
-
-### Planned Tasks
-- review the current node-chat template, CSS, JavaScript, and tests
-- center the transcript column and header framing on wider screens
-- redesign the composer into a pill-shaped single-shell input with integrated tool and send controls
-- fold the variant editor into a toggleable tools panel tied to the composer
-- update tests and validate the new chat layout
-
-### Work Completed
-- Session started; the current node-chat template, chat stylesheet, JavaScript, and tests were reviewed before editing.
-- Re-centered the focused chat experience by constraining the header and transcript content to a consistent central column instead of letting the conversation drift left.
-- Reworked the composer into a ChatGPT-like shell with a left-side tool button, central rounded textarea, and right-side send button.
-- Moved the edited-variant workflow into a toggleable tools panel that expands from the composer area instead of living as a separate block below the transcript.
-- Updated placeholder and small helper copy so the composer feels more like a primary chat input than a generic form.
-- Updated tests to reflect the new composer markup and verified the refinement with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/node-chat.js`
-- `tree_ui/templates/tree_ui/node_chat.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `00c020e` - `feat: redesign centered node chat composer`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The focused node chat is now centered and the composer has been redesigned into a more intentional single-shell chat control.
-
-### Next Recommended Step
-- Review the behavior in the browser and decide whether to simplify or expand the tools panel interactions further.
-
-### Known Issues / Blockers / Tech Debt
-- The tools button currently opens only the edited-variant workflow; additional tools could be added later if needed.
-
-## Session 2026-03-21 10:28
-
-### Session Goal
-- Strip the workspace page down to a more minimal, graph-first composition.
-- Remove the heavy right-side inspector and rework node creation into a lighter, map-building style flow.
-
-### Planned Tasks
-- review the workspace template, canvas interactions, and detail-panel dependencies
-- remove non-essential node detail copy and the full inspector block from the main page
-- redesign node creation into a compact graph action tray that fits a more XMind-like build flow
-- update tests and validate the simplified workspace
-
-### Work Completed
-- Session started; current branch, clean worktree, latest progress notes, and the workspace UI files were reviewed before editing.
-- Removed the right-side node inspector from the workspace page so the graph is no longer split by a heavy detail column.
-- Simplified the workspace header and search/selection strip to keep only graph-level controls and the selected-node essentials.
-- Reworked node creation into a compact action dock below the canvas so adding a root or child feels closer to a map-building flow.
-- Kept node chat access from the main workspace through a small selected-node action instead of a full detail panel.
-- Updated the workspace JavaScript to stop depending on inspector-only DOM state and trimmed selection copy to minimal summaries.
-- Updated the workspace page test expectations and verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `04b60f5` - `feat: simplify graph workspace layout`
-  - `3bf1ef8` - `docs: update progress log for workspace simplification`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The workspace page is now materially more minimal and graph-first, with the inspector removed and creation moved into a lighter dock.
-
-### Next Recommended Step
-- Review the live browser layout and refine the node-creation dock further if you want it to feel even closer to XMind's quick child-creation workflow.
-
-### Known Issues / Blockers / Tech Debt
-- The main graph page no longer exposes edited-variant creation directly; that flow now remains in the focused chat view only.
-
-## Session 2026-03-21 10:56
-
-### Session Goal
-- Remove the remaining empty workspace column so the graph surface fully occupies the available area.
-- Make the main canvas region stretch vertically in a more intentional full-workspace layout.
-
-### Planned Tasks
-- inspect the active workspace layout rules that still control the canvas width and height
-- replace the stale two-column workspace grid with a single full-width canvas layout
-- adjust the canvas panel and graph stage sizing so the workspace area fills the visible page more consistently
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; the active workspace CSS and viewport/canvas sizing code were reviewed after the user reported empty unused area beside the graph.
-- Replaced the stale two-column workspace grid with a single full-width layout so the removed inspector no longer leaves an empty reserved column.
-- Converted the canvas panel into a full-height grid shell so the graph stage grows like the main workspace surface instead of feeling like a smaller box inside the page.
-- Retuned the graph stage and graph canvas sizing so the visible workspace area fills more of the page and keeps the canvas stretching to the available viewport.
-- Verified the layout-only change with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- The empty reserved workspace area has been removed and the graph surface now occupies the available width more directly.
-
-### Next Recommended Step
-- Review the live browser result and decide whether the next step should be an even more XMind-like quick-create affordance near the selected node.
-
-### Known Issues / Blockers / Tech Debt
-- The stylesheet still contains legacy workspace/detail-panel rules from earlier layouts, which makes later overrides easy to miss.
-
-## Session 2026-03-21 22:58
-
-### Session Goal
-- Make entering a node conversation more direct from the graph workspace.
-- Add a double-click shortcut on nodes so chat navigation no longer depends on the small `Open chat` action.
-
-### Planned Tasks
-- inspect the current graph node event handling
-- wire a double-click action from node cards to the existing node chat URL
-- validate the frontend scripts and test suite
-- update the progress log with the result
-
-### Work Completed
-- Session started; the current workspace interaction flow and graph node event handling were reviewed after user feedback that opening chat is not obvious enough.
-- Added direct double-click navigation on graph nodes so a node can open its focused chat view without relying on the smaller `Open chat` action.
-- Kept the existing single-click selection flow and keyboard `C` shortcut while routing both through the same node-chat navigation helper.
-- Verified the interaction update with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `python3 manage.py check`, and `python3 manage.py test`.
+- Session started; branch state, latest progress log entries, and the current homepage template were reviewed before editing.
+- Reduced the homepage hero to a short title plus one CTA instead of a larger explanatory block.
+- Shortened workspace, graph, and selection helper copy so the homepage reads more like a control surface than a landing page.
+- Simplified the default search/status helper text and shortened the empty-state and detail-panel copy.
+- Updated tests to match the minimal homepage wording.
+- Verified the refinement with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
 
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- The graph now supports double-click-to-open on nodes, making entry into node chat much more direct.
-
-### Next Recommended Step
-- Review whether the `Open chat` pill should stay visible as a secondary affordance or be removed now that direct node entry is available.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-21 23:00
-
-### Session Goal
-- Remove the now-redundant `Open chat` pill from the graph workspace.
-- Keep node entry minimal by relying on double-click and keyboard navigation instead of another visible button.
-
-### Planned Tasks
-- remove the `Open chat` workspace control from the selected-node strip
-- simplify the related CSS and JS state that only existed for that button
-- keep double-click and `C` shortcut behavior intact
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; the current workspace template, CSS, JS, and tests were reviewed after confirming double-click node entry is the preferred interaction.
-- Removed the `Open chat` pill from the workspace selection strip so graph navigation now stays visually minimal.
-- Switched node opening behavior to a cross-render double-click detector because the first click re-renders the canvas and breaks a native DOM `dblclick` listener.
-- Fixed a follow-up regression where node selection could fail because the interaction still depended on a `click` path disrupted by `pointerdown`; selection and double-click open now resolve from `pointerup` based on drag distance instead.
-- Kept keyboard `C` navigation intact while moving the node chat URL source to a hidden template element instead of a visible button.
-- Updated tests to reflect the removed workspace chat pill and verified the change with `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
 - `tree_ui/templates/tree_ui/index.html`
 - `tree_ui/tests.py`
 
@@ -2755,760 +3642,17 @@
 - Commits made:
   - none yet
 - Push status:
-  - not pushed yet for this session
+  - branch already exists on `origin`, additional work not pushed yet
 
 ### Current Status
-- The graph no longer shows the `Open chat` pill, and node chat entry now works through double-click or `C`.
+- The homepage simplification pass is complete locally.
+- The goal of this session stayed focused on explicit reduction rather than another visual expansion.
 
 ### Next Recommended Step
-- Decide whether the selected-node strip itself should be simplified further now that node entry is handled directly on the canvas.
+- Commit and push the minimal homepage wording pass, then continue only if more reduction is still needed after review.
 
 ### Known Issues / Blockers / Tech Debt
 - None recorded yet for this session.
-
-## Session 2026-03-21 23:06
-
-### Session Goal
-- Eliminate any remaining node-click failure caused by stale frontend assets or layer interception.
-- Ship a cache-busted, more robust graph interaction fix so the user does not need to guess whether the browser loaded the latest scripts.
-
-### Planned Tasks
-- inspect current static asset versioning for the workspace page
-- add cache busting for the graph workspace scripts involved in node interaction
-- harden graph layer pointer behavior so edges cannot interfere with node clicks
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; static asset versioning and graph layer CSS were reviewed after continued reports that node clicks still failed in the browser.
-- Added cache-busting query strings to the workspace stylesheet, graph workspace entry script, and the graph-related ES module imports so the browser is forced onto the latest interaction code.
-- Hardened the graph layer pointer behavior so the SVG edge layer cannot intercept clicks and the node layer stays on top for interaction.
-- Verified the refreshed frontend modules with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/canvas.js`, `node --check tree_ui/static/tree_ui/js/minimap.js`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/minimap.js`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- The graph workspace now has explicit cache busting on its interaction assets, and the graph layers are configured so nodes receive pointer interaction directly.
-
-### Next Recommended Step
-- Re-test in the browser after a hard refresh; if node clicks still fail after the forced asset refresh, inspect live browser events directly.
-
-### Known Issues / Blockers / Tech Debt
-- Static asset cache busting is currently inconsistent between the chat page and the graph workspace page.
-
-## Session 2026-03-21 23:18
-
-### Session Goal
-- Move child-node creation closer to the selected node so the workspace feels more like a mind-mapping tool.
-- Reduce dependence on the bottom action dock for the primary branch-building action.
-
-### Planned Tasks
-- inspect the current graph node render structure and create-node flow
-- add an inline quick-add affordance beside the selected node
-- wire the quick-add interaction into the existing node creation API without duplicating backend logic
-- validate the frontend scripts and Django test suite, then update the progress log
-
-### Work Completed
-- Session started; the latest workspace interaction code and progress history were reviewed before implementing a node-adjacent quick-create flow.
-- Added a selected-node quick-create affordance inside the graph stage so a `+` button now appears near the active node instead of forcing the user back to the bottom dock for every child branch.
-- Built a compact floating child-creation panel with title, provider, model, and add controls, all wired to the existing node-creation API path.
-- Kept the bottom action dock for broader editing, but moved the primary "branch from this node" action closer to the canvas to better match a mind-mapping flow.
-- Updated the viewport interaction guard so using the floating quick-create panel does not accidentally trigger graph panning.
-- Added cache-busted graph asset references for the updated workspace interaction pass and extended the workspace page test to cover the quick-create affordance.
-- Fixed a follow-up runtime failure where the viewport controller fired before `nodesById` was initialized, which prevented the graph from rendering at all after the quick-create change.
-- Bumped the graph workspace asset versions again so browsers are forced off the broken quick-create build and onto the initialization fix.
-- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/viewport.js`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- Node selection and chat entry are working, and child creation now has a node-adjacent canvas affordance instead of relying only on the bottom dock.
-
-### Next Recommended Step
-- Review the live browser feel of the new quick-create panel and decide whether to simplify the remaining top selection strip and bottom dock further.
-
-### Known Issues / Blockers / Tech Debt
-- The bottom action dock still does most of the creation work and feels more form-like than map-like.
-
-## Session 2026-03-21 23:35
-
-### Session Goal
-- Make node chat behavior lineage-safe by preventing in-place continuation on nodes that already have children.
-- Ensure continuing from a historical non-leaf node automatically creates a new child branch instead of mutating old history.
-
-### Planned Tasks
-- inspect the node chat streaming flow in both the frontend and backend
-- route non-leaf chat submissions into a newly created child node on the server
-- update the chat UI so the rule is visible to the user
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; the node chat streaming flow, node creation service, and current tests were reviewed before changing the continuation rule.
-- Added a continuation-child helper in the node creation service so historical node continuation can branch without duplicating provider/model logic.
-- Updated `stream_node_message` so leaf nodes still append in place, while non-leaf nodes automatically create a new child and stream the reply into that new branch instead.
-- Extended the SSE payload with branch metadata so the frontend can detect when a reply is being written into a newly created child node.
-- Updated the node chat client to redirect into the new child chat after a non-leaf continuation finishes streaming.
-- Added an explicit composer note on non-leaf node chat pages so users know sending there opens a new child branch.
-- Added backend and template coverage for the new rule and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/services/node_creation.py`
-- `tree_ui/static/tree_ui/js/node-chat.js`
-- `tree_ui/templates/tree_ui/node_chat.html`
-- `tree_ui/tests.py`
-- `tree_ui/views.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- Chat continuation is now lineage-safe: only leaf nodes append in place, and non-leaf nodes automatically continue into a new child branch.
-
-### Next Recommended Step
-- Decide whether non-leaf chat pages should stay writable with auto-branching or become explicitly read-only with a stronger “continue in new child” call to action.
-
-### Known Issues / Blockers / Tech Debt
-- The current non-leaf flow redirects only after the streamed reply completes; if desired, it could be refined later into an immediate branch handoff before streaming begins.
-
-## Session 2026-03-21 23:41
-
-### Session Goal
-- Make non-leaf chat pages look explicitly like historical checkpoints instead of ordinary in-place chat sessions.
-- Turn the composer on non-leaf nodes into a clearer “continue in child” action surface.
-
-### Planned Tasks
-- inspect the current node chat template and composer styling
-- add stronger non-leaf visual treatment and explicit branching language
-- keep leaf-node chat pages visually unchanged
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; the node chat template, stylesheet, and recent continuation-rule changes were reviewed before adjusting the non-leaf presentation.
-- Added a visible `History node` status badge in the chat header for non-leaf nodes.
-- Changed the non-leaf composer into a clearer branch action surface with a `Continue in new child` kicker, a `Continue in child` submit label, and more explicit copy explaining that the historical node itself will not be mutated.
-- Added a subtle historical-node marker above the transcript and warmer composer styling so non-leaf pages are visually distinct from ordinary leaf-node chats.
-- Bumped the shared stylesheet and node-chat script asset versions so the revised historical-node presentation is forced through browser cache.
-- Updated template coverage for the new non-leaf presentation and verified the change with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/node_chat.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- Non-leaf chat pages now read as historical checkpoints with explicit branch-continuation language instead of looking like ordinary append-in-place chat screens.
-
-### Next Recommended Step
-- Decide whether to further simplify leaf-node chat pages now that non-leaf pages carry a stronger alternate mode treatment.
-
-### Known Issues / Blockers / Tech Debt
-- The non-leaf flow still redirects only after streaming completes; that interaction could be made even clearer later with an earlier handoff into the child chat page.
-
-## Session 2026-03-21 23:45
-
-### Session Goal
-- Reduce the homepage top selection/search area so the graph reads more like the primary workspace.
-- Redesign the in-canvas `+` affordance so it feels more integrated with each selected node.
-
-### Planned Tasks
-- compress the workspace search/selection strip into a thinner command-style toolbar
-- restyle and reposition the quick-create control so it reads like a branch handle rather than a floating button
-- keep the existing graph interactions and node creation behavior intact
-- validate with checks/tests and update the progress log
-
-### Work Completed
-- Session started; the workspace template, graph quick-create logic, and current toolbar styling were reviewed before compressing the top strip and redesigning the node-adjacent `+` affordance.
-- Compressed the top search/selection area into a thinner command-style toolbar so the graph starts reading more like the main surface instead of sharing attention with a larger control block.
-- Shortened the default top-strip copy and reduced the passive search hint so the header chrome stays quieter.
-- Reworked the in-canvas quick-create control into a more node-attached branch handle with a connector line, softer branch-colored treatment, and a more centered alignment against the selected node.
-- Refined the quick-create panel styling so it feels like an extension of the node rather than a detached floating modal.
-- Bumped the graph workspace asset versions for the refreshed toolbar and quick-create styling pass.
-- Verified the changes with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/minimap.js`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- The graph interactions remain stable, and the top toolbar plus node-adjacent quick-create affordance are visually more integrated into the workspace.
-
-### Next Recommended Step
-- Decide whether to downplay the bottom action dock further now that the node-adjacent branch handle is more usable.
-
-### Known Issues / Blockers / Tech Debt
-- The current quick-create control works functionally but still feels too detached from the node it belongs to.
-
-## Session 2026-03-21 23:53
-
-### Session Goal
-- Tighten the spacing between the selected node and the branch handle so the `+` reads as attached to the node.
-
-### Planned Tasks
-- reduce the quick-create anchor offset in the graph positioning logic
-- shorten the branch-handle connector line in CSS
-- validate the small adjustment and update the progress log
-
-### Work Completed
-- Session started; the current quick-create positioning logic and branch-handle styling were reviewed after feedback that the `+` still sits too far from the node.
-- Reduced the quick-create anchor offset so the branch handle sits noticeably closer to the selected node.
-- Shortened the branch-handle connector line so the `+` reads as attached to the node instead of floating beside it.
-- Bumped the workspace asset versions again so the tighter branch-handle positioning is forced through browser cache.
-- Verified the adjustment with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/minimap.js`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet
-- Push status:
-  - not pushed yet for this session
-
-### Current Status
-- The branch handle now sits closer to the selected node and should read more like a direct node extension.
-
-### Next Recommended Step
-- Review whether the branch handle should also be slightly smaller or inherit provider color accents from the selected node.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-21 23:58
-
-### Session Goal
-- Remove the last homepage hero CTA and reduce the landing copy to a simple final project title plus one short description line.
-- Keep the workspace-first experience intact while making the homepage feel more finished and minimal.
-
-### Planned Tasks
-- remove the top `Canvas` action from the homepage hero
-- change the hero title to `LLM tree`
-- add one short, smaller descriptive sentence under the title
-- update tests and validate the homepage cleanup
-
-### Work Completed
-- Session started; current branch status, homepage template, stylesheet, tests, and latest progress log entries were reviewed before editing.
-- Removed the top `Canvas` CTA from the homepage hero so the landing area no longer competes with the workspace itself.
-- Replaced the old `Conversation graph.` headline with `LLM tree` and added a single short description line explaining that the project is a branching chat workspace rendered as a graph.
-- Simplified the hero layout back to a single-column block and removed the now-unused hero CTA styles from the stylesheet.
-- Updated the homepage regression test to match the final hero copy.
-- Verified the cleanup with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `4ff3395` - `feat: finalize homepage hero copy`
-  - `bf67db9` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The homepage hero now reads as a minimal finished project intro instead of a landing section with a leftover CTA.
-
-### Next Recommended Step
-- Do one last visual pass for any remaining empty chrome on the graph workspace, then consider the product polish phase complete.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:08
-
-### Session Goal
-- Add safe deletion flows for workspaces and nodes before the final visual cleanup pass.
-- Make node deletion recursive for non-leaf nodes and require a double-confirmation dialog before destructive actions run.
-
-### Planned Tasks
-- add backend delete endpoints for workspaces and nodes
-- ensure deleting a node removes its full descendant subtree
-- add regression tests for workspace deletion and recursive node deletion
-- wire graph UI delete controls with a two-step confirmation modal
-- validate with local checks/tests
-
-### Work Completed
-- Session started; `AGENTS.md`, the latest progress log state, current branch, and the existing graph/chat code paths were reviewed before implementation.
-- Switched from `feature/workspace-ui-polish` to `feature/delete-node-workspace-confirmation` for this destructive-flow feature slice.
-- Added backend delete endpoints for workspaces and nodes, both guarded by an explicit `confirm` requirement in the request payload.
-- Implemented recursive node-subtree deletion so deleting a non-leaf node removes all descendants while leaving unrelated branches intact.
-- Added regression coverage for workspace deletion, recursive node deletion, and missing-confirmation rejection paths.
-- Added graph-page delete controls for the current workspace and the currently selected node.
-- Built a shared two-step confirmation modal so both destructive actions require a double confirmation before the request is sent.
-- Verified the feature with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-- `tree_ui/urls.py`
-- `tree_ui/views.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: `feature/delete-node-workspace-confirmation`
-- Commits made:
-  - `5a8b711` - `feat: add confirmed workspace and node deletion`
-  - `ae0e163` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
-
-### Current Status
-- Workspace and node deletion now work from the graph page with a shared double-confirmation modal.
-
-### Next Recommended Step
-- Run one browser pass on the new confirmation modal and delete controls, then resume the final visual cleanup.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:19
-
-### Session Goal
-- Simplify the new deletion modal from two confirmations down to a single confirmation step.
-- Keep the same delete API safety guard while reducing the UX friction.
-
-### Planned Tasks
-- remove the intermediate `Continue` step from the shared confirmation modal
-- keep workspace and node deletion messaging clear in the single confirm view
-- validate the UI change with local checks/tests
-
-### Work Completed
-- Session started; current branch status, latest progress-log state, and the delete-modal implementation were reviewed before editing.
-- Removed the intermediate `Continue` step from the shared delete modal so workspace and node deletion now require only one explicit confirmation click.
-- Kept the backend-side `confirm: true` requirement intact, so the UX is simpler without weakening API-side protection.
-- Updated the graph page asset version to force browsers to load the simplified confirmation flow.
-- Verified the change with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
-- Commits made:
-  - `d12df97` - `fix: simplify delete confirmation flow`
-  - `c0e840b` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
-
-### Current Status
-- The delete modal now uses a single confirmation step.
-
-### Next Recommended Step
-- Do a quick browser pass to confirm the simplified modal copy feels right, then continue with the final visual cleanup pass.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:24
-
-### Session Goal
-- Resume the final visual cleanup now that deletion flows are in place.
-- Reduce the visual weight of the workspace controls so the graph canvas reads more clearly as the primary surface.
-
-### Planned Tasks
-- lighten and compact the workspace switcher/create area
-- reduce the chrome around the workspace header and command bar
-- soften the bottom create dock so it feels like a utility strip rather than a second panel
-- validate the CSS/template polish with local checks/tests
-
-### Work Completed
-- Session started; current branch state, latest progress-log entries, and the current homepage/workspace CSS and template structure were reviewed before editing.
-- Reduced the top workspace switcher and create-workspace surfaces so they read more like lightweight control cards than hero-level panels.
-- Softened the workspace command bar and summary pills so the selection/search chrome competes less with the graph.
-- Reworked the bottom create dock into a slimmer translucent utility strip instead of a heavier second panel.
-- Tightened shared button, pill, and legend sizing so the overall workspace reads more minimal without changing functionality.
-- Bumped the stylesheet asset version and verified the pass with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/base.html`
-
-### Git Workflow
-- Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
-- Commits made:
-  - `95db79f` - `style: soften workspace control chrome`
-  - `c1908dc` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
-
-### Current Status
-- The workspace chrome is visibly lighter, and the graph should now dominate the page more clearly.
-
-### Next Recommended Step
-- Do a quick browser pass on spacing and readability, then decide whether any remaining polish should focus on node cards or the focused chat page.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:32
-
-### Session Goal
-- Remove the remaining minimap and graph hint text after review that they are unnecessary.
-- Continue the final polish by tightening the graph node card typography and spacing.
-
-### Planned Tasks
-- remove the minimap markup and its frontend initialization path
-- remove the passive graph hint copy from the workspace
-- refine node card spacing and type hierarchy
-- validate the cleanup with local checks/tests
-
-### Work Completed
-- Session started; current branch state, latest progress-log entries, and the minimap/node-card code paths were reviewed before editing.
-- Removed the minimap markup and its app-level initialization path so the graph no longer renders an unnecessary secondary navigator.
-- Removed the passive `Drag nodes. Drag canvas to pan.` hint from the workspace.
-- Tightened node-card padding, chip sizing, title/meta hierarchy, and summary height so the cards read cleaner and lighter.
-- Updated stylesheet and script asset versions so the browser picks up the minimap removal and card refinements immediately.
-- Verified the cleanup with `node --check tree_ui/static/tree_ui/js/app.js`, `python3 manage.py check`, and `python3 manage.py test`.
-- After browser feedback that the graph disappeared, fixed a frontend crash caused by `viewport.js` still dereferencing the removed `graph-hint` element during transform updates.
-- Bumped the workspace script/module version again so the fixed viewport module is forced through browser cache.
-- Re-verified the correction with `node --check tree_ui/static/tree_ui/js/app.js`, `node --check tree_ui/static/tree_ui/js/viewport.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/viewport.js`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
-- Commits made:
-  - `90c62a7` - `style: remove minimap and tighten graph cards`
-  - `9bf0b7c` - `fix: restore graph after minimap removal`
-  - `803d887` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
-
-### Current Status
-- The minimap/hint removal is complete, and the follow-up viewport crash has been corrected.
-
-### Next Recommended Step
-- Hard-refresh the workspace once to load the fixed script bundle, then resume any remaining visual polish from this stable state.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:41
-
-### Session Goal
-- Finish the remaining workspace-header polish by collapsing the top `Workspaces / New workspace` area into a single lighter tool row.
-- Keep workspace switching and creation fully intact while reducing the feeling of two stacked cards.
-
-### Planned Tasks
-- reshape the top workspace toolbar into one unified inline control strip
-- compact the create-workspace form into a utility-style input/button row
-- update the stylesheet version and verify the polish with local checks/tests
-
-### Work Completed
-- Session started; current branch state, progress-log context, and the current workspace toolbar template/CSS were reviewed before editing.
-- Collapsed the top `Workspaces / Create Workspace` area into a single inline toolbar rather than two separate control cards.
-- Turned workspace creation into a utility-style input/button row so the section reads more like a tool strip than a landing panel.
-- Added responsive rules so the compressed toolbar still falls back cleanly to a vertical stack on narrow screens.
-- Bumped the stylesheet version and verified the polish with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: continuing on `feature/delete-node-workspace-confirmation`
-- Commits made:
-  - `aab6277` - `style: compress workspace toolbar layout`
-  - `d6c8f05` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/delete-node-workspace-confirmation`
-
-### Current Status
-- The top workspace controls now read as a single compact toolbar.
-
-### Next Recommended Step
-- Do one browser pass to confirm the toolbar spacing feels finished, then decide if any further polish is still needed.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-22 00:47
-
-### Session Goal
-- Merge the completed workspace polish and deletion work back into `main`.
-- Keep git history explicit and push the merged `main` branch to origin.
-
-### Planned Tasks
-- confirm the current feature branch is clean and fully pushed
-- switch to `main` and update it from origin
-- merge `feature/delete-node-workspace-confirmation` into `main`
-- push the merged `main` branch and record the result
-
-### Work Completed
-- Session started; current branch state and the latest progress-log context were reviewed before the merge workflow.
-- Pushed `feature/delete-node-workspace-confirmation` so the source branch was fully published before integrating it into `main`.
-- Switched to `main` and merged `feature/delete-node-workspace-confirmation` with a non-fast-forward merge commit.
-- Verified the merged `main` branch with `python3 manage.py check` and `python3 manage.py test`.
-- A follow-up `git pull origin main` was attempted after the merge had already been created locally; it failed because the working tree already contained the merge changes, but this did not leave the repository in a conflicted state.
-
-### Files Changed
-- `docs/agent-progress.md`
-
-### Git Workflow
-- Current branch at session start: `feature/delete-node-workspace-confirmation`
-- New branch created/switched: switched to `main` for merge
-- Commits made:
-  - `d616d14` - `docs: start merge session log`
-  - `61ced67` - `merge: integrate workspace polish and delete flows`
-  - `8986ba0` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/main`
-
-### Current Status
-- `main` now contains the merged workspace polish and deletion work.
-
-### Next Recommended Step
-- Push the merged `main` branch and finalize the progress-log entry.
-
-### Known Issues / Blockers / Tech Debt
-- None recorded yet for this session.
-
-## Session 2026-03-21 09:40
-
-### Session Goal
-- Correct the broken node-chat redesign after browser feedback that the composer layout was malformed and the conversation still was not centered.
-- Remove the variant UI from the focused chat page for now and restore a stable, minimal chat experience.
-
-### Planned Tasks
-- review the current node-chat template, JavaScript, CSS, and test expectations
-- revert the unstable composer experiment to a reliable single-form layout
-- remove variant controls from the focused chat page
-- keep the immediate-clear-on-send behavior while centering the transcript column
-- validate with checks and tests, then commit and push
-
-### Work Completed
-- Session started; the current node-chat template, CSS, JavaScript, and tests were reviewed before editing.
-- Removed the unstable integrated tools composer and the focused-chat variant UI so the chat page is back to a single stable composer form.
-- Preserved the immediate-clear-on-send behavior and the restore-on-early-failure guard in the chat submit flow.
-- Centered the transcript content by constraining each transcript item to a shared centered column instead of letting the full-width message grid drift left.
-- Kept the composer width aligned to the same central chat column so the page now reads as one conversation surface.
-- Updated the chat-page test expectations to match the simplified focused-chat surface.
-- Verified the correction with `node --check tree_ui/static/tree_ui/js/node-chat.js`, `python3 manage.py check`, and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/node-chat.js`
-- `tree_ui/templates/tree_ui/node_chat.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - `1bceea7` - `fix: restore stable centered node chat layout`
-- Push status:
-  - pushed to `origin/feature/workspace-ui-polish`
-
-### Current Status
-- The focused chat page is back on a stable single-form composer, and the conversation column is explicitly centered in CSS.
-
-### Next Recommended Step
-- Confirm in the browser that the visual centering now matches expectations, then trim any unused server-side context assembly if the leaner chat view remains the preferred direction.
-
-### Known Issues / Blockers / Tech Debt
-- The node-chat view still computes lineage and child-branch context on the server even though those blocks are no longer rendered in the template.
-
-## Session 2026-03-21 10:08
-
-### Session Goal
-- Fix the remaining perceived chat misalignment by changing the node-chat layout structure, not just tweaking spacing.
-- Make the transcript, jump button, and composer share the same centered content shell.
-
-### Planned Tasks
-- inspect the current node-chat template/CSS to identify why the page still reads as off-center
-- add a dedicated centered shell around the transcript region
-- align the jump button and composer to that same shell
-- validate with checks/tests and push the correction
-
-### Work Completed
-- Session started; the current node-chat template and stylesheet were reviewed before editing.
-- Added a dedicated centered `chat-content-shell` wrapper so the transcript area now has a single explicit alignment anchor instead of relying on padding math alone.
-- Bound the `Jump to latest` control to that same centered shell so it no longer floats relative to the full viewport width.
-- Re-aligned the composer wrapper to the same centered width as the transcript shell, making transcript, jump control, and composer share one visual center line.
-- Unified the chat header, transcript shell, and composer around the same shared shell-width variable instead of letting each area compute its own width independently.
-- Removed the remaining viewport-relative horizontal padding from the transcript so centering now comes from structure rather than spacing tricks.
-- Added static asset version query strings for the main stylesheet and node-chat script to force the browser to load the corrected CSS/JS instead of stale cached files.
-- Verified the structural centering fix with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/node_chat.html`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet in this session
-- Push status:
-  - not pushed yet in this session
-
-### Current Status
-- The header, transcript, jump button, and composer now share a centered shell-width system, and browser cache should no longer mask the updated styling.
-
-### Next Recommended Step
-- Commit and push the centering fix, then hard-refresh the exact page that previously looked off-center to confirm the cached assets have been replaced.
-
-### Known Issues / Blockers / Tech Debt
-- Pure padding-based centering has proven too brittle for this page layout.
-
-## Session 2026-03-21 10:20
-
-### Session Goal
-- Move the focused-chat scrollbar back to the far right edge of the viewport while keeping the conversation itself centered.
-
-### Planned Tasks
-- inspect which chat container currently owns the scrollbar
-- widen the scrollable shell back to full width while keeping inner chat content centered
-- verify that the transcript and composer alignment remain stable after the scrollbar move
-
-### Work Completed
-- Session started; the centered chat shell layout was reviewed before editing.
-- Changed the transcript shell back to full width so the scrollable container once again owns the full viewport width and the scrollbar can sit on the far right edge.
-- Kept the conversation content centered by leaving the message column width constraint on the transcript children instead of the outer scroll shell.
-- Repositioned the `Jump to latest` control against the centered chat column boundary so it stays visually associated with the conversation even after the scrollbar moves outward.
-- Verified the scrollbar-shell adjustment with `python3 manage.py check`, `python3 manage.py test`, and `node --check tree_ui/static/tree_ui/js/node-chat.js`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet in this session
-- Push status:
-  - not pushed yet in this session
-
-### Current Status
-- The chat scrollbar is now owned by the full-width transcript shell rather than the centered inner shell.
-
-### Next Recommended Step
-- Commit and push the scrollbar alignment fix, then verify it in the browser with a normal refresh.
-
-### Known Issues / Blockers / Tech Debt
-- None newly recorded yet for this session.
-
-## Session 2026-03-21 10:22
-
-### Session Goal
-- Keep the conversation column exactly as before while moving only the scrollbar to the far right edge.
-
-### Planned Tasks
-- inspect the latest scrollbar-related CSS change
-- restore the centered message column width while leaving the scroll shell full width
-- verify the layout logic with checks/tests and push the minimal correction
-
-### Work Completed
-- Session started; the latest scrollbar-related CSS change was reviewed before editing.
-
-### Files Changed
-- `docs/agent-progress.md`
-
-### Git Workflow
-- Current branch at session start: `feature/workspace-ui-polish`
-- New branch created/switched: continuing on `feature/workspace-ui-polish`
-- Commits made:
-  - none yet in this session
-- Push status:
-  - not pushed yet in this session
-
-### Current Status
-- The requested adjustment is now narrowed to restoring only the centered message-column width inside the full-width scroll shell.
-
-### Next Recommended Step
-- Keep the full-width scroll shell, but re-apply the previous centered message width inside it.
-
-### Known Issues / Blockers / Tech Debt
-- None newly recorded yet for this session.
 
 ## Session 2026-03-20 11:11
 
@@ -4506,590 +4650,6 @@
 - The node chat transcript currently displays the selected node's own messages, not the full historical lineage transcript.
 - Graph-side navigation into chat is implemented from the detail panel; direct node-card double-click or other shortcuts are still future polish.
 
-## Session 2026-03-19 16:50
-
-### Session Goal
-- Bootstrap the repository into a runnable Django + Docker Compose MVP foundation.
-- Establish the persistent progress log and initial project structure.
-
-### Planned Tasks
-- inspect repository state and current git branch
-- create the dedicated progress log file
-- scaffold the Django project and initial app structure
-- add Docker Compose based startup and environment configuration
-- verify the generated project locally where possible
-
-### Work Completed
-- Inspected repository state, current branch, available tooling, and confirmed the project was still unbootstrapped.
-- Created the dedicated agent progress log required by the workflow.
-- Scaffolded the Django project and the initial `tree_ui` app.
-- Added graph-oriented data models for `Workspace`, `ConversationNode`, and `NodeMessage`.
-- Built the first Django Template based landing page with a DAG-style canvas shell and a detail panel.
-- Split frontend behavior into separate static JavaScript modules for canvas rendering, node detail rendering, API helpers, and streaming status messaging.
-- Added Docker Compose based startup with `Dockerfile`, `docker-compose.yml`, `.env.example`, and an entrypoint that runs migrations before starting Django.
-- Verified the project with `python3 manage.py check`, `python3 manage.py makemigrations tree_ui`, `python3 manage.py test`, and `python3 manage.py migrate --noinput`.
-- Committed and pushed the bootstrap slice.
-
-### Files Changed
-- `README.md`
-- `.env.example`
-- `Dockerfile`
-- `docker-compose.yml`
-- `entrypoint.sh`
-- `docs/agent-progress.md`
-- `llm_tree_project/settings.py`
-- `llm_tree_project/urls.py`
-- `manage.py`
-- `requirements.txt`
-- `tree_ui/admin.py`
-- `tree_ui/models.py`
-- `tree_ui/tests.py`
-- `tree_ui/urls.py`
-- `tree_ui/views.py`
-- `tree_ui/migrations/0001_initial.py`
-- `tree_ui/services/demo_graph.py`
-- `tree_ui/templates/tree_ui/base.html`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/api.js`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
-- `tree_ui/static/tree_ui/js/node-panel.js`
-- `tree_ui/static/tree_ui/js/streaming.js`
-
-### Git Workflow
-- Current branch at session start: `feature/bootstrap-django-docker`
-- New branch created/switched: `feature/bootstrap-django-docker`
-- Commits made:
-  - `1ac1ff3` - `feat: bootstrap django graph workspace`
-- Push status:
-  - pushed to `origin/feature/bootstrap-django-docker`
-
-### Current Status
-- The repository now has a runnable Django + Docker Compose foundation.
-- The main page renders a graph-style conversation workspace shell using Django Templates and modular JavaScript.
-- Core graph data models exist and initial migrations are committed.
-
-### Next Recommended Step
-- Implement the first real node creation flow and persist graph data to the database from the UI.
-- Add provider abstraction layers for OpenAI and Gemini so new nodes can choose a model per branch.
-- Begin the streaming response path after node creation is wired.
-
-### Known Issues / Blockers / Tech Debt
-- The UI currently renders demo graph data when the database has no workspace records.
-- Provider integration, branch-local context assembly, live streaming, and edit/re-branch behavior are not implemented yet.
-- `AGENTS.md` remains untracked in the worktree and was intentionally not included in the bootstrap commit.
-
-## Session 2026-03-19 17:03
-
-### Session Goal
-- Replace the demo-only graph with a database-backed workspace flow.
-- Let the UI create and persist root nodes and child branches from the page.
-
-### Planned Tasks
-- inspect the current implementation and preserve any existing uncommitted changes
-- add backend services and API endpoints for default workspace loading and node creation
-- update the template and JavaScript so users can create nodes from the UI
-- verify the flow with tests and local Django checks
-
-### Work Completed
-- Session started; current branch, worktree state, and latest progress log were reviewed.
-- Existing `entrypoint.sh` worktree change was inspected before implementation.
-- Replaced the demo-only homepage flow with a default workspace loaded from the database.
-- Added backend services to serialize graph payloads, provision the default workspace, and create nodes with stubbed assistant replies.
-- Added a POST API endpoint for creating root nodes and child branches in the selected workspace.
-- Updated the Django Template and modular JavaScript so the UI can create nodes, choose provider/model, and refresh the graph without reloading.
-- Added test coverage for homepage workspace provisioning plus root and child node creation.
-- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `entrypoint.sh`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/api.js`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-- `tree_ui/urls.py`
-- `tree_ui/views.py`
-- `tree_ui/services/graph_payload.py`
-- `tree_ui/services/node_creation.py`
-- `tree_ui/services/workspace_service.py`
-
-### Git Workflow
-- Current branch at session start: `feature/bootstrap-django-docker`
-- New branch created/switched: `feature/node-creation-flow`
-- Commits made:
-  - `25ddeda` - `feat: add workspace-backed node creation flow`
-- Push status:
-  - not pushed yet in this session
-
-### Current Status
-- The page now uses a real default workspace instead of the temporary demo payload.
-- Users can create a root node or branch from a selected node directly from the side panel.
-- New nodes are persisted in SQLite and rendered immediately on the graph.
-
-### Next Recommended Step
-- Replace the stubbed assistant reply generator with real OpenAI and Gemini provider abstractions.
-- Add branch-local context assembly for provider requests and prepare the streaming transport.
-
-### Known Issues / Blockers / Tech Debt
-- Assistant replies are still stubbed locally; real provider calls and streaming are not wired yet.
-- Node editing and version-safe re-branching remain unimplemented.
-
-## Session 2026-03-19 17:13
-
-### Session Goal
-- Introduce provider abstraction and branch-local context building behind the node creation flow.
-- Keep the app runnable even when provider API keys are not configured.
-
-### Planned Tasks
-- inspect the current node creation implementation and provider-related settings gaps
-- add branch-local context builder and provider abstraction modules
-- update node creation to use provider services with safe fallback behavior
-- verify the new behavior with tests and local Django checks
-
-### Work Completed
-- Session started; repository state, active branch, and progress log were reviewed.
-- Planned the next slice around provider abstraction and lineage-scoped context assembly.
-- Added environment-driven provider settings for OpenAI, Gemini, and request timeout handling.
-- Added a branch-local context builder that assembles only the selected lineage plus the new prompt.
-- Introduced provider abstraction modules for OpenAI and Gemini behind a registry-based service interface.
-- Updated node creation to call the provider layer and fall back safely when API keys are missing or requests fail.
-- Updated the UI copy to reflect provider-backed generation with safe fallback behavior.
-- Added tests for lineage-scoped context assembly and provider-result usage inside node creation.
-- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `.env.example`
-- `README.md`
-- `llm_tree_project/settings.py`
-- `tree_ui/services/context_builder.py`
-- `tree_ui/services/node_creation.py`
-- `tree_ui/services/providers/__init__.py`
-- `tree_ui/services/providers/base.py`
-- `tree_ui/services/providers/gemini_provider.py`
-- `tree_ui/services/providers/openai_provider.py`
-- `tree_ui/services/providers/registry.py`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/node-creation-flow`
-- New branch created/switched: `feature/provider-context-abstraction`
-- Commits made:
-  - `caa95a6` - `feat: add provider abstraction and branch context`
-  - `254fa7c` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/provider-context-abstraction`
-
-### Current Status
-- Node creation now builds a lineage-scoped message context before generation.
-- OpenAI and Gemini generation are routed through separate service modules with a shared interface.
-- The app still works without API keys because generation falls back to a local explanatory assistant message.
-
-### Next Recommended Step
-- Add a streaming transport layer on top of the provider abstraction so partial tokens can reach the UI.
-- Persist provider metadata or generation status on nodes if streaming state needs to survive refreshes.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` is still untracked and should remain outside the feature commits unless explicitly requested.
-- Provider calls are currently synchronous and non-streaming.
-- OpenAI and Gemini integrations are intentionally wrapped with fallback behavior, so missing keys do not hard-fail the UI.
-
-## Session 2026-03-19 18:36
-
-### Session Goal
-- Fix the graph viewport so users can drag the canvas to inspect off-screen nodes.
-- Preserve existing node selection and creation behavior while adding panning.
-
-### Planned Tasks
-- inspect the current canvas DOM/CSS/JS layout and identify the cleanest pan architecture
-- add a draggable graph viewport with horizontal and vertical movement
-- keep node click selection working after the pan behavior is added
-- verify the change locally and update the progress log
-
-### Work Completed
-- Session started; repository state, active branch, and progress log were reviewed.
-- Confirmed the current issue: graph content can extend past the visible area with no way to pan.
-- Reworked the graph stage into a fixed viewport plus a movable canvas surface.
-- Added drag-to-pan behavior so the workspace can be moved horizontally and vertically with the mouse.
-- Kept node selection intact while preventing accidental clicks during drag gestures.
-- Added a small on-canvas hint so the drag interaction is discoverable.
-- Added a minimal homepage assertion for the new pan hint text.
-- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
-- `tree_ui/static/tree_ui/js/viewport.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/provider-context-abstraction`
-- New branch created/switched: `feature/canvas-pan-drag`
-- Commits made:
-  - `385987e` - `feat: add drag-to-pan graph viewport`
-  - `746ecec` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/canvas-pan-drag`
-
-### Current Status
-- The graph viewport now supports drag-to-pan in all directions when nodes exist.
-- Existing node selection and branch creation behavior remain intact.
-
-### Next Recommended Step
-- Add streaming transport on top of the existing provider abstraction.
-- Consider adding zoom controls or a mini-map after streaming if the graph grows large.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` remains untracked and outside feature commits.
-- The current graph viewport supports panning but not zooming yet.
-
-## Session 2026-03-19 18:45
-
-### Session Goal
-- Fix the graph empty-state so it disappears as soon as real nodes exist.
-- Preserve the new drag-to-pan viewport behavior.
-
-### Planned Tasks
-- inspect the empty-state rendering path across template, CSS, and canvas JS
-- ensure hidden state is respected on initial render and subsequent client updates
-- verify the fix with local Django checks and tests
-
-### Work Completed
-- Session started; current branch and worktree state were reviewed.
-- Fixed the graph empty-state to hide correctly when workspace nodes already exist.
-- Added server-rendered `hidden` protection plus CSS handling for `.graph-empty[hidden]`.
-- Switched the client-side empty-state toggle to attribute-based control for consistency.
-- Verified the fix with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/canvas.js`
-- `tree_ui/templates/tree_ui/index.html`
-
-### Git Workflow
-- Current branch at session start: `feature/canvas-pan-drag`
-- New branch created/switched: `feature/canvas-pan-drag`
-- Commits made:
-  - `938a7e3` - `fix: hide graph empty state when nodes exist`
-- Push status:
-  - pushed to `origin/feature/canvas-pan-drag`
-
-### Current Status
-- The empty-state banner no longer persists over real graph content.
-
-### Next Recommended Step
-- Add streaming transport for node generation on top of the current provider abstraction.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` remains untracked and outside feature commits.
-
-## Session 2026-03-19 18:48
-
-### Session Goal
-- Add streaming transport for node generation on top of the current provider abstraction.
-- Keep the app usable without billing or configured API keys by streaming fallback output.
-
-### Planned Tasks
-- inspect the current synchronous node creation path and identify streaming integration points
-- add a streaming backend endpoint for incremental node generation
-- update the front-end to read streamed events and show live assistant output in the detail panel
-- verify the streaming path with local Django checks and tests
-
-### Work Completed
-- Session started; current branch, recent commits, and repository state were reviewed.
-- Created a new feature branch for streaming node generation.
-- Added environment settings for stream chunk timing.
-- Refactored node creation so validated inputs can be reused by both synchronous creation and streaming creation.
-- Added a streaming node-generation endpoint using `StreamingHttpResponse` and SSE-style events.
-- Added front-end stream parsing and a live preview state in the detail panel for preview, delta, node, and error events.
-- Kept the existing synchronous creation endpoint available while switching the UI to the new streaming endpoint.
-- Added streaming API test coverage and verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `.env.example`
-- `llm_tree_project/settings.py`
-- `tree_ui/services/node_creation.py`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/node-panel.js`
-- `tree_ui/static/tree_ui/js/streaming.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-- `tree_ui/urls.py`
-- `tree_ui/views.py`
-
-### Git Workflow
-- Current branch at session start: `feature/canvas-pan-drag`
-- New branch created/switched: `feature/streaming-node-generation`
-- Commits made:
-  - `d7201a9` - `feat: stream node generation to the UI`
-  - `1beb4ce` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/streaming-node-generation`
-
-### Current Status
-- New node generation now streams preview text into the UI before the node is committed to the graph.
-- The fallback path also streams incrementally, so the interaction can be tested without active billing.
-
-### Next Recommended Step
-- Replace local chunked provider output with true upstream streaming from OpenAI and Gemini when keys are available.
-- Add cancellation and streaming status persistence if interrupted generations need to survive refreshes.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` remains untracked and outside feature commits.
-- Current provider calls still fetch the full reply before chunking it locally; upstream provider-native streaming is the next refinement.
-
-## Session 2026-03-19 18:56
-
-### Session Goal
-- Allow multiple root conversations to be created inside the same workspace.
-- Remove the UI limitation that forces every new node under the currently selected node.
-
-### Planned Tasks
-- inspect the current node creation form state and confirm the root-node limitation is frontend-only
-- add an explicit root-conversation creation mode in the form
-- verify the backend already supports repeated root creation and add a regression test
-- update the progress log with the completed behavior and next recommended step
-
-### Work Completed
-- Session started; current branch, worktree state, and progress log were reviewed.
-- Confirmed the current limitation comes from the front-end always submitting the selected node as parent.
-- Added an explicit root-conversation toggle to the node creation form.
-- Updated the form state and submit logic so a selected node no longer blocks creating a separate top-level conversation.
-- Adjusted composer copy so the UI reflects that the panel can create both child branches and new root conversations.
-- Added a regression test proving the same workspace can persist multiple root nodes.
-- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/streaming-node-generation`
-- New branch created/switched: `feature/multi-root-node-creation`
-- Commits made:
-  - `57fb2d6` - `feat: allow multiple root conversations per workspace`
-  - `680e913` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/multi-root-node-creation`
-
-### Current Status
-- The same workspace can now contain multiple root conversations, each representing a separate top-level dialog.
-- Child branching still works from the selected node when root mode is off.
-
-### Next Recommended Step
-- Add edit-and-rebranch support so older nodes can fork revised conversation paths without destructive overwrite.
-- Consider workspace-level filters or grouping if the number of root conversations grows large.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` remains untracked and outside feature commits.
-
-## Session 2026-03-19 19:05
-
-### Session Goal
-- Update `AGENTS.md` so future sessions explicitly treat three additional product requirements as planned work.
-- Record the new roadmap direction in persistent progress notes.
-
-### Planned Tasks
-- inspect the current instruction file and place the new requirements in the most relevant product and UX sections
-- add the requested future requirements for node-focused chat view, draggable nodes, and zoomable full-page graph
-- update the progress log so the next session sees the newly recorded direction immediately
-
-### Work Completed
-- Session started; current branch, repository state, `AGENTS.md`, and the progress log were reviewed.
-- Updated `AGENTS.md` to explicitly record:
-  - node-focused conversation view for each selected node
-  - manual mouse-driven node repositioning
-  - zoomable graph workspace that can occupy the main page experience
-- Added these expectations to the product requirements, frontend approach, UX ideas, MVP priority order, and definition of done sections.
-- Recorded the roadmap update in the persistent progress log.
-
-### Files Changed
-- `AGENTS.md`
-- `docs/agent-progress.md`
-
-### Git Workflow
-- Current branch at session start: `feature/multi-root-node-creation`
-- New branch created/switched: `feature/multi-root-node-creation`
-- Commits made:
-  - `21ce806` - `docs: update agent roadmap requirements`
-  - `1f79d1e` - `docs: finalize agent progress log`
-- Push status:
-  - pushed to `origin/feature/multi-root-node-creation`
-
-### Current Status
-- The instruction file now explicitly captures the newly requested future features.
-
-### Next Recommended Step
-- Resume feature implementation from the updated roadmap, likely starting with edit-and-rebranch or multi-workspace support depending on product priority.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` was previously untracked; it should now be tracked because the user explicitly requested updates to it.
-
-## Session 2026-03-19 19:09
-
-### Session Goal
-- Implement version-safe editing of an old node and allow re-branching from the edited result.
-- Preserve original history while making the edited variant selectable like any other node.
-
-### Planned Tasks
-- inspect the current data model and graph payload for edit metadata support
-- add backend services and API endpoints for creating edited node variants
-- update the detail panel UI so a selected node can be edited into a new version
-- verify the edit-and-rebranch flow with tests and local Django checks
-
-### Work Completed
-- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
-- Confirmed that the model already includes `edited_from`, so the next step is wiring the workflow and UI.
-- Added a backend service for creating version-safe edited node variants without overwriting the original node.
-- Added an API endpoint for turning a selected node into an edited variant.
-- Updated the detail panel so a selected node can be edited into a new version from the UI.
-- Preserved original message bundles while letting the edited variant be selected and branched like any other node.
-- Replaced a few user-content rendering paths with safer DOM creation instead of string-based HTML injection.
-- Added regression tests for edited variant creation through both the service layer and API.
-- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/services/node_editing.py`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/static/tree_ui/js/app.js`
-- `tree_ui/static/tree_ui/js/canvas.js`
-- `tree_ui/static/tree_ui/js/node-panel.js`
-- `tree_ui/templates/tree_ui/index.html`
-- `tree_ui/tests.py`
-- `tree_ui/urls.py`
-- `tree_ui/views.py`
-
-### Git Workflow
-- Current branch at session start: `feature/multi-root-node-creation`
-- New branch created/switched: `feature/edit-node-rebranch`
-- Commits made:
-  - `9a18243` - `feat: allow editing node into a new branchable variant`
-  - `5ae88b7` - `docs: update agent progress log`
-- Push status:
-  - pushed to `origin/feature/edit-node-rebranch`
-
-### Current Status
-- Users can now create an edited node variant from a selected historical node without mutating the original.
-- The edited variant is persisted, selectable on the graph, and can be used as the base for future branches.
-
-### Next Recommended Step
-- Add multi-workspace support so separate graphs can be created and switched explicitly.
-- Consider evolving the edited variant UI into the future node-focused chat view described in `AGENTS.md`.
-
-### Known Issues / Blockers / Tech Debt
-- `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
-
-## Session 2026-04-15 23:14
-
-### Session Goal
-- Refresh the MCP management color system without changing page structure or behavior.
-- Fix workspace header overflow so the title block and top-right actions stay inside the main surface.
-
-### Planned Tasks
-- inspect the MCP source management templates and shared workspace CSS
-- refresh the color tokens and management page styling while preserving existing structure
-- review the delegated UI diff for scope drift and restore the original type-column semantics
-- tighten workspace header spacing so the title and toolbar actions stop clipping the container edges
-- verify the updated UI with local Django tests and migration checks
-
-### Work Completed
-- Session started from the color-refresh working branch after reviewing repository state and the delegated implementation report.
-- Refreshed shared color tokens in `app.css` and applied higher-contrast surfaces, borders, buttons, and status colors across the MCP management UI.
-- Restyled the MCP source list and form templates to use the new palette while preserving the existing page structure and flows.
-- Reviewed the delegated template changes and reverted the `Type` column back to `{{ source.get_source_type_display }}` so the UI remained a color-only refresh rather than a semantic content change.
-- Added stable header padding and action spacing in the workspace panel so the workspace label/title no longer clips the left edge and the top-right action buttons no longer touch the container boundary.
-- Verified the final state with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/static/tree_ui/css/app.css`
-- `tree_ui/templates/tree_ui/mcp_source_form.html`
-- `tree_ui/templates/tree_ui/mcp_source_list.html`
-
-### Git Workflow
-- Current branch at session start: `feature/ui-color-system-refresh`
-- New branch created/switched: `feature/ui-color-system-refresh`
-- Commits made:
-  - pending local commit for the color refresh and workspace header spacing adjustments
-- Push status:
-  - pending integration push to `origin/feature/ui-color-system-refresh` and `origin/feature/v2-tool-use-groundwork`
-
-### Current Status
-- The MCP source management pages now use a clearer, higher-contrast palette without changing their structure.
-- The workspace header no longer overflows at the left title block or the right-side action cluster.
-
-### Next Recommended Step
-- Resume the MCP roadmap with a real stdio-backed transport follow-up or another MCP operability improvement after this UI pass is integrated.
-
-### Known Issues / Blockers / Tech Debt
-- The refreshed MCP management templates still rely on inline style attributes for layout and spacing; they are visually improved but not yet extracted into a cleaner component-level stylesheet.
-
-## Session 2026-04-16 00:12
-
-### Session Goal
-- Integrate the delegated stdio MCP handshake implementation into the main v2 tool-use branch.
-- Close the review gaps around real timeout handling and invalid stdio timeout normalization.
-
-### Planned Tasks
-- inspect the delegated stdio MCP transport changes and verify the handshake, discovery, and tool-call paths
-- fix timeout handling so stdio requests can fail fast instead of blocking indefinitely
-- normalize invalid stdio timeout config so broken sources degrade cleanly instead of exploding during client construction
-- re-run Django tests and migration checks
-- commit and push the integrated stdio MCP transport work
-
-### Work Completed
-- Session started on `feature/v2-tool-use-groundwork` after reviewing repository state, delegated report output, and the current progress log.
-- Reviewed the delegated stdio MCP transport implementation and confirmed the new subprocess-backed handshake, tool discovery, and tool call flow were present.
-- Identified and fixed two integration issues:
-  - the configured stdio timeout was not actually used in the transport read path
-  - invalid timeout config could break client construction and trigger destructor-time exceptions
-- Added timeout-aware stdio reads using `selectors`, so stalled MCP subprocesses now fail with a clear timeout error and stop the subprocess.
-- Hardened stdio timeout normalization in both the remote adapter config path and the stdio client constructor.
-- Added a `hanging_mcp_server.py` test fixture plus regression tests for timeout behavior and invalid timeout normalization.
-- Verified the final state with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
-
-### Files Changed
-- `docs/agent-progress.md`
-- `tree_ui/services/mcp/client.py`
-- `tree_ui/services/mcp/hanging_mcp_server.py`
-- `tree_ui/services/mcp/malformed_mcp_server.py`
-- `tree_ui/services/mcp/remote_adapter.py`
-- `tree_ui/services/mcp/stdio_client.py`
-- `tree_ui/services/mcp/test_mcp_server.py`
-- `tree_ui/tests.py`
-
-### Git Workflow
-- Current branch at session start: `feature/v2-tool-use-groundwork`
-- New branch created/switched: `feature/v2-tool-use-groundwork`
-- Commits made:
-  - pending local commit for stdio MCP handshake, transport fixtures, and timeout hardening
-- Push status:
-  - pending push to `origin/feature/v2-tool-use-groundwork`
-
-### Current Status
-- `transport_kind=stdio` now uses a real subprocess-backed MCP path with initialize, tool discovery, and tool call support.
-- Timeout handling is now active rather than declarative, and broken timeout config no longer crashes source construction.
-
-### Next Recommended Step
-- Build the next MCP operability slice on top of the real stdio transport, such as source connection testing or clearer runtime diagnostics in the management UI.
-
-### Known Issues / Blockers / Tech Debt
-- The stdio MCP client is still a synchronous v1 implementation and does not yet support richer protocol behaviors such as concurrent outstanding requests or streaming-style server notifications.
-
 ## Session 2026-03-19 19:30
 
 ### Session Goal
@@ -5187,3 +4747,489 @@
 
 ### Known Issues / Blockers / Tech Debt
 - `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
+## Session 2026-03-19 19:09
+
+### Session Goal
+- Implement version-safe editing of an old node and allow re-branching from the edited result.
+- Preserve original history while making the edited variant selectable like any other node.
+
+### Planned Tasks
+- inspect the current data model and graph payload for edit metadata support
+- add backend services and API endpoints for creating edited node variants
+- update the detail panel UI so a selected node can be edited into a new version
+- verify the edit-and-rebranch flow with tests and local Django checks
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and progress log were reviewed.
+- Confirmed that the model already includes `edited_from`, so the next step is wiring the workflow and UI.
+- Added a backend service for creating version-safe edited node variants without overwriting the original node.
+- Added an API endpoint for turning a selected node into an edited variant.
+- Updated the detail panel so a selected node can be edited into a new version from the UI.
+- Preserved original message bundles while letting the edited variant be selected and branched like any other node.
+- Replaced a few user-content rendering paths with safer DOM creation instead of string-based HTML injection.
+- Added regression tests for edited variant creation through both the service layer and API.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/node_editing.py`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/multi-root-node-creation`
+- New branch created/switched: `feature/edit-node-rebranch`
+- Commits made:
+  - `9a18243` - `feat: allow editing node into a new branchable variant`
+  - `5ae88b7` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/edit-node-rebranch`
+
+### Current Status
+- Users can now create an edited node variant from a selected historical node without mutating the original.
+- The edited variant is persisted, selectable on the graph, and can be used as the base for future branches.
+
+### Next Recommended Step
+- Add multi-workspace support so separate graphs can be created and switched explicitly.
+- Consider evolving the edited variant UI into the future node-focused chat view described in `AGENTS.md`.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` is now tracked and should stay aligned with implementation decisions.
+
+## Session 2026-03-19 19:05
+
+### Session Goal
+- Update `AGENTS.md` so future sessions explicitly treat three additional product requirements as planned work.
+- Record the new roadmap direction in persistent progress notes.
+
+### Planned Tasks
+- inspect the current instruction file and place the new requirements in the most relevant product and UX sections
+- add the requested future requirements for node-focused chat view, draggable nodes, and zoomable full-page graph
+- update the progress log so the next session sees the newly recorded direction immediately
+
+### Work Completed
+- Session started; current branch, repository state, `AGENTS.md`, and the progress log were reviewed.
+- Updated `AGENTS.md` to explicitly record:
+  - node-focused conversation view for each selected node
+  - manual mouse-driven node repositioning
+  - zoomable graph workspace that can occupy the main page experience
+- Added these expectations to the product requirements, frontend approach, UX ideas, MVP priority order, and definition of done sections.
+- Recorded the roadmap update in the persistent progress log.
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/multi-root-node-creation`
+- New branch created/switched: `feature/multi-root-node-creation`
+- Commits made:
+  - `21ce806` - `docs: update agent roadmap requirements`
+  - `1f79d1e` - `docs: finalize agent progress log`
+- Push status:
+  - pushed to `origin/feature/multi-root-node-creation`
+
+### Current Status
+- The instruction file now explicitly captures the newly requested future features.
+
+### Next Recommended Step
+- Resume feature implementation from the updated roadmap, likely starting with edit-and-rebranch or multi-workspace support depending on product priority.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` was previously untracked; it should now be tracked because the user explicitly requested updates to it.
+
+## Session 2026-03-19 18:56
+
+### Session Goal
+- Allow multiple root conversations to be created inside the same workspace.
+- Remove the UI limitation that forces every new node under the currently selected node.
+
+### Planned Tasks
+- inspect the current node creation form state and confirm the root-node limitation is frontend-only
+- add an explicit root-conversation creation mode in the form
+- verify the backend already supports repeated root creation and add a regression test
+- update the progress log with the completed behavior and next recommended step
+
+### Work Completed
+- Session started; current branch, worktree state, and progress log were reviewed.
+- Confirmed the current limitation comes from the front-end always submitting the selected node as parent.
+- Added an explicit root-conversation toggle to the node creation form.
+- Updated the form state and submit logic so a selected node no longer blocks creating a separate top-level conversation.
+- Adjusted composer copy so the UI reflects that the panel can create both child branches and new root conversations.
+- Added a regression test proving the same workspace can persist multiple root nodes.
+- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/streaming-node-generation`
+- New branch created/switched: `feature/multi-root-node-creation`
+- Commits made:
+  - `57fb2d6` - `feat: allow multiple root conversations per workspace`
+  - `680e913` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/multi-root-node-creation`
+
+### Current Status
+- The same workspace can now contain multiple root conversations, each representing a separate top-level dialog.
+- Child branching still works from the selected node when root mode is off.
+
+### Next Recommended Step
+- Add edit-and-rebranch support so older nodes can fork revised conversation paths without destructive overwrite.
+- Consider workspace-level filters or grouping if the number of root conversations grows large.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+
+## Session 2026-03-19 18:48
+
+### Session Goal
+- Add streaming transport for node generation on top of the current provider abstraction.
+- Keep the app usable without billing or configured API keys by streaming fallback output.
+
+### Planned Tasks
+- inspect the current synchronous node creation path and identify streaming integration points
+- add a streaming backend endpoint for incremental node generation
+- update the front-end to read streamed events and show live assistant output in the detail panel
+- verify the streaming path with local Django checks and tests
+
+### Work Completed
+- Session started; current branch, recent commits, and repository state were reviewed.
+- Created a new feature branch for streaming node generation.
+- Added environment settings for stream chunk timing.
+- Refactored node creation so validated inputs can be reused by both synchronous creation and streaming creation.
+- Added a streaming node-generation endpoint using `StreamingHttpResponse` and SSE-style events.
+- Added front-end stream parsing and a live preview state in the detail panel for preview, delta, node, and error events.
+- Kept the existing synchronous creation endpoint available while switching the UI to the new streaming endpoint.
+- Added streaming API test coverage and verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `.env.example`
+- `llm_tree_project/settings.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/streaming.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `feature/canvas-pan-drag`
+- New branch created/switched: `feature/streaming-node-generation`
+- Commits made:
+  - `d7201a9` - `feat: stream node generation to the UI`
+  - `1beb4ce` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/streaming-node-generation`
+
+### Current Status
+- New node generation now streams preview text into the UI before the node is committed to the graph.
+- The fallback path also streams incrementally, so the interaction can be tested without active billing.
+
+### Next Recommended Step
+- Replace local chunked provider output with true upstream streaming from OpenAI and Gemini when keys are available.
+- Add cancellation and streaming status persistence if interrupted generations need to survive refreshes.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+- Current provider calls still fetch the full reply before chunking it locally; upstream provider-native streaming is the next refinement.
+
+## Session 2026-03-19 18:45
+
+### Session Goal
+- Fix the graph empty-state so it disappears as soon as real nodes exist.
+- Preserve the new drag-to-pan viewport behavior.
+
+### Planned Tasks
+- inspect the empty-state rendering path across template, CSS, and canvas JS
+- ensure hidden state is respected on initial render and subsequent client updates
+- verify the fix with local Django checks and tests
+
+### Work Completed
+- Session started; current branch and worktree state were reviewed.
+- Fixed the graph empty-state to hide correctly when workspace nodes already exist.
+- Added server-rendered `hidden` protection plus CSS handling for `.graph-empty[hidden]`.
+- Switched the client-side empty-state toggle to attribute-based control for consistency.
+- Verified the fix with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+
+### Git Workflow
+- Current branch at session start: `feature/canvas-pan-drag`
+- New branch created/switched: `feature/canvas-pan-drag`
+- Commits made:
+  - `938a7e3` - `fix: hide graph empty state when nodes exist`
+- Push status:
+  - pushed to `origin/feature/canvas-pan-drag`
+
+### Current Status
+- The empty-state banner no longer persists over real graph content.
+
+### Next Recommended Step
+- Add streaming transport for node generation on top of the current provider abstraction.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+
+## Session 2026-03-19 18:36
+
+### Session Goal
+- Fix the graph viewport so users can drag the canvas to inspect off-screen nodes.
+- Preserve existing node selection and creation behavior while adding panning.
+
+### Planned Tasks
+- inspect the current canvas DOM/CSS/JS layout and identify the cleanest pan architecture
+- add a draggable graph viewport with horizontal and vertical movement
+- keep node click selection working after the pan behavior is added
+- verify the change locally and update the progress log
+
+### Work Completed
+- Session started; repository state, active branch, and progress log were reviewed.
+- Confirmed the current issue: graph content can extend past the visible area with no way to pan.
+- Reworked the graph stage into a fixed viewport plus a movable canvas surface.
+- Added drag-to-pan behavior so the workspace can be moved horizontally and vertically with the mouse.
+- Kept node selection intact while preventing accidental clicks during drag gestures.
+- Added a small on-canvas hint so the drag interaction is discoverable.
+- Added a minimal homepage assertion for the new pan hint text.
+- Verified the change with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/viewport.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/provider-context-abstraction`
+- New branch created/switched: `feature/canvas-pan-drag`
+- Commits made:
+  - `385987e` - `feat: add drag-to-pan graph viewport`
+  - `746ecec` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/canvas-pan-drag`
+
+### Current Status
+- The graph viewport now supports drag-to-pan in all directions when nodes exist.
+- Existing node selection and branch creation behavior remain intact.
+
+### Next Recommended Step
+- Add streaming transport on top of the existing provider abstraction.
+- Consider adding zoom controls or a mini-map after streaming if the graph grows large.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` remains untracked and outside feature commits.
+- The current graph viewport supports panning but not zooming yet.
+
+## Session 2026-03-19 17:13
+
+### Session Goal
+- Introduce provider abstraction and branch-local context building behind the node creation flow.
+- Keep the app runnable even when provider API keys are not configured.
+
+### Planned Tasks
+- inspect the current node creation implementation and provider-related settings gaps
+- add branch-local context builder and provider abstraction modules
+- update node creation to use provider services with safe fallback behavior
+- verify the new behavior with tests and local Django checks
+
+### Work Completed
+- Session started; repository state, active branch, and progress log were reviewed.
+- Planned the next slice around provider abstraction and lineage-scoped context assembly.
+- Added environment-driven provider settings for OpenAI, Gemini, and request timeout handling.
+- Added a branch-local context builder that assembles only the selected lineage plus the new prompt.
+- Introduced provider abstraction modules for OpenAI and Gemini behind a registry-based service interface.
+- Updated node creation to call the provider layer and fall back safely when API keys are missing or requests fail.
+- Updated the UI copy to reflect provider-backed generation with safe fallback behavior.
+- Added tests for lineage-scoped context assembly and provider-result usage inside node creation.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `.env.example`
+- `README.md`
+- `llm_tree_project/settings.py`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/__init__.py`
+- `tree_ui/services/providers/base.py`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/services/providers/registry.py`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/node-creation-flow`
+- New branch created/switched: `feature/provider-context-abstraction`
+- Commits made:
+  - `caa95a6` - `feat: add provider abstraction and branch context`
+  - `254fa7c` - `docs: update agent progress log`
+- Push status:
+  - pushed to `origin/feature/provider-context-abstraction`
+
+### Current Status
+- Node creation now builds a lineage-scoped message context before generation.
+- OpenAI and Gemini generation are routed through separate service modules with a shared interface.
+- The app still works without API keys because generation falls back to a local explanatory assistant message.
+
+### Next Recommended Step
+- Add a streaming transport layer on top of the provider abstraction so partial tokens can reach the UI.
+- Persist provider metadata or generation status on nodes if streaming state needs to survive refreshes.
+
+### Known Issues / Blockers / Tech Debt
+- `AGENTS.md` is still untracked and should remain outside the feature commits unless explicitly requested.
+- Provider calls are currently synchronous and non-streaming.
+- OpenAI and Gemini integrations are intentionally wrapped with fallback behavior, so missing keys do not hard-fail the UI.
+
+## Session 2026-03-19 17:03
+
+### Session Goal
+- Replace the demo-only graph with a database-backed workspace flow.
+- Let the UI create and persist root nodes and child branches from the page.
+
+### Planned Tasks
+- inspect the current implementation and preserve any existing uncommitted changes
+- add backend services and API endpoints for default workspace loading and node creation
+- update the template and JavaScript so users can create nodes from the UI
+- verify the flow with tests and local Django checks
+
+### Work Completed
+- Session started; current branch, worktree state, and latest progress log were reviewed.
+- Existing `entrypoint.sh` worktree change was inspected before implementation.
+- Replaced the demo-only homepage flow with a default workspace loaded from the database.
+- Added backend services to serialize graph payloads, provision the default workspace, and create nodes with stubbed assistant replies.
+- Added a POST API endpoint for creating root nodes and child branches in the selected workspace.
+- Updated the Django Template and modular JavaScript so the UI can create nodes, choose provider/model, and refresh the graph without reloading.
+- Added test coverage for homepage workspace provisioning plus root and child node creation.
+- Verified the implementation with `python3 manage.py check` and `python3 manage.py test`.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `entrypoint.sh`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/api.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/workspace_service.py`
+
+### Git Workflow
+- Current branch at session start: `feature/bootstrap-django-docker`
+- New branch created/switched: `feature/node-creation-flow`
+- Commits made:
+  - `25ddeda` - `feat: add workspace-backed node creation flow`
+- Push status:
+  - not pushed yet in this session
+
+### Current Status
+- The page now uses a real default workspace instead of the temporary demo payload.
+- Users can create a root node or branch from a selected node directly from the side panel.
+- New nodes are persisted in SQLite and rendered immediately on the graph.
+
+### Next Recommended Step
+- Replace the stubbed assistant reply generator with real OpenAI and Gemini provider abstractions.
+- Add branch-local context assembly for provider requests and prepare the streaming transport.
+
+### Known Issues / Blockers / Tech Debt
+- Assistant replies are still stubbed locally; real provider calls and streaming are not wired yet.
+- Node editing and version-safe re-branching remain unimplemented.
+
+## Session 2026-03-19 16:50
+
+### Session Goal
+- Bootstrap the repository into a runnable Django + Docker Compose MVP foundation.
+- Establish the persistent progress log and initial project structure.
+
+### Planned Tasks
+- inspect repository state and current git branch
+- create the dedicated progress log file
+- scaffold the Django project and initial app structure
+- add Docker Compose based startup and environment configuration
+- verify the generated project locally where possible
+
+### Work Completed
+- Inspected repository state, current branch, available tooling, and confirmed the project was still unbootstrapped.
+- Created the dedicated agent progress log required by the workflow.
+- Scaffolded the Django project and the initial `tree_ui` app.
+- Added graph-oriented data models for `Workspace`, `ConversationNode`, and `NodeMessage`.
+- Built the first Django Template based landing page with a DAG-style canvas shell and a detail panel.
+- Split frontend behavior into separate static JavaScript modules for canvas rendering, node detail rendering, API helpers, and streaming status messaging.
+- Added Docker Compose based startup with `Dockerfile`, `docker-compose.yml`, `.env.example`, and an entrypoint that runs migrations before starting Django.
+- Verified the project with `python3 manage.py check`, `python3 manage.py makemigrations tree_ui`, `python3 manage.py test`, and `python3 manage.py migrate --noinput`.
+- Committed and pushed the bootstrap slice.
+
+### Files Changed
+- `README.md`
+- `.env.example`
+- `Dockerfile`
+- `docker-compose.yml`
+- `entrypoint.sh`
+- `docs/agent-progress.md`
+- `llm_tree_project/settings.py`
+- `llm_tree_project/urls.py`
+- `manage.py`
+- `requirements.txt`
+- `tree_ui/admin.py`
+- `tree_ui/models.py`
+- `tree_ui/tests.py`
+- `tree_ui/urls.py`
+- `tree_ui/views.py`
+- `tree_ui/migrations/0001_initial.py`
+- `tree_ui/services/demo_graph.py`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/index.html`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/api.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/streaming.js`
+
+### Git Workflow
+- Current branch at session start: `feature/bootstrap-django-docker`
+- New branch created/switched: `feature/bootstrap-django-docker`
+- Commits made:
+  - `1ac1ff3` - `feat: bootstrap django graph workspace`
+- Push status:
+  - pushed to `origin/feature/bootstrap-django-docker`
+
+### Current Status
+- The repository now has a runnable Django + Docker Compose foundation.
+- The main page renders a graph-style conversation workspace shell using Django Templates and modular JavaScript.
+- Core graph data models exist and initial migrations are committed.
+
+### Next Recommended Step
+- Implement the first real node creation flow and persist graph data to the database from the UI.
+- Add provider abstraction layers for OpenAI and Gemini so new nodes can choose a model per branch.
+- Begin the streaming response path after node creation is wired.
+
+### Known Issues / Blockers / Tech Debt
+- The UI currently renders demo graph data when the database has no workspace records.
+- Provider integration, branch-local context assembly, live streaming, and edit/re-branch behavior are not implemented yet.
+- `AGENTS.md` remains untracked in the worktree and was intentionally not included in the bootstrap commit.

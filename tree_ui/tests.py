@@ -2213,6 +2213,34 @@ class MCPSourceManagementTests(TestCase):
         self.assertIn("compare_branches", updated_tool_names)
         self.assertIn("external_echo", updated_tool_names)
 
+    def test_can_run_mcp_source_diagnostic_for_mock_source(self):
+        source = MCPSource.objects.create(
+            name="Mock Source",
+            source_id="mock-source",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+
+        response = self.client.post(reverse("mcp_source_test", args=[source.id]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ready")
+        self.assertContains(response, "Connection succeeded. Discovered 2 tool(s).")
+        self.assertContains(response, "external_echo")
+
+    def test_can_run_mcp_source_diagnostic_for_stdio_failure(self):
+        source = MCPSource.objects.create(
+            name="Broken Stdio",
+            source_id="broken-stdio",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "stdio", "command": "non-existent-command-123"},
+        )
+
+        response = self.client.post(reverse("mcp_source_test", args=[source.id]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unavailable")
+        self.assertContains(response, "Failed to start subprocess")
+
 class StdioMCPTransportTests(TestCase):
     def setUp(self):
         from tree_ui.services.mcp.dispatcher import default_dispatcher
