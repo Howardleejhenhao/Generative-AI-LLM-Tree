@@ -31,10 +31,15 @@
 - Added a new `mcp_source_test` POST route and view flow so MCP Settings can execute a per-source connection test and redirect back to the list page.
 - Updated the MCP source list template to render the most recent diagnostic result, including readiness label, message, tool count, and tool names.
 - Added management-page tests covering both a successful mock-source diagnostic and a failing stdio-source diagnostic.
+- Reviewed the delegated MCP source status persistence branch and confirmed it persisted `last_check_*` metadata to `MCPSource`.
+- Fixed a stale-status regression by clearing persisted diagnostics whenever a source is edited, so the UI no longer shows out-of-date health data after config changes.
+- Added a regression test to verify that editing a source removes the previously persisted last-check state.
 - Verified the implementation with `python3 manage.py test tree_ui.tests` and `python3 manage.py makemigrations --check`.
 
 ### Files Changed
 - `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0011_mcpsource_last_check_label_and_more.py`
 - `tree_ui/services/mcp/source_status.py`
 - `tree_ui/templates/tree_ui/mcp_source_list.html`
 - `tree_ui/tests.py`
@@ -45,15 +50,18 @@
 - Current branch at session start: `feature/v2-tool-use-groundwork`
 - New branch created/switched: `feature/mcp-source-connection-check`
 - Commits made:
-  - pending local commit for MCP source connection diagnostics
+  - `3cd5095` - `feat: add MCP source connection diagnostics`
+  - pending follow-up commit on `feature/mcp-source-status-persistence` for stale-status clearing after source edits
 - Push status:
-  - not pushed yet
+  - `feature/mcp-source-connection-check` pushed to origin
+  - `feature/mcp-source-status-persistence` follow-up push pending
 
 ### Current Status
 - MCP Settings can now run an actual diagnostic pass against a source instead of only showing static configuration.
+- Last-check results are persisted in the database, and edited sources now correctly invalidate stale persisted diagnostics.
 
 ### Next Recommended Step
-- Integrate this branch back into `feature/v2-tool-use-groundwork` and then extend MCP operability with richer connection history or source-level status caching if needed.
+- Integrate the persisted last-check workflow back into `feature/v2-tool-use-groundwork`, then extend MCP operability with richer history or source-level status caching if needed.
 
 ### Known Issues / Blockers / Tech Debt
 - Diagnostics are currently single-shot results stored in session for the next page load; there is not yet a persistent connection-history model or live refresh UI.

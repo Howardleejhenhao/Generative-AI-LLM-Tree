@@ -10,7 +10,11 @@ from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.mcp.dispatcher import default_dispatcher
-from tree_ui.services.mcp.source_status import diagnose_source, save_diagnostics_result
+from tree_ui.services.mcp.source_status import (
+    clear_diagnostics_result,
+    diagnose_source,
+    save_diagnostics_result,
+)
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
 from tree_ui.services.memory_drafting import ensure_workspace_memory
@@ -617,7 +621,8 @@ def mcp_source_edit(request, source_id: int):
     if request.method == "POST":
         form = MCPSourceForm(request.POST, instance=source)
         if form.is_valid():
-            form.save()
+            source = form.save()
+            clear_diagnostics_result(source)
             default_dispatcher.refresh()
             return HttpResponseRedirect(reverse("mcp_source_list"))
     else:

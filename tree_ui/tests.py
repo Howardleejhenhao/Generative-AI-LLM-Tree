@@ -2523,3 +2523,42 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertContains(response, "Everything is fine")
         self.assertContains(response, "Tools: 5")
         self.assertContains(response, "tool1, tool2, tool3")
+
+    def test_editing_source_clears_stale_diagnostic_status(self):
+        from django.utils import timezone
+
+        source = MCPSource.objects.create(
+            name="Persisted Source",
+            source_id="persisted-source",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+            last_checked_at=timezone.now(),
+            last_check_ok=True,
+            last_check_label="Persisted Ready",
+            last_check_message="Everything is fine",
+            last_check_tool_count=5,
+            last_check_tools_summary="tool1, tool2, tool3",
+        )
+
+        response = self.client.post(
+            reverse("mcp_source_edit", args=[source.id]),
+            {
+                "name": "Updated Source",
+                "source_id": "persisted-source",
+                "source_type": "mock",
+                "is_enabled": False,
+                "description": "Updated",
+                "config_json": "{}",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        source.refresh_from_db()
+        self.assertIsNone(source.last_checked_at)
+        self.assertIsNone(source.last_check_ok)
+        self.assertEqual(source.last_check_label, "")
+        self.assertEqual(source.last_check_message, "")
+        self.assertIsNone(source.last_check_tool_count)
+        self.assertEqual(source.last_check_tools_summary, "")
+        self.assertNotContains(response, "Persisted Ready")

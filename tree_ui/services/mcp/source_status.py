@@ -78,3 +78,23 @@ def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
             "updated_at",
         ]
     )
+
+
+def clear_diagnostics_result(source_model: Any) -> None:
+    source_model.last_checked_at = None
+    source_model.last_check_ok = None
+    source_model.last_check_label = ""
+    source_model.last_check_message = ""
+    source_model.last_check_tool_count = None
+    source_model.last_check_tools_summary = ""
+    source_model.save(
+        update_fields=[
+            "last_checked_at",
+            "last_check_ok",
+            "last_check_label",
+            "last_check_message",
+            "last_check_tool_count",
+            "last_check_tools_summary",
+            "updated_at",
+        ]
+    )
