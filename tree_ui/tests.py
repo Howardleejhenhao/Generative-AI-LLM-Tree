@@ -2465,3 +2465,61 @@ class StdioMCPTransportTests(TestCase):
         self.assertIn("unavailable", tools[0].name.lower())
         self.assertIn("unsupported", tools[0].description.lower())
         self.assertIn("recognized but not yet implemented", tools[0].description)
+
+
+class MCPSourcePersistenceTests(TestCase):
+    def test_diagnostic_persistence_on_success(self):
+        source = MCPSource.objects.create(
+            name="Mock Source",
+            source_id="mock-source",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+
+        response = self.client.post(reverse("mcp_source_test", args=[source.id]))
+        self.assertEqual(response.status_code, 302)
+
+        source.refresh_from_db()
+        self.assertIsNotNone(source.last_checked_at)
+        self.assertTrue(source.last_check_ok)
+        self.assertEqual(source.last_check_label, "Ready")
+        self.assertEqual(source.last_check_tool_count, 2)
+        self.assertIn("external_echo", source.last_check_tools_summary)
+
+    def test_diagnostic_persistence_on_failure(self):
+        source = MCPSource.objects.create(
+            name="Broken Stdio",
+            source_id="broken-stdio",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "stdio", "command": "non-existent-cmd"},
+        )
+
+        self.client.post(reverse("mcp_source_test", args=[source.id]))
+        source.refresh_from_db()
+
+        self.assertIsNotNone(source.last_checked_at)
+        self.assertFalse(source.last_check_ok)
+        self.assertEqual(source.last_check_label, "Unavailable")
+        self.assertIn("Failed to start subprocess", source.last_check_message)
+
+    def test_list_page_displays_persisted_status(self):
+        from django.utils import timezone
+        source = MCPSource.objects.create(
+            name="Persisted Source",
+            source_id="persisted-source",
+            source_type=MCPSource.SourceType.MOCK,
+            last_checked_at=timezone.now(),
+            last_check_ok=True,
+            last_check_label="Persisted Ready",
+            last_check_message="Everything is fine",
+            last_check_tool_count=5,
+            last_check_tools_summary="tool1, tool2, tool3",
+        )
+
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Persisted Ready")
+        self.assertContains(response, "Everything is fine")
+        self.assertContains(response, "Tools: 5")
+        self.assertContains(response, "tool1, tool2, tool3")

@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from django.utils import timezone
 
 from .dispatcher import create_adapter_from_model
 
@@ -57,3 +58,23 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
         "transport": transport,
         "client_status": client_info.get("status", "connected"),
     }
+
+
+def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
+    source_model.last_checked_at = timezone.now()
+    source_model.last_check_ok = result.get("ok", False)
+    source_model.last_check_label = result.get("label", "Unknown")
+    source_model.last_check_message = result.get("message", "")
+    source_model.last_check_tool_count = result.get("tool_count", 0)
+    source_model.last_check_tools_summary = ", ".join(result.get("tool_names", []))
+    source_model.save(
+        update_fields=[
+            "last_checked_at",
+            "last_check_ok",
+            "last_check_label",
+            "last_check_message",
+            "last_check_tool_count",
+            "last_check_tools_summary",
+            "updated_at",
+        ]
+    )

@@ -69,6 +69,11 @@
                           <span class="badge {% if diagnostic.ok %}badge-success{% else %}badge-danger{% endif %}">
                             {{ diagnostic.label }}
                           </span>
+                          {% if diagnostic.checked_at %}
+                            <span style="font-size: 0.75rem; color: var(--muted); margin-left: 0.4rem;">
+                              {{ diagnostic.checked_at|date:"M j, H:i" }}
+                            </span>
+                          {% endif %}
                         </div>
                         <div style="margin-top: 0.45rem; color: var(--muted); font-size: 0.82rem; line-height: 1.45;">
                           {{ diagnostic.message }}

@@ -247,6 +247,15 @@ class MCPSource(models.Model):
     is_enabled = models.BooleanField(default=True)
     description = models.TextField(blank=True)
     config = models.JSONField(default=dict, blank=True)
+
+    # Last check metadata
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    last_check_ok = models.BooleanField(null=True, blank=True)
+    last_check_label = models.CharField(max_length=120, blank=True)
+    last_check_message = models.TextField(blank=True)
+    last_check_tool_count = models.PositiveIntegerField(null=True, blank=True)
+    last_check_tools_summary = models.TextField(blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
