@@ -11,6 +11,160 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-16 20:10
+
+### Session Goal
+- Review the delegated bounded multi-step tool-use loop implementation before accepting it for integration.
+
+### Planned Tasks
+- inspect the delegated report and current worktree diff for multi-step tool-loop changes
+- verify test and migration status locally
+- identify correctness gaps, regressions, or contract violations in the new loop behavior
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-16-2000.md` and the related changes in `node_creation.py`, `context_builder.py`, provider adapters, and tests.
+- Ran `python3 manage.py test tree_ui.tests`; all 110 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Identified a blocking correctness issue in the streaming loop: JSON decoding for streamed tool arguments is now done directly in a list comprehension without the previous safe fallback, so malformed streamed tool arguments can still crash the generation path.
+- Identified a second correctness issue in historical context reconstruction: replaying prior `ToolInvocation` rows now assumes every persisted `invocation_payload` is valid JSON, which can crash future generations if earlier rows contain malformed payload text.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this review-only session
+- Push status:
+  - not pushed
+
+### Current Status
+- The delegated multi-step tool loop is close, but it is not yet acceptable for integration because malformed tool-argument payloads can still break both streaming synthesis and historical context replay.
+
+### Next Recommended Step
+- Patch the tool-argument parsing paths so both streaming tool deltas and historical `ToolInvocation` replay degrade safely to an error-shaped payload instead of raising.
+
+### Known Issues / Blockers / Tech Debt
+- Current tests cover the happy path and bounded loop behavior, but not malformed streamed JSON or malformed persisted invocation payloads.
+
+## Session 2026-04-16 10:45
+
+### Session Goal
+- Review the delegated tool-trace inspector implementation and verify whether it is acceptable for integration.
+
+### Planned Tasks
+- inspect the current worktree and the files changed by the delegated tool-trace task
+- verify that a delegated Markdown report artifact exists in `task_reports/`
+- run Django tests and migration checks
+- identify correctness, regression, or security issues before accepting the work
+
+### Work Completed
+- Reviewed the delegated node-chat tool-trace changes across serializer, template, JS, CSS, and test files.
+- Verified the current worktree state and checked `task_reports/` for a new delegated report artifact.
+- Ran `python3 manage.py test tree_ui.tests`; all 107 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Identified a blocking frontend security issue: the new tool inspector renders tool names, source ids, arguments, and results through `innerHTML` without escaping, which creates an XSS sink for tool-returned content.
+- Identified a delegated workflow issue: this task did not leave a new `task_reports/REPORT-*.md` artifact even though delegated work is now required to include one.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this review-only session
+- Push status:
+  - not pushed
+
+### Current Status
+- The delegated tool-trace inspector work is not yet acceptable for integration because it contains a blocking XSS risk and is missing the required delegated report artifact.
+
+### Next Recommended Step
+- Have the implementing agent or this coding agent replace the inspector `innerHTML` rendering with safe DOM construction or escaped text rendering, then add the missing `task_reports/REPORT-YYYY-MM-DD-HHMM.md` file before re-review.
+
+### Known Issues / Blockers / Tech Debt
+- The new inspector UI was not accepted.
+- Existing automated tests do not cover front-end HTML injection behavior in the tool-trace inspector.
+
+## Session 2026-04-16 10:35
+
+### Session Goal
+- Tighten delegated-agent workflow rules so future handoffs always produce a persistent Markdown report file.
+
+### Planned Tasks
+- inspect the current delegation rules in `AGENTS.md`
+- add an explicit requirement that delegated agents must create a `.md` report under `task_reports/`
+- update the progress log with the documentation change
+
+### Work Completed
+- Reviewed the existing delegated handoff rules in `AGENTS.md`.
+- Added explicit delegated-workflow requirements that any other agent must create a Markdown report file after implementation.
+- Recorded that delegated reports must be stored in `task_reports/` using a timestamped filename pattern such as `REPORT-YYYY-MM-DD-HHMM.md`.
+- Added the rule that delegated work is not complete until both the implementation and the report file exist.
+
+### Files Changed
+- `AGENTS.md`
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this docs-only update
+- Push status:
+  - not pushed
+
+### Current Status
+- Future delegated implementation prompts are now required to demand a report file in `task_reports/`.
+
+### Next Recommended Step
+- Reuse this rule in the next handoff prompt so the delegated agent leaves both code changes and a report artifact for review.
+
+### Known Issues / Blockers / Tech Debt
+- The currently pending other-agent UI changes in the worktree are still unreviewed and were intentionally left untouched in this session.
+
+## Session 2026-04-16 10:29
+
+### Session Goal
+- Review repository state and current MCP/tooling progress.
+- Prepare a concrete delegated implementation prompt for the next v2 work slice instead of coding directly.
+
+### Planned Tasks
+- inspect current branch, git status, progress log, and recent delegated reports
+- identify the highest-value next implementation slice that fits the v2 roadmap and current branch state
+- write a handoff prompt with file targets, constraints, acceptance criteria, and verification steps
+
+### Work Completed
+- Reviewed `AGENTS.md`, the latest progress log entries, current git status, and recent delegated reports on stdio MCP transport and persisted source diagnostics.
+- Confirmed the repository is currently on `feature/v2-tool-use-groundwork` with untracked delegated task reports only.
+- Inspected MCP source diagnostics, dispatcher, node serialization, and node-chat UI code to determine the next practical delegation target.
+- Chose the next recommended slice as tool-trace observability in the node-focused chat experience, because backend tool invocation persistence already exists but the UI does not yet expose it clearly enough for v2 demo/debug value.
+- Prepared a detailed implementation handoff prompt for another agent, including scope, relevant files, runtime assumptions, verification, and explicit non-merge / non-progress-log rules.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this planning-only session
+- Push status:
+  - not pushed; planning/documentation only
+
+### Current Status
+- The project already persists `ToolInvocation` records and includes tool data in serialized node payloads.
+- The next clean delegation target is to surface those traces in the node-focused UI and make tool usage inspectable without reading backend logs.
+
+### Next Recommended Step
+- Delegate and implement a tool-trace inspector for node chat, including clear rendering of tool name, source, arguments/result summary, and success state.
+
+### Known Issues / Blockers / Tech Debt
+- MCP source diagnostics now exist, but node-level tool observability is still weak from a user/demo perspective.
+- This session did not create code changes beyond the progress log because the user requested a handoff prompt for another agent.
+
 ## Session 2026-04-16 08:20
 
 ### Session Goal

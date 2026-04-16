@@ -10,6 +10,7 @@
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
         <a class="ghost-link" href="{% url 'mcp_source_list' %}">MCP Settings</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
+        <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button">Tool Trace</button>
         <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
@@ -117,6 +118,16 @@
           </div>
         </div>
       </div>
+
+      <aside class="chat-inspector-panel" id="chat-tool-inspector" hidden>
+        <div class="chat-inspector-header">
+          <h2>Tool Trace</h2>
+          <button class="chat-inspector-close" id="chat-tool-inspector-close-button" type="button">×</button>
+        </div>
+        <div class="chat-inspector-content" id="chat-tool-list">
+          <!-- Tool invocations go here -->
+        </div>
+      </aside>
     </section>
   </section>
 

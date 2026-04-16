@@ -22,7 +22,14 @@ def _build_contents(messages: list[ContextMessage]) -> list[dict]:
     for message in messages:
         if message.role == "system":
             continue
-        role = "model" if message.role == "assistant" else "user"
+        # Gemini roles: user, model, function
+        if message.role == "tool":
+            role = "function"
+        elif message.role == "assistant":
+            role = "model"
+        else:
+            role = "user"
+            
         contents.append(
             {
                 "role": role,
@@ -35,7 +42,36 @@ def _build_contents(messages: list[ContextMessage]) -> list[dict]:
 def _build_parts(message: ContextMessage) -> list[dict]:
     parts: list[dict] = []
     if message.content:
-        parts.append({"text": message.content})
+        # If it's a tool result, Gemini expects it in a functionResponse part
+        if message.role == "tool":
+            try:
+                # Try to parse content as JSON for the response
+                response_data = json.loads(message.content)
+            except json.JSONDecodeError:
+                response_data = {"result": message.content}
+                
+            parts.append(
+                {
+                    "functionResponse": {
+                        "name": message.tool_name or message.tool_call_id or "unknown",
+                        "response": response_data,
+                    }
+                }
+            )
+        else:
+            parts.append({"text": message.content})
+            
+    if message.tool_calls:
+        for tc in message.tool_calls:
+            parts.append(
+                {
+                    "functionCall": {
+                        "name": tc.name,
+                        "args": tc.arguments,
+                    }
+                }
+            )
+
     for attachment in message.attachments:
         data_url = attachment.data_url or encode_attachment_as_data_url(
             file_path=attachment.file_path,

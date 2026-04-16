@@ -28,6 +28,7 @@ def serialize_node(node: ConversationNode) -> dict:
                 "args": json.loads(inv.invocation_payload) if inv.invocation_payload else {},
                 "result": json.loads(inv.result_payload) if inv.result_payload else {},
                 "success": inv.success,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
             }
             for inv in node.tool_invocations.all()
         ],

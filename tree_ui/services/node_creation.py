@@ -13,6 +13,7 @@ from tree_ui.services.context_builder import (
     build_system_instruction,
     build_branch_lineage,
     build_generation_messages,
+    ContextMessage,
 )
 from tree_ui.services.memory_drafting import refresh_workspace_preference_memory
 from tree_ui.services.model_catalog import resolve_model_name
@@ -27,6 +28,18 @@ class ReplyChunk:
     text: str = ""
     tool_call: dict | None = None
     tool_result: dict | None = None
+
+
+def _safe_parse_tool_arguments(raw_arguments: str) -> dict:
+    if not raw_arguments:
+        return {}
+    try:
+        return json.loads(raw_arguments)
+    except json.JSONDecodeError:
+        return {
+            "error": "Invalid tool arguments JSON",
+            "raw": raw_arguments,
+        }
 
 
 def _build_summary(prompt: str) -> str:
@@ -144,48 +157,69 @@ def generate_assistant_reply(
     )
     tools = default_dispatcher.get_tool_schemas()
 
+    active_messages = list(context_messages)
+    max_steps = 3
+    
     try:
-        # Simple non-streaming tool handling (one-shot for MVP)
-        result = generate_text(
-            provider_name=provider,
-            model_name=model_name,
-            messages=context_messages,
-            system_instruction=system_instruction,
-            tools=tools,
-            temperature=temperature,
-            top_p=top_p,
-            max_output_tokens=max_output_tokens,
-        )
+        for _ in range(max_steps):
+            result = generate_text(
+                provider_name=provider,
+                model_name=model_name,
+                messages=active_messages,
+                system_instruction=system_instruction,
+                tools=tools,
+                temperature=temperature,
+                top_p=top_p,
+                max_output_tokens=max_output_tokens,
+            )
 
-        if result.tool_calls:
-            # Execute first tool call for MVP
-            tc = result.tool_calls[0]
-            context = {"workspace": parent.workspace} if parent else {}
-            mcp_result = default_dispatcher.execute_tool(tc.name, tc.arguments, context=context)
+            if not result.tool_calls:
+                return result.text
 
-            # Standardize persistence using MCP result shape
-            if parent:
-                # For persistence, we try to get the tool's source_type from the list of tools.
-                tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc.name), None)
-                tool_type = tool_def.source_type if tool_def else "unknown"
-                source_id = tool_def.source_id if tool_def else ""
+            # OpenAI can return multiple tool calls.
+            # Execute all of them and feed them back into the next pass.
+            # Add the assistant message with tool calls to history
+            active_messages.append(
+                ContextMessage(
+                    role="assistant",
+                    content=result.text,
+                    tool_calls=tuple(result.tool_calls)
+                )
+            )
 
-                ToolInvocation.objects.create(
-                    node=parent,
-                    tool_name=tc.name,
-                    tool_type=tool_type,
-                    source_id=source_id,
-                    invocation_payload=json.dumps(tc.arguments),
-                    result_payload=json.dumps(mcp_result.content),
-                    success=not mcp_result.is_error,
+            for tc in result.tool_calls:
+                context = {"workspace": parent.workspace} if parent else {}
+                mcp_result = default_dispatcher.execute_tool(tc.name, tc.arguments, context=context)
+
+                # Standardize persistence using MCP result shape
+                if parent:
+                    tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc.name), None)
+                    tool_type = tool_def.source_type if tool_def else "unknown"
+                    source_id = tool_def.source_id if tool_def else ""
+
+                    ToolInvocation.objects.create(
+                        node=parent,
+                        tool_name=tc.name,
+                        tool_type=tool_type,
+                        source_id=source_id,
+                        invocation_payload=json.dumps(tc.arguments),
+                        result_payload=json.dumps(mcp_result.content),
+                        success=not mcp_result.is_error,
+                    )
+
+                # Append tool result to history
+                active_messages.append(
+                    ContextMessage(
+                        role="tool",
+                        content=json.dumps(mcp_result.content),
+                        tool_call_id=tc.call_id or tc.name,
+                        tool_name=tc.name
+                    )
                 )
 
-            # In a real multi-turn we'd append and call generate_text again.
-            # For now just return a mention that it happened.
-            display_result = json.dumps(mcp_result.content)[:100]
-            return f"[Tool Call: {tc.name} executed. Result: {display_result}...]"
+        # If we reached max_steps and the model is still asking for tools
+        return f"[Tool limit reached after {max_steps} steps. Last result: {active_messages[-1].content[:100]}...]"
 
-        return result.text
     except ProviderError as exc:
         return _build_fallback_assistant_message(
             parent=parent,
@@ -330,11 +364,19 @@ def stream_assistant_reply(
     # Multi-turn tool execution loop
     active_messages = list(context_messages)
     emitted_anything = False
+    max_steps = 3
+    step_count = 0
 
     while True:
-        tool_call_id = ""
-        tool_name = ""
-        tool_args_str = ""
+        if step_count >= max_steps:
+            yield ReplyChunk(text=f"\n[Tool limit reached after {max_steps} steps.]")
+            break
+        
+        step_count += 1
+        current_text = ""
+        # In streaming, we only support one tool call per turn for simplicity of yielding.
+        # However, OpenAI can return multiple. We'll track them.
+        turn_tool_calls: dict[str, dict] = {} # call_id -> {name, arguments}
 
         try:
             for delta in stream_text(
@@ -349,13 +391,14 @@ def stream_assistant_reply(
             ):
                 emitted_anything = True
                 if delta.text:
+                    current_text += delta.text
                     yield ReplyChunk(text=delta.text)
                 if delta.tool_call:
-                    if not tool_name:
-                        tool_name = delta.tool_call.name
-                        tool_call_id = delta.tool_call.call_id
-                        yield ReplyChunk(tool_call={"name": tool_name, "id": tool_call_id})
-                    tool_args_str += delta.tool_call.arguments
+                    call_id = delta.tool_call.call_id
+                    if call_id not in turn_tool_calls:
+                        turn_tool_calls[call_id] = {"name": delta.tool_call.name, "arguments": ""}
+                        yield ReplyChunk(tool_call={"name": delta.tool_call.name, "id": call_id})
+                    turn_tool_calls[call_id]["arguments"] += delta.tool_call.arguments
         except ProviderError as exc:
             if emitted_anything:
                 raise
@@ -371,41 +414,63 @@ def stream_assistant_reply(
                 yield ReplyChunk(text=chunk)
             return
 
-        if not tool_name:
+        if not turn_tool_calls:
             break
 
-        # Execute tool via dispatcher
-        try:
-            args = json.loads(tool_args_str) if tool_args_str else {}
-        except json.JSONDecodeError:
-            args = {"error": "Invalid tool arguments JSON", "raw": tool_args_str}
-
-        context = {"workspace": parent.workspace} if parent else {}
-        mcp_result = default_dispatcher.execute_tool(tool_name, args, context=context)
-
-        # Standardize persistence using MCP result shape
-        if parent:
-            tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tool_name), None)
-            tool_type = tool_def.source_type if tool_def else "unknown"
-            source_id = tool_def.source_id if tool_def else ""
-
-            ToolInvocation.objects.create(
-                node=parent,
-                tool_name=tool_name,
-                tool_type=tool_type,
-                source_id=source_id,
-                invocation_payload=tool_args_str,
-                result_payload=json.dumps(mcp_result.content),
-                success=not mcp_result.is_error,
+        # Record assistant message with tool calls in history
+        from tree_ui.services.providers.base import ToolCall
+        tool_calls_objs = [
+            ToolCall(
+                call_id=cid,
+                name=tc["name"],
+                arguments=_safe_parse_tool_arguments(tc["arguments"]),
             )
+            for cid, tc in turn_tool_calls.items()
+        ]
+        active_messages.append(
+            ContextMessage(
+                role="assistant",
+                content=current_text,
+                tool_calls=tuple(tool_calls_objs)
+            )
+        )
 
-        # Emit result for streaming consumers
-        # In a real multi-turn we'd append and call stream_text again.
-        # For now, just yield the normalized result.
-        yield ReplyChunk(tool_result={"name": tool_name, "result": mcp_result.content})
+        # Execute tool calls
+        for tc_obj in tool_calls_objs:
+            context = {"workspace": parent.workspace} if parent else {}
+            mcp_result = default_dispatcher.execute_tool(tc_obj.name, tc_obj.arguments, context=context)
 
-        # Feed back to model (Simplified: stop after one tool call for MVP)
-        break
+            # Standardize persistence using MCP result shape
+            if parent:
+                tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc_obj.name), None)
+                tool_type = tool_def.source_type if tool_def else "unknown"
+                source_id = tool_def.source_id if tool_def else ""
+
+                ToolInvocation.objects.create(
+                    node=parent,
+                    tool_name=tc_obj.name,
+                    tool_type=tool_type,
+                    source_id=source_id,
+                    invocation_payload=json.dumps(tc_obj.arguments),
+                    result_payload=json.dumps(mcp_result.content),
+                    success=not mcp_result.is_error,
+                )
+
+            # Emit result for streaming consumers
+            yield ReplyChunk(tool_result={"name": tc_obj.name, "result": mcp_result.content})
+
+            # Feed back to model
+            active_messages.append(
+                ContextMessage(
+                    role="tool",
+                    content=json.dumps(mcp_result.content),
+                    tool_call_id=tc_obj.call_id or tc_obj.name,
+                    tool_name=tc_obj.name
+                )
+            )
+        
+        # Reset for next model pass
+        continue
 
 
 def create_node(

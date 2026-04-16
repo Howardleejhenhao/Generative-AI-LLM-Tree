@@ -62,16 +62,33 @@ def _build_payload(
     top_p: float | None,
     max_output_tokens: int | None,
 ) -> dict:
+    payload_messages = []
+    for message in messages:
+        msg_dict = {
+            "role": message.role,
+            "content": _build_content_parts(message),
+        }
+        if message.tool_calls:
+            msg_dict["tool_calls"] = [
+                {
+                    "id": tc.call_id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments),
+                    },
+                }
+                for tc in message.tool_calls
+            ]
+        if message.tool_call_id:
+            msg_dict["tool_call_id"] = message.tool_call_id
+        
+        payload_messages.append(msg_dict)
+
     payload = {
         "model": model_name,
         "instructions": system_instruction,
-        "input": [
-            {
-                "role": message.role,
-                "content": _build_content_parts(message),
-            }
-            for message in messages
-        ],
+        "input": payload_messages,
     }
     if stream:
         payload["stream"] = True

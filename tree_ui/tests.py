@@ -1553,12 +1553,19 @@ class ToolUseTests(TestCase):
             workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
         )
         
-        mock_generate_text.return_value = GenerationResult(
-            text="",
-            provider="openai",
-            model_name="gpt-4.1-mini",
-            tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
-        )
+        mock_generate_text.side_effect = [
+            GenerationResult(
+                text="",
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
+            ),
+            GenerationResult(
+                text="Final answer",
+                provider="openai",
+                model_name="gpt-4.1-mini"
+            )
+        ]
         
         from tree_ui.services.node_creation import generate_assistant_reply
         generate_assistant_reply(
@@ -1777,12 +1784,19 @@ class MCPAdapterTests(TestCase):
             workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
         )
 
-        mock_generate_text.return_value = GenerationResult(
-            text="",
-            provider="openai",
-            model_name="gpt-4.1-mini",
-            tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
-        )
+        mock_generate_text.side_effect = [
+            GenerationResult(
+                text="",
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                tool_calls=[ToolCall(call_id="call_1", name="compare_branches", arguments={"node_id_a": node.id, "node_id_b": node.id})]
+            ),
+            GenerationResult(
+                text="Final result",
+                provider="openai",
+                model_name="gpt-4.1-mini"
+            )
+        ]
 
         from tree_ui.services.node_creation import generate_assistant_reply
         generate_assistant_reply(
@@ -2562,3 +2576,201 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertIsNone(source.last_check_tool_count)
         self.assertEqual(source.last_check_tools_summary, "")
         self.assertNotContains(response, "Persisted Ready")
+
+
+class ToolTraceInspectorTests(TestCase):
+    def test_serialize_node_includes_created_at_for_tool_invocations(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        ToolInvocation.objects.create(
+            node=node,
+            tool_name="test_tool",
+            tool_type="mcp",
+            source_id="mcp-1",
+            invocation_payload='{"q": "test"}',
+            result_payload='{"ans": "ok"}',
+            success=True
+        )
+
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        inv = data["tool_invocations"][0]
+        self.assertIn("created_at", inv)
+        self.assertIsNotNone(inv["created_at"])
+
+    def test_node_chat_page_renders_tool_inspector_button_and_panel(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        node = ConversationNode.objects.create(
+            workspace=workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        
+        response = self.client.get(reverse("workspace_node_chat", args=[workspace.slug, node.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="tool-inspector-toggle-button"')
+        self.assertContains(response, 'id="chat-tool-inspector"')
+        self.assertContains(response, "Tool Trace")
+
+
+class MultiStepToolUseTests(TestCase):
+    def setUp(self):
+        from tree_ui.services.mcp.dispatcher import default_dispatcher
+        default_dispatcher.refresh()
+        self.workspace = Workspace.objects.create(name="Test", slug="test")
+        self.node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Root",
+            provider="openai",
+            model_name="gpt-4.1-mini"
+        )
+
+    def test_non_streaming_multi_step_loop(self):
+        from unittest.mock import patch
+        from tree_ui.services.providers.base import GenerationResult, ToolCall
+        from tree_ui.services.node_creation import generate_assistant_reply
+
+        # First pass returns a tool call, second pass returns final text
+        mock_results = [
+            GenerationResult(
+                text="",
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                tool_calls=[ToolCall(call_id="call_1", name="external_echo", arguments={"message": "hello"})]
+            ),
+            GenerationResult(
+                text="The echo result was hello",
+                provider="openai",
+                model_name="gpt-4.1-mini"
+            )
+        ]
+
+        with patch("tree_ui.services.node_creation.generate_text", side_effect=mock_results) as mock_gen:
+            reply = generate_assistant_reply(
+                parent=self.node,
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                prompt="Echo hello"
+            )
+            self.assertEqual(reply, "The echo result was hello")
+            self.assertEqual(mock_gen.call_count, 2)
+            
+            # Verify ToolInvocation was created
+            self.assertEqual(self.node.tool_invocations.count(), 1)
+            inv = self.node.tool_invocations.first()
+            self.assertEqual(inv.tool_name, "external_echo")
+
+    def test_non_streaming_bounded_loop(self):
+        from unittest.mock import patch
+        from tree_ui.services.providers.base import GenerationResult, ToolCall
+        from tree_ui.services.node_creation import generate_assistant_reply
+
+        # Model keeps asking for tools
+        mock_result = GenerationResult(
+            text="",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            tool_calls=[ToolCall(call_id="call_x", name="external_echo", arguments={"message": "repeat"})]
+        )
+
+        with patch("tree_ui.services.node_creation.generate_text", return_value=mock_result) as mock_gen:
+            reply = generate_assistant_reply(
+                parent=self.node,
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                prompt="Infinite loop"
+            )
+            self.assertIn("Tool limit reached", reply)
+            self.assertEqual(mock_gen.call_count, 3) # Max steps is 3
+
+    def test_streaming_multi_step_loop(self):
+        from unittest.mock import patch
+        from tree_ui.services.providers.base import ProviderDelta, ToolCallDelta
+        from tree_ui.services.node_creation import stream_assistant_reply
+
+        # First pass yields tool call, second pass yields final text
+        pass1 = [
+            ProviderDelta(tool_call=ToolCallDelta(call_id="c1", name="external_echo", arguments='{"message":')),
+            ProviderDelta(tool_call=ToolCallDelta(call_id="c1", name="external_echo", arguments='"streamed"}'))
+        ]
+        pass2 = [
+            ProviderDelta(text="Final streamed answer")
+        ]
+
+        with patch("tree_ui.services.node_creation.stream_text", side_effect=[pass1, pass2]) as mock_stream:
+            chunks = list(stream_assistant_reply(
+                parent=self.node,
+                provider="openai",
+                model_name="gpt-4.1-mini",
+                prompt="Stream echo"
+            ))
+            
+            # Verify we got tool call, tool result, and final text
+            tool_calls = [c.tool_call for c in chunks if c.tool_call]
+            tool_results = [c.tool_result for c in chunks if c.tool_result]
+            final_text = "".join(c.text for c in chunks if c.text)
+            
+            self.assertEqual(len(tool_calls), 1)
+            self.assertEqual(tool_calls[0]["name"], "external_echo")
+            self.assertEqual(len(tool_results), 1)
+            self.assertEqual(final_text, "Final streamed answer")
+            self.assertEqual(mock_stream.call_count, 2)
+
+    def test_streaming_multi_step_loop_handles_invalid_tool_json(self):
+        from unittest.mock import patch
+        from tree_ui.services.providers.base import ProviderDelta, ToolCallDelta
+        from tree_ui.services.node_creation import stream_assistant_reply
+
+        pass1 = [
+            ProviderDelta(
+                tool_call=ToolCallDelta(
+                    call_id="c1",
+                    name="external_echo",
+                    arguments='{"message": "broken"',
+                )
+            )
+        ]
+        pass2 = [
+            ProviderDelta(text="Recovered after invalid tool args")
+        ]
+
+        with patch("tree_ui.services.node_creation.stream_text", side_effect=[pass1, pass2]) as mock_stream:
+            chunks = list(
+                stream_assistant_reply(
+                    parent=self.node,
+                    provider="openai",
+                    model_name="gpt-4.1-mini",
+                    prompt="Handle invalid args",
+                )
+            )
+
+            tool_results = [c.tool_result for c in chunks if c.tool_result]
+            final_text = "".join(c.text for c in chunks if c.text)
+
+            self.assertEqual(len(tool_results), 1)
+            self.assertEqual(tool_results[0]["name"], "external_echo")
+            self.assertEqual(final_text, "Recovered after invalid tool args")
+            self.assertEqual(mock_stream.call_count, 2)
+
+    def test_build_generation_messages_handles_invalid_persisted_tool_payload(self):
+        from tree_ui.services.context_builder import build_generation_messages
+
+        ToolInvocation.objects.create(
+            node=self.node,
+            tool_name="external_echo",
+            tool_type="mock",
+            source_id="mock-source",
+            invocation_payload='{"message": "broken"',
+            result_payload='{"message": "ok"}',
+            success=False,
+        )
+
+        messages = build_generation_messages(parent=self.node, prompt="Continue")
+        assistant_tool_messages = [m for m in messages if m.role == "assistant" and m.tool_calls]
+
+        self.assertEqual(len(assistant_tool_messages), 1)
+        self.assertEqual(assistant_tool_messages[0].tool_calls[0].name, "external_echo")
+        self.assertEqual(
+            assistant_tool_messages[0].tool_calls[0].arguments["error"],
+            "Invalid persisted tool arguments JSON",
+        )

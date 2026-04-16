@@ -364,6 +364,10 @@ Rules for delegated implementation handoffs:
 * the handoff prompt must explicitly state that the other agent is **not allowed to merge**
 * the handoff prompt must explicitly state that the other agent is **not allowed to modify** `docs/agent-progress.md`; that file is maintained only by this coding agent during review / integration
 * the handoff prompt must explicitly state that the other agent is **not responsible for git operations**; branch creation, commit creation, push, merge, and other final git workflow steps are handled by this coding agent
+* the handoff prompt must explicitly require the other agent to produce a Markdown task report after finishing implementation
+* that report must be saved as a new `.md` file inside the dedicated `task_reports/` folder
+* the report filename should use a timestamped style such as `task_reports/REPORT-YYYY-MM-DD-HHMM.md`
+* the delegated agent's work is not considered complete until both the implementation and the report file are present
 * the other agent may implement, test, and report results, but must leave final approval and merge decisions to this coding agent
 * after review is complete and the work is confirmed correct, this coding agent is responsible for merging the accepted changes back into `main`
 

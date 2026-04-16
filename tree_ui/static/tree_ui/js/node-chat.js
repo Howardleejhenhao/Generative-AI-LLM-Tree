@@ -31,10 +31,17 @@ const editVariantEditors = document.getElementById("edit-variant-editors");
 const editVariantCancelButton = document.getElementById("edit-variant-cancel-button");
 const editVariantSubmitButton = document.getElementById("edit-variant-submit-button");
 const editVariantFeedback = document.getElementById("edit-variant-feedback");
+
+const toolInspector = document.getElementById("chat-tool-inspector");
+const toolInspectorToggleButton = document.getElementById("tool-inspector-toggle-button");
+const toolInspectorCloseButton = document.getElementById("chat-tool-inspector-close-button");
+const toolList = document.getElementById("chat-tool-list");
+
 const PROMPT_MAX_HEIGHT = 176;
 let stagedImages = [];
 let selectedPreviewUrls = [];
 let pendingPreviewAttachments = [];
+let streamingToolInvocations = [];
 
 function buildAttachmentFile(file) {
   if (file.name) {
@@ -83,6 +90,115 @@ function scrollToBottom() {
 
 function updateJumpButton() {
   jumpButton.hidden = isNearBottom();
+}
+
+function renderToolTrace() {
+  if (!toolList) return;
+
+  const allInvocations = [...(payload.tool_invocations || []), ...streamingToolInvocations];
+  toolList.innerHTML = "";
+
+  if (allInvocations.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "chat-inspector-empty";
+    empty.textContent = "No tool invocations for this node.";
+    toolList.appendChild(empty);
+    return;
+  }
+
+  for (const inv of allInvocations) {
+    const isStreaming = !inv.id;
+    const name = inv.name || inv.tool_call?.name || "Unknown Tool";
+    const args = inv.args || inv.tool_call?.args;
+    const result = inv.result || inv.tool_result?.result;
+    const success = inv.success ?? (inv.tool_result ? !inv.tool_result.is_error : true);
+    const toolType = inv.tool_type || (inv.tool_call ? "streaming" : "unknown");
+    const sourceId = inv.source_id || "";
+    const createdAt = inv.created_at;
+
+    const card = document.createElement("div");
+    card.className = `tool-trace-card ${success ? 'tool-trace-success' : 'tool-trace-failure'} ${isStreaming ? 'tool-trace-streaming' : ''}`;
+
+    const header = document.createElement("header");
+    header.className = "tool-trace-header";
+
+    const meta = document.createElement("div");
+    meta.className = "tool-trace-meta";
+    
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "tool-trace-name";
+    nameSpan.textContent = name;
+    
+    const typeBadge = document.createElement("span");
+    typeBadge.className = "tool-trace-type-badge";
+    typeBadge.textContent = toolType;
+    
+    meta.append(nameSpan, typeBadge);
+    
+    if (sourceId) {
+      const sourceSpan = document.createElement("span");
+      sourceSpan.className = "tool-trace-source";
+      sourceSpan.textContent = `@ ${sourceId}`;
+      meta.appendChild(sourceSpan);
+    }
+
+    const statusDiv = document.createElement("div");
+    statusDiv.className = "tool-trace-status";
+    
+    const statusLabel = document.createElement("span");
+    statusLabel.className = success ? 'status-success' : 'status-danger';
+    statusLabel.textContent = success ? 'Success' : 'Failed';
+    
+    statusDiv.appendChild(statusLabel);
+    
+    if (createdAt) {
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "tool-trace-time";
+      timeSpan.textContent = new Date(createdAt).toLocaleTimeString();
+      statusDiv.appendChild(timeSpan);
+    }
+
+    header.append(meta, statusDiv);
+
+    const body = document.createElement("div");
+    body.className = "tool-trace-body";
+
+    // Args details
+    const argsDetails = document.createElement("details");
+    argsDetails.className = "tool-trace-details";
+    if (args) argsDetails.open = true;
+    const argsSummary = document.createElement("summary");
+    argsSummary.textContent = "Arguments";
+    const argsPre = document.createElement("pre");
+    const argsCode = document.createElement("code");
+    argsCode.textContent = JSON.stringify(args || {}, null, 2);
+    argsPre.appendChild(argsCode);
+    argsDetails.append(argsSummary, argsPre);
+
+    // Result details
+    const resDetails = document.createElement("details");
+    resDetails.className = "tool-trace-details";
+    if (result) resDetails.open = true;
+    const resSummary = document.createElement("summary");
+    resSummary.textContent = "Result";
+    const resPre = document.createElement("pre");
+    const resCode = document.createElement("code");
+    
+    let resText = "No result yet.";
+    if (result) {
+      resText = JSON.stringify(result, null, 2);
+    } else if (isStreaming && !inv.tool_result) {
+      resText = "Waiting for result...";
+    }
+    resCode.textContent = resText;
+    
+    resPre.appendChild(resCode);
+    resDetails.append(resSummary, resPre);
+
+    body.append(argsDetails, resDetails);
+    card.append(header, body);
+    toolList.appendChild(card);
+  }
 }
 
 function renderTranscript(extraMessages = []) {
@@ -287,6 +403,8 @@ async function handleSubmit(event) {
   pendingPreviewAttachments = selectedImages.map((file) => buildAttachmentPreview(file));
   resetComposer({ focus: false, clearPendingAttachments: false });
   submitButton.disabled = true;
+  streamingToolInvocations = [];
+  renderToolTrace();
   let previewPrompt = "";
   let assistantText = "";
   let extraStreamingMessages = [];
@@ -332,12 +450,21 @@ async function handleSubmit(event) {
         },
         tool_call(data) {
           extraStreamingMessages.push({ tool_call: data });
+          streamingToolInvocations.push({ tool_call: data, name: data.name, args: data.args, tool_type: data.tool_type, source_id: data.source_id, created_at: new Date().toISOString() });
           renderTranscript(extraStreamingMessages);
+          renderToolTrace();
           scrollToBottom();
         },
         tool_result(data) {
           extraStreamingMessages.push({ tool_result: data });
+          const inv = streamingToolInvocations.find(i => (i.name === data.name || (i.tool_call && i.tool_call.name === data.name)) && !i.tool_result);
+          if (inv) {
+            inv.tool_result = data;
+            inv.result = data.result;
+            inv.success = !data.is_error;
+          }
           renderTranscript(extraStreamingMessages);
+          renderToolTrace();
           scrollToBottom();
         },
         node(data) {
@@ -348,6 +475,7 @@ async function handleSubmit(event) {
           payload.messages = data.node.messages;
           payload.attachments = data.node.attachments || [];
           payload.tool_invocations = data.node.tool_invocations || [];
+          streamingToolInvocations = [];
 
           if (providerLabel) {
             providerLabel.textContent = data.node.provider.charAt(0).toUpperCase() + data.node.provider.slice(1);
@@ -369,6 +497,7 @@ async function handleSubmit(event) {
           resetComposer();
           renderAttachmentPanel();
           renderTranscript();
+          renderToolTrace();
           scrollToBottom();
         },
         error(data) {
@@ -484,6 +613,19 @@ if (payload.messages.length) {
   editVariantToggleButton.hidden = true;
 }
 
+toolInspectorToggleButton.addEventListener("click", () => {
+  toolInspector.hidden = !toolInspector.hidden;
+  toolInspectorToggleButton.classList.toggle("chat-shell-action-active", !toolInspector.hidden);
+  if (!toolInspector.hidden) {
+    renderToolTrace();
+  }
+});
+
+toolInspectorCloseButton.addEventListener("click", () => {
+  toolInspector.hidden = true;
+  toolInspectorToggleButton.classList.toggle("chat-shell-action-active", false);
+});
+
 promptInput.addEventListener("input", resizePromptInput);
 promptInput.addEventListener("input", updateComposerState);
 promptInput.addEventListener("keydown", handlePromptKeydown);
@@ -511,5 +653,6 @@ resizePromptInput();
 renderSelectedFiles();
 renderAttachmentPanel();
 renderTranscript();
+renderToolTrace();
 updateComposerState();
 scrollToBottom();
