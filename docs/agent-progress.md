@@ -11,6 +11,45 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-17 09:30
+
+### Session Goal
+- Review the delegated branch comparison inspector implementation before accepting it for integration.
+
+### Planned Tasks
+- inspect the delegated report and changed files for the comparison workflow
+- verify test and migration status locally
+- identify gaps between the implemented comparison UI and the requested branch-comparison acceptance criteria
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-17-0915.md` and the associated changes in graph-view JS, templates, CSS, URLs, views, and tests.
+- Ran `python3 manage.py test tree_ui.tests`; all 117 tests passed in the delegated implementation state.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Confirmed the implementation adds a usable compare-mode flow in graph view and a side-by-side modal backed by a new comparison endpoint.
+- Identified two remaining product gaps:
+  - the comparison UI does not surface memory usage/visibility even though memory data is already available in serialized node payloads
+  - lineage titles are computed on the backend but never rendered, so the branch context is not actually shown at a high level in the UI
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this review-only session
+- Push status:
+  - not pushed
+
+### Current Status
+- The branch comparison feature is partially implemented but not yet accepted for integration because it still misses part of the requested comparison surface.
+
+### Next Recommended Step
+- Patch the comparison modal to show memory visibility and branch lineage titles so the UI compares actual branch context instead of mostly node metadata.
+
+### Known Issues / Blockers / Tech Debt
+- Existing tests cover the endpoint and basic modal wiring, but not the completeness of comparison content shown to the user.
+
 ## Session 2026-04-16 20:10
 
 ### Session Goal

@@ -2863,3 +2863,113 @@ class MemoryInspectorTests(TestCase):
         self.assertContains(response, 'id="memory-inspector-toggle-button"')
         self.assertContains(response, 'id="chat-memory-inspector"')
         self.assertContains(response, "Memory Context")
+
+class BranchComparisonViewTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Comparison Test", slug="comp-test")
+        self.node_a = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Node A",
+            summary="Summary A",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+            routing_mode=ConversationNode.RoutingMode.MANUAL,
+        )
+        self.node_b = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Node B",
+            summary="Summary B",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.5-flash",
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+        )
+        NodeMessage.objects.create(
+            node=self.node_a,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Assistant content A",
+            order_index=0,
+        )
+        NodeMessage.objects.create(
+            node=self.node_b,
+            role=NodeMessage.Role.ASSISTANT,
+            content="Assistant content B",
+            order_index=0,
+        )
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.FACT,
+            title="Shared Context",
+            content="Workspace-level comparison context.",
+            is_pinned=True,
+        )
+
+    def test_compare_nodes_endpoint_returns_comparison_payload(self):
+        url = reverse("compare_nodes", args=[self.workspace.slug])
+        response = self.client.post(
+            url,
+            data=json.dumps({
+                "node_id_a": self.node_a.id,
+                "node_id_b": self.node_b.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("node_a", data)
+        self.assertIn("node_b", data)
+        
+        # Verify specific fields
+        self.assertEqual(data["node_a"]["title"], "Node A")
+        self.assertEqual(data["node_b"]["title"], "Node B")
+        self.assertEqual(data["node_a"]["provider"], "openai")
+        self.assertEqual(data["node_b"]["provider"], "gemini")
+        self.assertEqual(data["node_a"]["lineage"]["depth"], 1)
+        self.assertEqual(data["node_b"]["lineage"]["depth"], 1)
+        self.assertEqual(data["node_a"]["lineage"]["titles"], ["Node A"])
+        self.assertEqual(data["node_b"]["lineage"]["titles"], ["Node B"])
+        self.assertEqual(data["node_a"]["messages"][0]["content"], "Assistant content A")
+        self.assertEqual(data["node_b"]["messages"][0]["content"], "Assistant content B")
+        self.assertTrue(any(memory["title"] == "Shared Context" for memory in data["node_a"]["memories"]))
+        self.assertTrue(any(memory["title"] == "Shared Context" for memory in data["node_b"]["memories"]))
+
+    def test_compare_nodes_requires_same_workspace(self):
+        other_ws = Workspace.objects.create(name="Other", slug="other")
+        other_node = ConversationNode.objects.create(
+            workspace=other_ws,
+            title="Other Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        
+        url = reverse("compare_nodes", args=[self.workspace.slug])
+        response = self.client.post(
+            url,
+            data=json.dumps({
+                "node_id_a": self.node_a.id,
+                "node_id_b": other_node.id,
+            }),
+            content_type="application/json",
+        )
+
+        # Should return 404 because other_node is not in self.workspace
+        self.assertEqual(response.status_code, 404)
+
+    def test_compare_nodes_requires_both_ids(self):
+        url = reverse("compare_nodes", args=[self.workspace.slug])
+        response = self.client.post(
+            url,
+            data=json.dumps({
+                "node_id_a": self.node_a.id,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_workspace_graph_page_renders_compare_dialog_shell(self):
+        response = self.client.get(reverse("workspace_graph", args=[self.workspace.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="node-compare-button"')
+        self.assertContains(response, 'id="compare-dialog"')
+        self.assertContains(response, "Branch Comparison")

@@ -61,6 +61,11 @@ urlpatterns = [
         views.create_edited_node_variant,
         name="create_edited_node_variant",
     ),
+    path(
+        "api/workspaces/<slug:slug>/nodes/compare/",
+        views.compare_nodes,
+        name="compare_nodes",
+    ),
     path("mcp-sources/", views.mcp_source_list, name="mcp_source_list"),
     path("mcp-sources/add/", views.mcp_source_create, name="mcp_source_create"),
     path(

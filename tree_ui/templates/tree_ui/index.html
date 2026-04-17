@@ -92,6 +92,9 @@
             <div class="workspace-selection-flags">
               <span class="workspace-summary-pill" id="workspace-selection-type">New root</span>
               <span class="workspace-summary-pill" id="workspace-selection-depth">Depth 0</span>
+              <button class="detail-toggle-button detail-toggle-button-quiet" id="node-compare-button" type="button" disabled>
+                Compare
+              </button>
               <button class="detail-toggle-button detail-toggle-button-quiet" id="node-rename-button" type="button" disabled>
                 Rename node
               </button>
@@ -303,6 +306,7 @@
   <div id="node-chat-url-template" data-node-chat-url-template="{% url 'workspace_node_chat' graph_payload.workspace.slug 999999 %}" hidden></div>
   <div id="node-delete-url-template" data-node-delete-url-template="{% url 'delete_workspace_node' graph_payload.workspace.slug 999999 %}" hidden></div>
   <div id="node-title-update-url-template" data-node-title-update-url-template="{% url 'update_node_title' graph_payload.workspace.slug 999999 %}" hidden></div>
+  <div id="compare-nodes-url" data-compare-nodes-url="{% url 'compare_nodes' graph_payload.workspace.slug %}" hidden></div>
   <section class="workspace-help-dialog" id="workspace-help-dialog" hidden aria-hidden="true">
     <div class="workspace-help-backdrop" id="workspace-help-backdrop"></div>
     <div class="workspace-help-card" role="dialog" aria-modal="true" aria-labelledby="workspace-help-title">
@@ -364,6 +368,22 @@
           Delete
         </button>
       </div>
+    </div>
+  </section>
+
+  <section class="compare-dialog" id="compare-dialog" hidden aria-hidden="true">
+    <div class="compare-dialog-backdrop" id="compare-dialog-backdrop"></div>
+    <div class="compare-dialog-card" role="dialog" aria-modal="true" aria-labelledby="compare-dialog-title">
+      <div class="compare-dialog-header">
+        <div>
+          <p class="panel-kicker">Branch Comparison</p>
+          <h2 id="compare-dialog-title">Compare Nodes</h2>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="compare-dialog-close" type="button">
+          Close
+        </button>
+      </div>
+      <div class="compare-dialog-content" id="compare-dialog-content"></div>
     </div>
   </section>
 

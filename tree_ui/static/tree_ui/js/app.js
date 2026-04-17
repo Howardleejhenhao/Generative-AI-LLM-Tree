@@ -20,6 +20,7 @@ const workspaceHelpDialog = document.getElementById("workspace-help-dialog");
 const workspaceHelpBackdrop = document.getElementById("workspace-help-backdrop");
 const workspaceHelpClose = document.getElementById("workspace-help-close");
 const workspaceDeleteButton = document.getElementById("workspace-delete-button");
+const nodeCompareButton = document.getElementById("node-compare-button");
 const nodeRenameButton = document.getElementById("node-rename-button");
 const nodeDeleteButton = document.getElementById("node-delete-button");
 const fitViewButton = document.getElementById("graph-fit-view");
@@ -31,6 +32,11 @@ const graphStage = document.getElementById("graph-stage");
 const nodeChatUrlTemplate = document.getElementById("node-chat-url-template");
 const nodeDeleteUrlTemplate = document.getElementById("node-delete-url-template");
 const nodeTitleUpdateUrlTemplate = document.getElementById("node-title-update-url-template");
+const compareNodesUrl = document.getElementById("compare-nodes-url").dataset.compareNodesUrl;
+const compareDialog = document.getElementById("compare-dialog");
+const compareDialogBackdrop = document.getElementById("compare-dialog-backdrop");
+const compareDialogClose = document.getElementById("compare-dialog-close");
+const compareDialogContent = document.getElementById("compare-dialog-content");
 const formTarget = document.getElementById("form-target");
 const feedback = document.getElementById("form-feedback");
 const nodeForm = document.getElementById("node-form");
@@ -80,6 +86,7 @@ let latestViewportState = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
 let pendingConfirmation = null;
+let isCompareMode = false;
 
 function handleViewportChange(viewportState) {
   latestViewportState = viewportState;
@@ -252,6 +259,127 @@ function updateSearchState() {
   renderGraphCanvas();
 }
 
+function setCompareDialogOpen(isOpen) {
+  compareDialog.hidden = !isOpen;
+  compareDialog.setAttribute("aria-hidden", String(!isOpen));
+}
+
+function renderComparison(data) {
+  const { node_a, node_b } = data;
+  compareDialogContent.innerHTML = "";
+
+  const createColumn = (node) => {
+    const col = document.createElement("div");
+    col.className = "compare-col";
+
+    const header = document.createElement("div");
+    header.className = "compare-node-header";
+    const title = document.createElement("h3");
+    title.textContent = node.title;
+    const meta = document.createElement("p");
+    meta.className = "panel-kicker";
+    meta.textContent = `${node.provider} / ${node.model_name}`;
+    header.append(title, meta);
+
+    const stats = document.createElement("div");
+    stats.className = "compare-stats";
+    const addStat = (label, value) => {
+      const row = document.createElement("div");
+      row.className = "compare-stat";
+      const l = document.createElement("label");
+      l.textContent = `${label}:`;
+      const v = document.createElement("span");
+      v.textContent = value || "N/A";
+      row.append(l, v);
+      stats.appendChild(row);
+    };
+
+    addStat("Routing", node.routing_mode);
+    addStat("Decision", node.routing_decision);
+    addStat("Branch Depth", node.lineage.depth);
+    addStat("Total Tools", node.lineage.total_tool_count);
+
+    const retrievedMemories = (node.memories || []).filter((memory) => memory.is_retrieved);
+    addStat("Retrieved Memory", `${retrievedMemories.length} / ${(node.memories || []).length}`);
+
+    const summary = document.createElement("div");
+    summary.className = "compare-summary";
+    const summaryTitle = document.createElement("h4");
+    summaryTitle.textContent = "Summary";
+    const summaryText = document.createElement("p");
+    summaryText.textContent = node.summary || "No summary available.";
+    summary.append(summaryTitle, summaryText);
+
+    const lineage = document.createElement("div");
+    lineage.className = "compare-lineage";
+    const lineageTitle = document.createElement("h4");
+    lineageTitle.textContent = "Branch Lineage";
+    const lineageList = document.createElement("ol");
+    lineageList.className = "compare-lineage-list";
+    for (const titleText of node.lineage.titles || []) {
+      const item = document.createElement("li");
+      item.textContent = titleText;
+      lineageList.appendChild(item);
+    }
+    if (!lineageList.children.length) {
+      const item = document.createElement("li");
+      item.textContent = "No lineage available.";
+      lineageList.appendChild(item);
+    }
+    lineage.append(lineageTitle, lineageList);
+
+    const memorySection = document.createElement("div");
+    memorySection.className = "compare-memory";
+    const memoryTitle = document.createElement("h4");
+    memoryTitle.textContent = "Retrieved Memory";
+    memorySection.appendChild(memoryTitle);
+
+    if (retrievedMemories.length) {
+      const memoryList = document.createElement("ul");
+      memoryList.className = "compare-memory-list";
+      for (const memory of retrievedMemories) {
+        const item = document.createElement("li");
+        const label = document.createElement("strong");
+        label.textContent = `${memory.scope} / ${memory.memory_type}`;
+        const text = document.createElement("span");
+        const titlePrefix = memory.title ? `${memory.title}: ` : "";
+        text.textContent = `${titlePrefix}${memory.content}`;
+        item.append(label, text);
+        memoryList.appendChild(item);
+      }
+      memorySection.appendChild(memoryList);
+    } else {
+      const emptyMemory = document.createElement("p");
+      emptyMemory.className = "compare-empty-copy";
+      emptyMemory.textContent = "No retrieved memory for this node.";
+      memorySection.appendChild(emptyMemory);
+    }
+
+    const assistantMsgs = node.messages.filter(m => m.role === "assistant");
+    if (assistantMsgs.length > 0) {
+        const lastMsg = assistantMsgs[assistantMsgs.length - 1];
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "compare-last-message";
+        const msgTitle = document.createElement("h4");
+        msgTitle.textContent = "Latest Assistant Output";
+        const msgBody = document.createElement("div");
+        msgBody.className = "compare-message-body";
+        msgBody.textContent = lastMsg.content.slice(0, 500) + (lastMsg.content.length > 500 ? "..." : "");
+        msgDiv.append(msgTitle, msgBody);
+        col.append(header, stats, summary, lineage, memorySection, msgDiv);
+    } else {
+        col.append(header, stats, summary, lineage, memorySection);
+    }
+
+    return col;
+  };
+
+  const grid = document.createElement("div");
+  grid.className = "compare-grid";
+  grid.append(createColumn(node_a), createColumn(node_b));
+  compareDialogContent.append(grid);
+}
+
 function updateWorkspaceSummary() {
   const nodeCount = payload.nodes.length;
   const selectedNode = getSelectedNode();
@@ -277,6 +405,7 @@ function updateWorkspaceSummary() {
 
   workspaceSelectionType.textContent = selectionTypeText;
   workspaceSelectionDepth.textContent = `Depth ${lineageIds.length}`;
+  nodeCompareButton.disabled = !selectedNode || nodeCount < 2;
   nodeRenameButton.disabled = !selectedNode;
   nodeDeleteButton.disabled = !selectedNode;
 }
@@ -543,6 +672,11 @@ function showEmptyNodeState() {
 }
 
 function updateSelection(nodeId) {
+  if (isCompareMode && selectedNodeId && String(nodeId) !== selectedNodeId) {
+    performComparison(selectedNodeId, nodeId);
+    return;
+  }
+
   selectedNodeId = String(nodeId);
   const node = getSelectedNode();
 
@@ -766,6 +900,46 @@ function handleWorkspaceDelete() {
   });
 }
 
+async function performComparison(nodeIdA, nodeIdB) {
+  graphStatus.textContent = "Comparing branches...";
+  try {
+    const data = await postJSON(
+      compareNodesUrl,
+      {
+        node_id_a: nodeIdA,
+        node_id_b: nodeIdB,
+      },
+      csrfToken,
+    );
+    renderComparison(data);
+    setCompareDialogOpen(true);
+  } catch (error) {
+    graphStatus.textContent = `Comparison failed: ${error.message}`;
+  } finally {
+    isCompareMode = false;
+    nodeCompareButton.textContent = "Compare";
+    nodeCompareButton.classList.remove("detail-toggle-button-active");
+    updateWorkspaceSummary();
+  }
+}
+
+function handleNodeCompare() {
+  if (isCompareMode) {
+    isCompareMode = false;
+    nodeCompareButton.textContent = "Compare";
+    nodeCompareButton.classList.remove("detail-toggle-button-active");
+  } else {
+    const selectedNode = getSelectedNode();
+    if (!selectedNode) {
+      return;
+    }
+    isCompareMode = true;
+    nodeCompareButton.textContent = "Select node to compare...";
+    nodeCompareButton.classList.add("detail-toggle-button-active");
+    graphStatus.textContent = "Select another node in the graph to compare with the current selection.";
+  }
+}
+
 async function handleNodeRename() {
   const selectedNode = getSelectedNode();
   if (!selectedNode) {
@@ -936,11 +1110,14 @@ workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspa
 workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceHelpBackdrop.addEventListener("click", () => setWorkspaceHelpOpen(false));
 workspaceDeleteButton.addEventListener("click", handleWorkspaceDelete);
+nodeCompareButton.addEventListener("click", handleNodeCompare);
 nodeRenameButton.addEventListener("click", handleNodeRename);
 nodeDeleteButton.addEventListener("click", handleNodeDelete);
 confirmDialogCancel.addEventListener("click", closeConfirmationDialog);
 confirmDialogBackdrop.addEventListener("click", closeConfirmationDialog);
 confirmDialogConfirm.addEventListener("click", handleConfirmationFinal);
+compareDialogClose.addEventListener("click", () => setCompareDialogOpen(false));
+compareDialogBackdrop.addEventListener("click", () => setCompareDialogOpen(false));
 fitViewButton.addEventListener("click", () => viewport.fitToGraph());
 zoomOutButton.addEventListener("click", () => viewport.zoomOut());
 zoomInButton.addEventListener("click", () => viewport.zoomIn());

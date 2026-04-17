@@ -562,6 +562,50 @@ def stream_node_message(request, slug: str, node_id: int):
     response["X-Accel-Buffering"] = "no"
     return response
 
+@require_POST
+def compare_nodes(request, slug: str):
+    workspace = get_object_or_404(Workspace, slug=slug)
+    try:
+        payload = _parse_json_payload(request)
+        node_id_a = payload.get("node_id_a")
+        node_id_b = payload.get("node_id_b")
+    except ValueError as exc:
+        return HttpResponseBadRequest(str(exc))
+
+    if not node_id_a or not node_id_b:
+        return HttpResponseBadRequest("node_id_a and node_id_b are required.")
+
+    node_a = get_object_or_404(
+        ConversationNode.objects.prefetch_related("messages__attachments", "attachments", "tool_invocations"),
+        pk=node_id_a,
+        workspace=workspace,
+    )
+    node_b = get_object_or_404(
+        ConversationNode.objects.prefetch_related("messages__attachments", "attachments", "tool_invocations"),
+        pk=node_id_b,
+        workspace=workspace,
+    )
+
+    data_a = serialize_node(node_a)
+    data_b = serialize_node(node_b)
+
+    def get_lineage_info(node):
+        lineage = _build_lineage(node)
+        return {
+            "depth": len(lineage),
+            "titles": [n.title for n in lineage],
+            "total_tool_count": sum(n.tool_invocations.count() for n in lineage),
+        }
+
+    data_a["lineage"] = get_lineage_info(node_a)
+    data_b["lineage"] = get_lineage_info(node_b)
+
+    return JsonResponse({
+        "node_a": data_a,
+        "node_b": data_b,
+    })
+
+
 def mcp_source_list(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     sources = MCPSource.objects.all().order_by("created_at")
