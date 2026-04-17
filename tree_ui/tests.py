@@ -3085,3 +3085,37 @@ class GraphFilterViewTests(TestCase):
         self.assertContains(response, 'data-filter="memory"')
         self.assertContains(response, 'data-filter="auto"')
         self.assertContains(response, 'data-filter="edited"')
+
+class WorkspaceTimelineTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Timeline Test", slug="timeline-test")
+
+    def test_get_workspace_timeline_contains_events(self):
+        node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Recent Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        ToolInvocation.objects.create(
+            node=node,
+            tool_name="timeline_tool",
+            success=True
+        )
+        
+        from tree_ui.services.graph_payload import get_workspace_timeline
+        timeline = get_workspace_timeline(self.workspace)
+        
+        event_types = [e["event_type"] for e in timeline]
+        self.assertIn("node_created", event_types)
+        self.assertIn("tool_invocation", event_types)
+        
+        # Verify node_id is present
+        self.assertEqual(timeline[0]["node_id"], node.id)
+
+    def test_workspace_graph_page_renders_activity_panel(self):
+        response = self.client.get(reverse("workspace_graph", args=[self.workspace.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="activity-panel"')
+        self.assertContains(response, 'id="activity-list"')
+        self.assertContains(response, 'id="activity-panel-open"')

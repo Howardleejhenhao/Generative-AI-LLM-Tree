@@ -11,6 +11,44 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-17 12:15
+
+### Session Goal
+- Review the delegated workspace activity timeline implementation before deciding whether to integrate it.
+
+### Planned Tasks
+- inspect the delegated report and timeline-related file changes
+- verify Django tests and migration status locally
+- evaluate whether the activity panel adds useful workspace-level observability without displacing the graph
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-17-1200.md` and the corresponding changes in `graph_payload.py`, `index.html`, `app.js`, `app.css`, and `tests.py`.
+- Ran `python3 manage.py test tree_ui.tests`; all 126 tests passed in the delegated implementation state.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Confirmed the new activity panel derives timeline entries from existing persisted models (`ConversationNode`, `ToolInvocation`, `ConversationMemory`) rather than introducing a new event table.
+- Confirmed activity items are actionable: timeline clicks can focus the related node on the graph when a `node_id` exists.
+- Reviewed the layout interaction and found the graph remains the dominant surface even with the timeline available as a collapsible panel.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this review-only session
+- Push status:
+  - not pushed
+
+### Current Status
+- The workspace activity timeline implementation is acceptable as a first-pass workspace-level observability feature.
+
+### Next Recommended Step
+- Integrate the timeline feature, then consider a later polish pass for richer event semantics or more precise copy when combining filter/search/timeline interactions.
+
+### Known Issues / Blockers / Tech Debt
+- Timeline event semantics are intentionally lightweight and derived from existing models, so some event descriptions are compact rather than deeply structured.
+
 ## Session 2026-04-17 10:15
 
 ### Session Goal

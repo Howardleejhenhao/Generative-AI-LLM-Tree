@@ -4422,3 +4422,107 @@ kbd {
     justify-content: flex-start;
   }
 }
+
+/* Workspace Activity Panel */
+.workspace-shell[data-activity-panel-collapsed="false"] {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+.workspace-shell[data-activity-panel-collapsed="true"] .activity-panel {
+  display: none;
+}
+
+.activity-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(255, 252, 247, 0.5);
+  border-right: 1px solid rgba(74, 58, 40, 0.08);
+  overflow: hidden;
+}
+
+.activity-panel-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(74, 58, 40, 0.06);
+}
+
+.activity-list {
+  padding: 12px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.activity-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  cursor: pointer;
+  transition: all 160ms ease;
+  text-align: left;
+  font: inherit;
+}
+
+.activity-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(49, 37, 22, 0.06);
+  border-color: rgba(74, 58, 40, 0.16);
+}
+
+.activity-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.activity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-node_created { background: rgba(22, 93, 74, 0.1); color: var(--openai); }
+.badge-node_edited { background: rgba(74, 58, 40, 0.08); color: var(--text-strong); }
+.badge-tool_invocation { background: var(--info-bg); color: var(--info); }
+.badge-memory_updated { background: var(--success-bg); color: var(--success); }
+
+.activity-time {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.activity-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 1080px) {
+  .workspace-shell[data-activity-panel-collapsed="false"] {
+    grid-template-columns: 1fr;
+  }
+  
+  .activity-panel {
+    border-right: 0;
+    border-bottom: 1px solid rgba(74, 58, 40, 0.08);
+    max-height: 400px;
+  }
+}

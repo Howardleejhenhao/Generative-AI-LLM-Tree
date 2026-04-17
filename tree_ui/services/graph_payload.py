@@ -125,6 +125,65 @@ def serialize_node(node: ConversationNode) -> dict:
     }
 
 
+def serialize_timeline_event(event_type: str, timestamp, title: str, description: str, node_id=None) -> dict:
+    return {
+        "event_type": event_type,
+        "timestamp": timestamp.isoformat() if timestamp else None,
+        "title": title,
+        "description": description,
+        "node_id": node_id,
+    }
+
+
+def get_workspace_timeline(workspace: Workspace, limit: int = 20) -> list:
+    from tree_ui.models import ConversationNode, ToolInvocation, ConversationMemory
+    
+    events = []
+    
+    # Recent nodes
+    nodes = workspace.nodes.order_by("-created_at")[:limit]
+    for node in nodes:
+        event_type = "node_created"
+        description = f"Model: {node.model_name}"
+        if node.edited_from_id:
+            event_type = "node_edited"
+            description = f"Variant of {node.edited_from.title}"
+            
+        events.append(serialize_timeline_event(
+            event_type=event_type,
+            timestamp=node.created_at,
+            title=node.title,
+            description=description,
+            node_id=node.id
+        ))
+        
+    # Recent tool invocations
+    tools = ToolInvocation.objects.filter(node__workspace=workspace).select_related("node").order_by("-created_at")[:limit]
+    for tool in tools:
+        events.append(serialize_timeline_event(
+            event_type="tool_invocation",
+            timestamp=tool.created_at,
+            title=f"Tool: {tool.tool_name}",
+            description=f"Used in {tool.node.title} ({'Success' if tool.success else 'Failed'})",
+            node_id=tool.node_id
+        ))
+        
+    # Recent memory events
+    memories = workspace.memories.order_by("-updated_at")[:limit]
+    for memory in memories:
+        events.append(serialize_timeline_event(
+            event_type="memory_updated",
+            timestamp=memory.updated_at,
+            title=f"Memory: {memory.memory_type}",
+            description=memory.title or memory.content[:50],
+            node_id=memory.source_node_id
+        ))
+        
+    # Sort all by timestamp descending
+    events.sort(key=lambda x: x["timestamp"], reverse=True)
+    return events[:limit]
+
+
 def serialize_workspace(workspace: Workspace) -> dict:
     nodes = [
         serialize_node(node)
@@ -138,4 +197,5 @@ def serialize_workspace(workspace: Workspace) -> dict:
             "description": workspace.description,
         },
         "nodes": nodes,
+        "timeline": get_workspace_timeline(workspace),
     }

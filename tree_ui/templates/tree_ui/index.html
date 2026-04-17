@@ -34,7 +34,22 @@
     </form>
   </section>
 
-  <section class="workspace-shell" id="workspace-shell">
+  <section class="workspace-shell" id="workspace-shell" data-activity-panel-collapsed="false">
+    <aside class="activity-panel" id="activity-panel" aria-label="Recent activity">
+      <div class="panel-header activity-panel-header">
+        <div>
+          <p class="panel-kicker">Timeline</p>
+          <h3>Recent activity</h3>
+        </div>
+        <button class="detail-toggle-button detail-toggle-button-quiet" id="activity-panel-toggle" type="button" aria-label="Toggle activity panel">
+          ×
+        </button>
+      </div>
+      <div class="activity-list" id="activity-list">
+        <!-- Activity items go here -->
+      </div>
+    </aside>
+
     <div class="canvas-panel">
       <div class="panel-header panel-header-workspace">
         <div class="canvas-panel-heading">
@@ -46,6 +61,9 @@
           </div>
         </div>
         <div class="canvas-panel-actions">
+          <button class="detail-toggle-button detail-toggle-button-quiet" id="activity-panel-open" type="button">
+            Activity
+          </button>
           <a class="detail-toggle-button detail-toggle-button-quiet" href="{% url 'mcp_source_list' %}" style="text-decoration: none;">
             MCP Settings
           </a>

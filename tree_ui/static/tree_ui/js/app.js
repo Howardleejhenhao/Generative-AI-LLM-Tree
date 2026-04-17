@@ -4,6 +4,13 @@ import { syncModelOptions } from "./model-options.js?v=20260322-graph-hint-fix";
 import { createViewportController } from "./viewport.js?v=20260322-graph-hint-fix";
 
 const payload = JSON.parse(document.getElementById("graph-payload").textContent);
+const workspaceShell = document.getElementById("workspace-shell");
+const activityPanel = document.getElementById("activity-panel");
+const activityList = document.getElementById("activity-list");
+const activityPanelToggle = document.getElementById("activity-panel-toggle");
+const activityPanelOpen = document.getElementById("activity-panel-open");
+const canvasPanel = document.querySelector(".canvas-panel");
+const canvasPanelHeading = document.querySelector(".canvas-panel-heading");
 const workspaceName = document.getElementById("workspace-name");
 const workspaceNodePill = document.getElementById("workspace-node-pill");
 const workspaceSearchInput = document.getElementById("workspace-search-input");
@@ -408,6 +415,79 @@ function renderComparison(data) {
   grid.className = "compare-grid";
   grid.append(createColumn(node_a), createColumn(node_b));
   compareDialogContent.append(grid);
+}
+
+function setActivityPanelOpen(isOpen) {
+  workspaceShell.dataset.activityPanelCollapsed = String(!isOpen);
+  activityPanelOpen.hidden = isOpen;
+  // Trigger a resize for the canvas viewport
+  window.dispatchEvent(new Event("resize"));
+}
+
+function renderTimeline(events) {
+  activityList.innerHTML = "";
+  if (!events || events.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "compare-empty-copy";
+    empty.style.padding = "20px";
+    empty.textContent = "No recent activity.";
+    activityList.appendChild(empty);
+    return;
+  }
+
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  });
+
+  const eventTypeLabels = {
+    node_created: "New Node",
+    node_edited: "Edited",
+    tool_invocation: "Tool Used",
+    memory_updated: "Memory",
+  };
+
+  for (const event of events) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "activity-item";
+
+    const header = document.createElement("div");
+    header.className = "activity-item-header";
+
+    const badge = document.createElement("span");
+    badge.className = `activity-badge badge-${event.event_type}`;
+    badge.textContent = eventTypeLabels[event.event_type] || event.event_type;
+
+    const time = document.createElement("span");
+    time.className = "activity-time";
+    time.textContent = timeFormatter.format(new Date(event.timestamp));
+
+    header.append(badge, time);
+
+    const title = document.createElement("strong");
+    title.className = "activity-title";
+    title.textContent = event.title;
+
+    const desc = document.createElement("span");
+    desc.className = "activity-desc";
+    desc.textContent = event.description;
+
+    item.append(header, title, desc);
+
+    if (event.node_id) {
+      item.addEventListener("click", () => {
+        updateSelection(event.node_id);
+        const node = nodesById.get(String(event.node_id));
+        if (node) {
+          viewport.centerOnBounds(getNodeBounds(node));
+        }
+      });
+    }
+
+    activityList.appendChild(item);
+  }
 }
 
 function updateWorkspaceSummary() {
@@ -1135,6 +1215,8 @@ nodeForm.addEventListener("submit", handleNodeSubmit);
 quickCreateToggle.addEventListener("click", toggleQuickCreate);
 quickCreatePanel.addEventListener("submit", handleQuickCreateSubmit);
 quickCancelButton.addEventListener("click", () => setQuickCreateOpen(false));
+activityPanelToggle.addEventListener("click", () => setActivityPanelOpen(false));
+activityPanelOpen.addEventListener("click", () => setActivityPanelOpen(true));
 workspaceCreateForm.addEventListener("submit", handleWorkspaceCreateSubmit);
 workspaceHelpToggle.addEventListener("click", () => setWorkspaceHelpOpen(workspaceHelpDialog.hidden));
 workspaceHelpClose.addEventListener("click", () => setWorkspaceHelpOpen(false));
@@ -1161,6 +1243,8 @@ for (const button of quickStartButtons) {
 window.addEventListener("keydown", handleWorkspaceKeydown);
 syncModelOptions(providerInput, modelInput);
 syncQuickCreateDefaults();
+renderTimeline(payload.timeline);
+setActivityPanelOpen(false);
 setWorkspaceHelpOpen(false);
 setConfirmDialogOpen(false);
 updateSearchState();
