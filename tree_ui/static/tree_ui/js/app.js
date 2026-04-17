@@ -10,6 +10,8 @@ const workspaceSearchInput = document.getElementById("workspace-search-input");
 const workspaceSearchProvider = document.getElementById("workspace-search-provider");
 const workspaceSearchFeedback = document.getElementById("workspace-search-feedback");
 const workspaceSearchResults = document.getElementById("workspace-search-results");
+const workspaceGraphFilters = document.getElementById("workspace-graph-filters");
+const workspaceFilterPills = Array.from(document.querySelectorAll(".workspace-filter-pill"));
 const workspaceSelectionTitle = document.getElementById("workspace-selection-title");
 const workspaceSelectionSummary = document.getElementById("workspace-selection-summary");
 const workspaceSelectionType = document.getElementById("workspace-selection-type");
@@ -85,6 +87,7 @@ const csrfToken = document.getElementById("csrf-token").value;
 let latestViewportState = null;
 let activeLineageIds = new Set();
 let matchedNodeIds = new Set(payload.nodes.map((node) => String(node.id)));
+let activeFilter = "all";
 let pendingConfirmation = null;
 let isCompareMode = false;
 
@@ -138,7 +141,11 @@ function getNodeSearchText(node) {
 }
 
 function isSearchActive() {
-  return workspaceSearchInput.value.trim() !== "" || workspaceSearchProvider.value !== "all";
+  return (
+    workspaceSearchInput.value.trim() !== "" ||
+    workspaceSearchProvider.value !== "all" ||
+    activeFilter !== "all"
+  );
 }
 
 function getRootNodeCount() {
@@ -205,6 +212,14 @@ function buildSearchMatches() {
     if (!providerMatches) {
       return false;
     }
+
+    if (activeFilter !== "all") {
+      const hasBadge = (node.status_badges || []).some((badge) => badge.type === activeFilter);
+      if (!hasBadge) {
+        return false;
+      }
+    }
+
     if (!query) {
       return true;
     }
@@ -257,6 +272,21 @@ function updateSearchState() {
   matchedNodeIds = new Set(matches.map((node) => String(node.id)));
   renderSearchResults(matches);
   renderGraphCanvas();
+}
+
+function handleFilterClick(event) {
+  const button = event.target.closest(".workspace-filter-pill");
+  if (!button) {
+    return;
+  }
+
+  activeFilter = button.dataset.filter;
+
+  workspaceFilterPills.forEach((pill) => {
+    pill.classList.toggle("active", pill === button);
+  });
+
+  updateSearchState();
 }
 
 function setCompareDialogOpen(isOpen) {
@@ -1124,6 +1154,7 @@ zoomInButton.addEventListener("click", () => viewport.zoomIn());
 zoomResetButton.addEventListener("click", () => viewport.resetZoom());
 workspaceSearchInput.addEventListener("input", updateSearchState);
 workspaceSearchProvider.addEventListener("change", updateSearchState);
+workspaceGraphFilters.addEventListener("click", handleFilterClick);
 for (const button of quickStartButtons) {
   button.addEventListener("click", () => applyQuickStart(button));
 }

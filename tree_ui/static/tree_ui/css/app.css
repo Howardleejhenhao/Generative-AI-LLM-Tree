@@ -4383,3 +4383,42 @@ kbd {
   background: rgba(74, 58, 40, 0.08);
   color: var(--text-strong);
 }
+
+/* Workspace Graph Filters */
+.workspace-graph-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.workspace-filter-pill {
+  padding: 8px 14px;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.workspace-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(74, 58, 40, 0.16);
+  color: var(--text);
+}
+
+.workspace-filter-pill.active {
+  background: var(--text-strong);
+  color: #fff;
+  border-color: var(--text-strong);
+}
+
+@media (max-width: 1080px) {
+  .workspace-graph-filters {
+    justify-content: flex-start;
+  }
+}

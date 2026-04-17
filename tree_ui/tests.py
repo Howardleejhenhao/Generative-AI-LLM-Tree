@@ -3071,3 +3071,17 @@ class GraphPayloadBadgeTests(TestCase):
         
         badges = data["status_badges"]
         self.assertTrue(any(b["type"] == "edited" for b in badges))
+
+class GraphFilterViewTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Filter Test", slug="filter-test")
+
+    def test_workspace_graph_page_renders_filter_pills(self):
+        response = self.client.get(reverse("workspace_graph", args=[self.workspace.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="workspace-graph-filters"')
+        self.assertContains(response, 'data-filter="all"')
+        self.assertContains(response, 'data-filter="tools"')
+        self.assertContains(response, 'data-filter="memory"')
+        self.assertContains(response, 'data-filter="auto"')
+        self.assertContains(response, 'data-filter="edited"')
