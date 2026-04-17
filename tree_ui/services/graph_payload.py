@@ -40,6 +40,27 @@ def serialize_node(node: ConversationNode) -> dict:
             ),
         })
 
+    status_badges = []
+    
+    # Tool usage badge
+    tool_count = node.tool_invocations.count()
+    if tool_count > 0:
+        status_badges.append({"label": f"Tools {tool_count}", "type": "tools"})
+    
+    # Memory badge should reflect node-specific branch context, not generic workspace memory.
+    branch_memory_count = len(br_memories)
+    if branch_memory_count > 0:
+        status_badges.append({"label": f"Memory {branch_memory_count}", "type": "memory"})
+        
+    # Routing mode badge (only surface if it's NOT manual, or if we want to show it explicitly)
+    if node.routing_mode != ConversationNode.RoutingMode.MANUAL:
+        # Use a short label like "Auto"
+        status_badges.append({"label": "Auto", "type": "auto"})
+    
+    # Edited variant badge
+    if node.edited_from_id:
+        status_badges.append({"label": "Edited", "type": "edited"})
+
     return {
         "id": node.id,
         "parent_id": node.parent_id,
@@ -55,6 +76,7 @@ def serialize_node(node: ConversationNode) -> dict:
         "top_p": node.top_p,
         "max_output_tokens": node.max_output_tokens,
         "position": {"x": node.position_x, "y": node.position_y},
+        "status_badges": status_badges,
         "memories": all_memories,
         "tool_invocations": [
             {

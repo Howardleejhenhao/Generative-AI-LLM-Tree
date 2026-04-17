@@ -4342,3 +4342,44 @@ kbd {
   color: #fff !important;
   border-color: var(--primary) !important;
 }
+
+/* Graph Node Status Badges */
+.graph-node-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  flex: 1;
+}
+
+.graph-node-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(74, 58, 40, 0.08);
+  white-space: nowrap;
+}
+
+.badge-tools {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.badge-memory {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.badge-auto {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.badge-edited {
+  background: rgba(74, 58, 40, 0.08);
+  color: var(--text-strong);
+}

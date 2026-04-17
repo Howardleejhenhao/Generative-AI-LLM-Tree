@@ -2973,3 +2973,101 @@ class BranchComparisonViewTests(TestCase):
         self.assertContains(response, 'id="node-compare-button"')
         self.assertContains(response, 'id="compare-dialog"')
         self.assertContains(response, "Branch Comparison")
+
+class GraphPayloadBadgeTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Badge Test", slug="badge-test")
+
+    def test_serialize_node_includes_tool_count_badge(self):
+        node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Tool Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        ToolInvocation.objects.create(
+            node=node,
+            tool_name="test_tool",
+            success=True
+        )
+        
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        
+        badges = data["status_badges"]
+        self.assertTrue(any(b["type"] == "tools" and "Tools 1" in b["label"] for b in badges))
+
+    def test_serialize_node_includes_memory_badge_when_branch_memory_exists(self):
+        node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Memory Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            branch_anchor=node,
+            content="Branch-specific memory",
+        )
+
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+
+        badges = data["status_badges"]
+        self.assertTrue(any(b["type"] == "memory" and b["label"] == "Memory 1" for b in badges))
+
+    def test_serialize_node_does_not_include_memory_badge_for_workspace_memory_only(self):
+        node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Workspace Memory Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            content="Workspace-only memory",
+        )
+
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+
+        badges = data["status_badges"]
+        self.assertFalse(any(b["type"] == "memory" for b in badges))
+
+    def test_serialize_node_includes_auto_routing_badge(self):
+        node = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Auto Node",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            routing_mode=ConversationNode.RoutingMode.AUTO_FAST,
+        )
+        
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(node)
+        
+        badges = data["status_badges"]
+        self.assertTrue(any(b["type"] == "auto" for b in badges))
+
+    def test_serialize_node_includes_edited_badge(self):
+        original = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Original",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+        )
+        edited = ConversationNode.objects.create(
+            workspace=self.workspace,
+            title="Edited",
+            provider="openai",
+            model_name="gpt-4.1-mini",
+            edited_from=original,
+        )
+        
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(edited)
+        
+        badges = data["status_badges"]
+        self.assertTrue(any(b["type"] == "edited" for b in badges))

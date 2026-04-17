@@ -151,14 +151,31 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
     providerBadge.className = "graph-node-provider";
     providerBadge.textContent = node.provider;
 
-    const messageCount = document.createElement("span");
-    messageCount.className = "graph-node-count";
-    messageCount.textContent = `${node.messages.length} ${node.messages.length === 1 ? "msg" : "msgs"}`;
+    const badgesContainer = document.createElement("div");
+    badgesContainer.className = "graph-node-badges";
 
-    const attachmentCount = document.createElement("span");
-    attachmentCount.className = "graph-node-count";
-    attachmentCount.textContent = `${node.attachments.length} img`;
-    attachmentCount.hidden = node.attachments.length === 0;
+    // Add message count as a standard badge
+    const msgBadge = document.createElement("span");
+    msgBadge.className = "graph-node-count";
+    msgBadge.textContent = `${node.messages.length} ${node.messages.length === 1 ? "msg" : "msgs"}`;
+    badgesContainer.appendChild(msgBadge);
+
+    if (node.attachments.length > 0) {
+      const imgBadge = document.createElement("span");
+      imgBadge.className = "graph-node-count";
+      imgBadge.textContent = `${node.attachments.length} img`;
+      badgesContainer.appendChild(imgBadge);
+    }
+
+    // Add status badges from payload
+    if (node.status_badges) {
+      for (const badgeData of node.status_badges) {
+        const badge = document.createElement("span");
+        badge.className = `graph-node-badge badge-${badgeData.type}`;
+        badge.textContent = badgeData.label;
+        badgesContainer.appendChild(badge);
+      }
+    }
 
     const title = document.createElement("span");
     title.className = "graph-node-title";
@@ -185,7 +202,7 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
       state.textContent = "Root conversation";
     }
 
-    topLine.append(providerBadge, messageCount, attachmentCount);
+    topLine.append(providerBadge, badgesContainer);
     footer.append(state);
     button.append(topLine, title, meta, summary, footer);
 

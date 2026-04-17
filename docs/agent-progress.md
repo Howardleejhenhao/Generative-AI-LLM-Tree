@@ -11,6 +11,43 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-17 10:15
+
+### Session Goal
+- Review the delegated graph node status badges implementation before accepting it for integration.
+
+### Planned Tasks
+- inspect the delegated report and graph-level diff for node badge rendering
+- verify Django tests and migration status locally
+- check whether the new badges provide accurate node-level signals rather than misleading global signals
+
+### Work Completed
+- Reviewed `task_reports/REPORT-2026-04-17-1000.md` and the corresponding changes in `graph_payload.py`, `canvas.js`, `app.css`, and `tests.py`.
+- Ran `python3 manage.py test tree_ui.tests`; all 122 tests passed in the delegated implementation state.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Confirmed the implementation adds compact graph-level badges for tool count, memory, auto routing, and edited variants.
+- Identified one remaining semantics issue: the `Memory` badge is currently derived from retrieved workspace/branch memory availability, but because retrieval currently only returns the canonical workspace memory, the badge can appear uniformly across nodes and does not yet act as a strong node-level differentiator.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this review-only session
+- Push status:
+  - not pushed
+
+### Current Status
+- The graph node status badge feature is implemented and test-clean, but the memory badge semantics should be treated cautiously until memory retrieval becomes more branch-discriminating.
+
+### Next Recommended Step
+- Either accept the feature as a compact first pass, or tighten the `Memory` badge to represent a more node-specific memory signal once branch retrieval becomes richer.
+
+### Known Issues / Blockers / Tech Debt
+- Graph-level memory badges currently reflect retrieved memory availability more than truly distinctive per-node memory state.
+
 ## Session 2026-04-17 09:30
 
 ### Session Goal
