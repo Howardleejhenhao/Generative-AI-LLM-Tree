@@ -1,9 +1,45 @@
 import json
+from django.urls import reverse
 from tree_ui.models import ConversationNode, Workspace
 from tree_ui.services.model_catalog import resolve_model_name
+from tree_ui.services.memory_service import (
+    list_workspace_memories,
+    list_branch_memories,
+    retrieve_memories_for_generation,
+)
 
 
 def serialize_node(node: ConversationNode) -> dict:
+    workspace = node.workspace
+    
+    # Available memories: Workspace scope + Branch scope in lineage
+    ws_memories = list_workspace_memories(workspace=workspace)
+    br_memories = list_branch_memories(node=node)
+    
+    # Retrieved memories (for current context)
+    retrieved = retrieve_memories_for_generation(workspace=workspace, parent=node)
+    retrieved_ids = {m.id for m in retrieved}
+
+    all_memories = []
+    for mem in list(ws_memories) + list(br_memories):
+        all_memories.append({
+            "id": mem.id,
+            "title": mem.title or (f"Memory {mem.id}"),
+            "content": mem.content,
+            "scope": mem.scope,
+            "memory_type": mem.memory_type,
+            "is_pinned": mem.is_pinned,
+            "is_retrieved": mem.id in retrieved_ids,
+            "updated_at": mem.updated_at.isoformat() if mem.updated_at else None,
+            "source_node_id": mem.source_node_id,
+            "source_node_title": mem.source_node.title if mem.source_node_id else "",
+            "source_node_url": (
+                reverse("workspace_node_chat", args=[workspace.slug, mem.source_node_id])
+                if mem.source_node_id
+                else ""
+            ),
+        })
+
     return {
         "id": node.id,
         "parent_id": node.parent_id,
@@ -19,6 +55,7 @@ def serialize_node(node: ConversationNode) -> dict:
         "top_p": node.top_p,
         "max_output_tokens": node.max_output_tokens,
         "position": {"x": node.position_x, "y": node.position_y},
+        "memories": all_memories,
         "tool_invocations": [
             {
                 "id": inv.id,

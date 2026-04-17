@@ -2294,6 +2294,120 @@ body.lightbox-open {
   border-color: var(--primary);
 }
 
+/* Memory Trace Inspector */
+.memory-trace-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  position: relative;
+}
+
+.memory-trace-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(49, 37, 22, 0.08);
+}
+
+.memory-trace-pinned {
+  border-color: var(--warning);
+}
+
+.memory-trace-retrieved {
+  border-left: 4px solid var(--info);
+}
+
+.memory-trace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.memory-trace-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.memory-trace-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-strong);
+  word-break: break-all;
+}
+
+.memory-trace-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.memory-scope-badge {
+  text-transform: capitalize;
+  font-size: 0.65rem;
+}
+
+.scope-workspace {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.scope-branch {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.memory-type-badge {
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.memory-pinned-badge {
+  background: rgba(154, 106, 0, 0.12);
+  color: var(--warning);
+}
+
+.memory-trace-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.memory-trace-time {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.memory-trace-body {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.memory-trace-source {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.memory-trace-source a {
+  color: var(--info);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.memory-trace-source a:hover {
+  text-decoration: underline;
+}
+
 .workspace-summary-strip {
   display: flex;
   flex-wrap: wrap;

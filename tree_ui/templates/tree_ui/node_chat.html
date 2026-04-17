@@ -10,6 +10,7 @@
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
         <a class="ghost-link" href="{% url 'mcp_source_list' %}">MCP Settings</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
+        <button class="chat-shell-action" id="memory-inspector-toggle-button" type="button">Memory Context</button>
         <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button">Tool Trace</button>
         <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>
@@ -126,6 +127,16 @@
         </div>
         <div class="chat-inspector-content" id="chat-tool-list">
           <!-- Tool invocations go here -->
+        </div>
+      </aside>
+
+      <aside class="chat-inspector-panel" id="chat-memory-inspector" hidden>
+        <div class="chat-inspector-header">
+          <h2>Memory Context</h2>
+          <button class="chat-inspector-close" id="chat-memory-inspector-close-button" type="button">×</button>
+        </div>
+        <div class="chat-inspector-content" id="chat-memory-list">
+          <!-- Memory records go here -->
         </div>
       </aside>
     </section>

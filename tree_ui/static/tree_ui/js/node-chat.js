@@ -37,6 +37,11 @@ const toolInspectorToggleButton = document.getElementById("tool-inspector-toggle
 const toolInspectorCloseButton = document.getElementById("chat-tool-inspector-close-button");
 const toolList = document.getElementById("chat-tool-list");
 
+const memoryInspector = document.getElementById("chat-memory-inspector");
+const memoryInspectorToggleButton = document.getElementById("memory-inspector-toggle-button");
+const memoryInspectorCloseButton = document.getElementById("chat-memory-list-close-button") || document.getElementById("chat-memory-inspector-close-button");
+const memoryList = document.getElementById("chat-memory-list");
+
 const PROMPT_MAX_HEIGHT = 176;
 let stagedImages = [];
 let selectedPreviewUrls = [];
@@ -198,6 +203,111 @@ function renderToolTrace() {
     body.append(argsDetails, resDetails);
     card.append(header, body);
     toolList.appendChild(card);
+  }
+}
+
+function renderMemoryInspector() {
+  if (!memoryList) return;
+
+  const memories = payload.memories || [];
+  memoryList.innerHTML = "";
+
+  if (memories.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "chat-inspector-empty";
+    empty.textContent = "No long-term memories for this context.";
+    memoryList.appendChild(empty);
+    return;
+  }
+
+  // Sort: Retrieved first, then Pinned, then by update time
+  const sorted = [...memories].sort((a, b) => {
+    if (a.is_retrieved !== b.is_retrieved) return b.is_retrieved ? 1 : -1;
+    if (a.is_pinned !== b.is_pinned) return b.is_pinned ? 1 : -1;
+    return new Date(b.updated_at) - new Date(a.updated_at);
+  });
+
+  for (const mem of sorted) {
+    const card = document.createElement("div");
+    card.className = `memory-trace-card ${mem.is_retrieved ? 'memory-trace-retrieved' : ''}`;
+    if (mem.is_pinned) card.classList.add('memory-trace-pinned');
+
+    const header = document.createElement("header");
+    header.className = "memory-trace-header";
+
+    const meta = document.createElement("div");
+    meta.className = "memory-trace-meta";
+    
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "memory-trace-title";
+    titleSpan.textContent = mem.title;
+    
+    const tagsDiv = document.createElement("div");
+    tagsDiv.className = "memory-trace-tags";
+    
+    const scopeBadge = document.createElement("span");
+    scopeBadge.className = `badge memory-scope-badge scope-${mem.scope}`;
+    scopeBadge.textContent = mem.scope;
+
+    const typeBadge = document.createElement("span");
+    typeBadge.className = `badge memory-type-badge type-${mem.memory_type}`;
+    typeBadge.textContent = mem.memory_type;
+    
+    tagsDiv.append(scopeBadge, typeBadge);
+
+    if (mem.is_pinned) {
+      const pinnedBadge = document.createElement("span");
+      pinnedBadge.className = "badge memory-pinned-badge";
+      pinnedBadge.textContent = "Pinned";
+      tagsDiv.appendChild(pinnedBadge);
+    }
+    meta.append(titleSpan, tagsDiv);
+
+    const statusDiv = document.createElement("div");
+    statusDiv.className = "memory-trace-status";
+    
+    if (mem.is_retrieved) {
+      const retrievedLabel = document.createElement("span");
+      retrievedLabel.className = "status-info";
+      retrievedLabel.textContent = "Retrieved";
+      statusDiv.appendChild(retrievedLabel);
+    }
+    
+    if (mem.updated_at) {
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "memory-trace-time";
+      timeSpan.textContent = new Date(mem.updated_at).toLocaleDateString();
+      statusDiv.appendChild(timeSpan);
+    }
+
+    header.append(meta, statusDiv);
+
+    const body = document.createElement("div");
+    body.className = "memory-trace-body";
+    body.textContent = mem.content;
+
+    card.append(header, body);
+
+    if (mem.source_node_title) {
+      const source = document.createElement("div");
+      source.className = "memory-trace-source";
+      source.append("Source node: ");
+
+      if (mem.source_node_url) {
+        const sourceLink = document.createElement("a");
+        sourceLink.href = mem.source_node_url;
+        sourceLink.textContent = mem.source_node_title;
+        source.appendChild(sourceLink);
+      } else {
+        const sourceLabel = document.createElement("span");
+        sourceLabel.textContent = mem.source_node_title;
+        source.appendChild(sourceLabel);
+      }
+
+      card.appendChild(source);
+    }
+
+    memoryList.appendChild(card);
   }
 }
 
@@ -626,6 +736,19 @@ toolInspectorCloseButton.addEventListener("click", () => {
   toolInspectorToggleButton.classList.toggle("chat-shell-action-active", false);
 });
 
+memoryInspectorToggleButton.addEventListener("click", () => {
+  memoryInspector.hidden = !memoryInspector.hidden;
+  memoryInspectorToggleButton.classList.toggle("chat-shell-action-active", !memoryInspector.hidden);
+  if (!memoryInspector.hidden) {
+    renderMemoryInspector();
+  }
+});
+
+memoryInspectorCloseButton.addEventListener("click", () => {
+  memoryInspector.hidden = true;
+  memoryInspectorToggleButton.classList.toggle("chat-shell-action-active", false);
+});
+
 promptInput.addEventListener("input", resizePromptInput);
 promptInput.addEventListener("input", updateComposerState);
 promptInput.addEventListener("keydown", handlePromptKeydown);
@@ -654,5 +777,6 @@ renderSelectedFiles();
 renderAttachmentPanel();
 renderTranscript();
 renderToolTrace();
+renderMemoryInspector();
 updateComposerState();
 scrollToBottom();

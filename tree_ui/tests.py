@@ -2774,3 +2774,92 @@ class MultiStepToolUseTests(TestCase):
             assistant_tool_messages[0].tool_calls[0].arguments["error"],
             "Invalid persisted tool arguments JSON",
         )
+
+
+class MemoryInspectorTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Main", slug="main")
+        self.root = ConversationNode.objects.create(
+            workspace=self.workspace, title="Root", provider="openai", model_name="gpt-4.1-mini"
+        )
+        self.child = ConversationNode.objects.create(
+            workspace=self.workspace, parent=self.root, title="Child", provider="openai", model_name="gpt-4.1-mini"
+        )
+
+    def test_serialize_node_includes_memories(self):
+        from unittest.mock import patch
+
+        # Create a workspace memory
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.FACT,
+            title="WS Fact",
+            content="Workspace info",
+        )
+        # Create a branch memory anchored to the root
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            branch_anchor=self.root,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Branch Summary",
+            content="Branch info",
+        )
+        # Create a branch memory anchored to an unrelated node (should not be included)
+        other_node = ConversationNode.objects.create(
+            workspace=self.workspace, title="Other", provider="openai", model_name="gpt-4.1-mini"
+        )
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            branch_anchor=other_node,
+            memory_type=ConversationMemory.MemoryType.FACT,
+            title="Other Fact",
+            content="Other info",
+        )
+
+        from tree_ui.services.graph_payload import serialize_node
+        data = serialize_node(self.child)
+        
+        mem_titles = {m["title"] for m in data["memories"]}
+        self.assertIn("WS Fact", mem_titles)
+        self.assertIn("Branch Summary", mem_titles)
+        self.assertNotIn("Other Fact", mem_titles)
+
+        from tree_ui.services.memory_drafting import ensure_workspace_memory
+        ensure_workspace_memory(self.workspace)
+
+        current_node_memory = ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            branch_anchor=self.child,
+            memory_type=ConversationMemory.MemoryType.TASK,
+            title="Current Node Task",
+            content="Memory anchored on the selected node.",
+            source_node=self.child,
+            is_pinned=True,
+        )
+
+        with patch("tree_ui.services.graph_payload.retrieve_memories_for_generation", wraps=retrieve_memories_for_generation) as mock_retrieve:
+            data = serialize_node(self.child)
+        mock_retrieve.assert_called_once_with(workspace=self.workspace, parent=self.child)
+
+        retrieved_titles = {m["title"] for m in data["memories"] if m["is_retrieved"]}
+        self.assertIn("Workspace memory", retrieved_titles)
+
+        current_node_payload = next(m for m in data["memories"] if m["id"] == current_node_memory.id)
+        self.assertTrue(current_node_payload["is_pinned"])
+        self.assertEqual(current_node_payload["source_node_id"], self.child.id)
+        self.assertEqual(current_node_payload["source_node_title"], self.child.title)
+        self.assertEqual(
+            current_node_payload["source_node_url"],
+            reverse("workspace_node_chat", args=[self.workspace.slug, self.child.id]),
+        )
+
+    def test_node_chat_page_renders_memory_inspector_button_and_panel(self):
+        response = self.client.get(reverse("workspace_node_chat", args=[self.workspace.slug, self.root.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="memory-inspector-toggle-button"')
+        self.assertContains(response, 'id="chat-memory-inspector"')
+        self.assertContains(response, "Memory Context")
