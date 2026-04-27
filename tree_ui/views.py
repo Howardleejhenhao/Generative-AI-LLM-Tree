@@ -1,4 +1,6 @@
 import json
+import sys
+from pathlib import Path
 
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -671,6 +673,32 @@ def mcp_source_list(request):
             "workspace_list": _serialize_workspace_list(workspace),
         },
     )
+
+@require_POST
+def mcp_source_install_demo(request):
+    project_root = Path(__file__).resolve().parent.parent
+    demo_server_path = project_root / "tree_ui" / "services" / "mcp" / "test_mcp_server.py"
+
+    source, _ = MCPSource.objects.update_or_create(
+        source_id="demo-stdio",
+        defaults={
+            "name": "Bundled Demo Stdio Server",
+            "source_type": MCPSource.SourceType.MCP_SERVER,
+            "is_enabled": True,
+            "description": "Bundled stdio demo MCP server for validating the full end-to-end integration path.",
+            "config": {
+                "transport_kind": "stdio",
+                "label": "Bundled Demo Stdio Server",
+                "timeout": 30,
+                "command": sys.executable,
+                "args": [str(demo_server_path)],
+                "cwd": str(project_root),
+            },
+        },
+    )
+    clear_diagnostics_result(source)
+    default_dispatcher.refresh()
+    return HttpResponseRedirect(reverse("mcp_source_list"))
 
 def mcp_source_create(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()

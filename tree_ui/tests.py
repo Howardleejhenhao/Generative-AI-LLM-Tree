@@ -2232,6 +2232,7 @@ class MCPSourceManagementTests(TestCase):
         self.assertContains(response, "Test Source")
         self.assertContains(response, "test-source")
         self.assertContains(response, "Internal Registry")
+        self.assertContains(response, "Install Bundled Demo")
 
     def test_mcp_source_list_page_shows_support_status_labels(self):
         MCPSource.objects.create(
@@ -2465,6 +2466,37 @@ class MCPSourceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Unavailable")
         self.assertContains(response, "Failed to start subprocess")
+
+    def test_can_install_bundled_demo_mcp_source(self):
+        response = self.client.post(reverse("mcp_source_install_demo"))
+        self.assertEqual(response.status_code, 302)
+
+        source = MCPSource.objects.get(source_id="demo-stdio")
+        self.assertEqual(source.source_type, MCPSource.SourceType.MCP_SERVER)
+        self.assertTrue(source.is_enabled)
+        self.assertEqual(source.config["transport_kind"], "stdio")
+        self.assertEqual(source.config["label"], "Bundled Demo Stdio Server")
+        self.assertEqual(len(source.config["args"]), 1)
+        self.assertTrue(source.config["args"][0].endswith("tree_ui/services/mcp/test_mcp_server.py"))
+
+    def test_install_bundled_demo_refreshes_existing_source(self):
+        MCPSource.objects.create(
+            name="Old Demo",
+            source_id="demo-stdio",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=False,
+            description="outdated",
+            config={"transport_kind": "stub"},
+        )
+
+        response = self.client.post(reverse("mcp_source_install_demo"))
+        self.assertEqual(response.status_code, 302)
+
+        source = MCPSource.objects.get(source_id="demo-stdio")
+        self.assertEqual(source.name, "Bundled Demo Stdio Server")
+        self.assertEqual(source.source_type, MCPSource.SourceType.MCP_SERVER)
+        self.assertTrue(source.is_enabled)
+        self.assertEqual(source.config["transport_kind"], "stdio")
 
 class StdioMCPTransportTests(TestCase):
     def setUp(self):

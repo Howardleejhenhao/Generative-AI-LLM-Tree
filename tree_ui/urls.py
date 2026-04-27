@@ -67,6 +67,11 @@ urlpatterns = [
         name="compare_nodes",
     ),
     path("mcp-sources/", views.mcp_source_list, name="mcp_source_list"),
+    path(
+        "mcp-sources/install-demo/",
+        views.mcp_source_install_demo,
+        name="mcp_source_install_demo",
+    ),
     path("mcp-sources/add/", views.mcp_source_create, name="mcp_source_create"),
     path(
         "mcp-sources/<int:source_id>/edit/",

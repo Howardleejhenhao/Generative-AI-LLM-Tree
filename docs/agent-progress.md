@@ -11,6 +11,54 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 10:28
+
+### Session Goal
+- Close the MCP product loop further by adding a stronger end-to-end stdio demo flow directly in the MCP management UI.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- inspect the bundled stdio MCP test server and current MCP management routes
+- add a one-click flow to create or refresh the bundled demo stdio MCP source
+- expose that flow in the MCP source list UI and update docs if needed
+- add focused tests and rerun Django validation
+
+### Work Completed
+- Reviewed the bundled stdio MCP test server, MCP management routes, and current MCP source tests to identify the shortest end-to-end demo path already available inside the repo.
+- Added a new `mcp_source_install_demo` POST flow that creates or refreshes a bundled `demo-stdio` MCP source using the checked-in stdio demo server.
+- Configured the bundled demo source to use `sys.executable`, the repo-local `tree_ui/services/mcp/test_mcp_server.py`, and a stable project-root working directory for better runtime portability.
+- Added an `Install Bundled Demo` action to the MCP source list so the supported stdio demo path is now one click instead of a manual form-filling exercise.
+- Updated the MCP README demo instructions so the primary setup path now matches the product UI rather than asking users to hand-enter the source first.
+- Added focused tests for the new MCP source list action and the idempotent creation/refresh behavior of the bundled demo source installer.
+- Ran `python3 manage.py test tree_ui.tests.MCPSourceManagementTests`; all 15 tests passed.
+- Ran `python3 manage.py test tree_ui.tests`; all 134 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+- `tree_ui/views.py`
+- `tree_ui/urls.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed yet
+
+### Current Status
+- The MCP UI now includes a one-click bundled stdio demo-source path, which closes a major demoability gap for the supported MCP transport.
+
+### Next Recommended Step
+- Decide whether to stop at a clearly documented stdio-first MCP scope for this milestone or invest next in the harder `sse` transport implementation.
+
+### Known Issues / Blockers / Tech Debt
+- SSE transport is still recognized but not implemented, so MCP is still not transport-complete even though the supported stdio path is now much easier to demonstrate.
+
 ## Session 2026-04-27 10:21
 
 ### Session Goal

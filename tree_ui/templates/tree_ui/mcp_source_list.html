@@ -33,7 +33,13 @@
               <strong>SSE</strong> is recognized but not complete, and <strong>stub</strong> remains demo-only.
             </p>
           </div>
-          <a href="{% url 'mcp_source_create' %}" class="action-btn">Add Source</a>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <form action="{% url 'mcp_source_install_demo' %}" method="post" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="secondary-button" style="padding: 0.5rem 1rem;">Install Bundled Demo</button>
+            </form>
+            <a href="{% url 'mcp_source_create' %}" class="action-btn">Add Source</a>
+          </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
