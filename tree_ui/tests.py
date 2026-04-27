@@ -2232,7 +2232,7 @@ class MCPSourceManagementTests(TestCase):
         self.assertContains(response, "Test Source")
         self.assertContains(response, "test-source")
         self.assertContains(response, "Internal Registry")
-        self.assertContains(response, "Install Bundled Demo")
+        self.assertContains(response, "Install + Test Bundled Demo")
 
     def test_mcp_source_list_page_shows_support_status_labels(self):
         MCPSource.objects.create(
@@ -2478,6 +2478,9 @@ class MCPSourceManagementTests(TestCase):
         self.assertEqual(source.config["label"], "Bundled Demo Stdio Server")
         self.assertEqual(len(source.config["args"]), 1)
         self.assertTrue(source.config["args"][0].endswith("tree_ui/services/mcp/test_mcp_server.py"))
+        self.assertTrue(source.last_check_ok)
+        self.assertEqual(source.last_check_label, "Ready")
+        self.assertGreaterEqual(source.last_check_tool_count or 0, 1)
 
     def test_install_bundled_demo_refreshes_existing_source(self):
         MCPSource.objects.create(
@@ -2497,6 +2500,7 @@ class MCPSourceManagementTests(TestCase):
         self.assertEqual(source.source_type, MCPSource.SourceType.MCP_SERVER)
         self.assertTrue(source.is_enabled)
         self.assertEqual(source.config["transport_kind"], "stdio")
+        self.assertTrue(source.last_check_ok)
 
 class StdioMCPTransportTests(TestCase):
     def setUp(self):

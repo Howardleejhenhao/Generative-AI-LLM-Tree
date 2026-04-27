@@ -11,6 +11,53 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 10:31
+
+### Session Goal
+- Commit to a stdio-first MCP milestone scope and make the bundled MCP demo flow complete in one action instead of a two-step install-then-test sequence.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- inspect the current bundled-demo installer and MCP source list UX
+- make the bundled demo installer run diagnostics immediately after installation
+- update the MCP UI copy and README to match the one-click install-and-test flow
+- add focused tests and rerun Django validation
+
+### Work Completed
+- Chose to keep the milestone scoped as a stdio-first MCP integration instead of expanding immediately into the unfinished SSE transport path.
+- Updated the bundled demo installer so `mcp_source_install_demo` now creates or refreshes the stdio demo source and immediately runs diagnostics on it.
+- Updated the MCP source list CTA from `Install Bundled Demo` to `Install + Test Bundled Demo` so the UI matches the real behavior.
+- Updated the MCP README demo instructions to reflect the new one-click install-and-test flow.
+- Extended MCP management tests to verify that the bundled demo installer now persists a successful diagnostic result immediately after creation/refresh.
+- Ran `python3 manage.py test tree_ui.tests.MCPSourceManagementTests`; all 15 tests passed.
+- Ran `python3 manage.py test tree_ui.tests`; all 134 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed yet
+
+### Current Status
+- The supported MCP path is now a real one-click stdio demo flow: install, diagnose, and inspect all happen from the MCP settings surface without manual intermediate steps.
+
+### Next Recommended Step
+- If the milestone stays stdio-first, the next worthwhile closure step is mostly wording and release framing rather than major code: define the milestone boundary clearly and stop implying SSE completeness.
+
+### Known Issues / Blockers / Tech Debt
+- SSE transport is still recognized but unimplemented, so the project is intentionally stdio-first rather than transport-complete.
+- The stdio client is still a synchronous sequential-request client and does not yet provide richer concurrent MCP behavior.
+
 ## Session 2026-04-27 10:28
 
 ### Session Goal

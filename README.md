@@ -149,11 +149,10 @@ Use the bundled MCP test server to validate the full source-management and tool-
 
 1. Start the Django app.
 2. Open `MCP Settings`.
-3. Click `Install Bundled Demo`.
-4. On the MCP source list page, click `Test` for `Bundled Demo Stdio Server`.
-5. Confirm the source reports `Ready` and shows discovered tools.
-6. Return to a node chat flow and use a prompt that encourages tool use.
-7. Inspect `Tool Trace` in node chat to confirm the tool source and result are visible.
+3. Click `Install + Test Bundled Demo`.
+4. Confirm the source reports `Ready` and shows discovered tools immediately.
+5. Return to a node chat flow and use a prompt that encourages tool use.
+6. Inspect `Tool Trace` in node chat to confirm the tool source and result are visible.
 
 If you prefer to create the source manually, use:
 

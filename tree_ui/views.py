@@ -698,6 +698,8 @@ def mcp_source_install_demo(request):
     )
     clear_diagnostics_result(source)
     default_dispatcher.refresh()
+    result = diagnose_source(source)
+    save_diagnostics_result(source, result)
     return HttpResponseRedirect(reverse("mcp_source_list"))
 
 def mcp_source_create(request):

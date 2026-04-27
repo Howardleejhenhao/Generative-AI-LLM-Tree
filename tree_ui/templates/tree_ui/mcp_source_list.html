@@ -36,7 +36,7 @@
           <div style="display: flex; gap: 0.75rem; align-items: center;">
             <form action="{% url 'mcp_source_install_demo' %}" method="post" style="display: inline;">
               {% csrf_token %}
-              <button type="submit" class="secondary-button" style="padding: 0.5rem 1rem;">Install Bundled Demo</button>
+              <button type="submit" class="secondary-button" style="padding: 0.5rem 1rem;">Install + Test Bundled Demo</button>
             </form>
             <a href="{% url 'mcp_source_create' %}" class="action-btn">Add Source</a>
           </div>
