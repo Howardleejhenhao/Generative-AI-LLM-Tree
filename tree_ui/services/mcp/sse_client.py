@@ -25,6 +25,9 @@ class SSEMCPClient(BaseMCPClient):
         self.endpoint = config.get("endpoint", "")
         self.timeout = self._normalize_timeout(config.get("timeout", 30))
         self.headers = self._normalize_headers(config.get("headers", {}))
+        self.max_request_retries = self._normalize_retry_count(
+            config.get("max_request_retries", 1)
+        )
 
         self._request_id = 0
         self._is_initialized = False
@@ -57,6 +60,14 @@ class SSEMCPClient(BaseMCPClient):
         if not isinstance(value, dict):
             return {}
         return {str(key): str(item) for key, item in value.items()}
+
+    @staticmethod
+    def _normalize_retry_count(value: Any) -> int:
+        try:
+            retries = int(value)
+        except (TypeError, ValueError):
+            return 1
+        return retries if retries >= 0 else 1
 
     def _build_headers(self, extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         headers = {
@@ -110,6 +121,7 @@ class SSEMCPClient(BaseMCPClient):
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 self._stream_response = response
+                self._maybe_set_message_endpoint_from_response(response)
                 self._stream_ready.set()
                 self._consume_stream(response)
         except Exception as exc:
@@ -168,7 +180,65 @@ class SSEMCPClient(BaseMCPClient):
             self._endpoint_ready.set()
             raise RuntimeError("Invalid SSE JSON payload.") from exc
 
+        if self._maybe_set_message_endpoint_from_json(message):
+            return
+
         self._incoming_messages.put(message)
+
+    def _maybe_set_message_endpoint_from_response(self, response: Any) -> None:
+        header_names = [
+            "X-MCP-Endpoint",
+            "Mcp-Endpoint",
+            "X-MCP-Message-Endpoint",
+            "Mcp-Message-Endpoint",
+            "Location",
+        ]
+        headers = getattr(response, "headers", None)
+        if headers is None:
+            return
+
+        for header_name in header_names:
+            header_value = headers.get(header_name)
+            if header_value:
+                self._set_message_endpoint(header_value)
+                return
+
+    def _maybe_set_message_endpoint_from_json(self, payload: Any) -> bool:
+        if not isinstance(payload, dict):
+            return False
+
+        candidates = []
+        if "endpoint" in payload:
+            candidates.append(payload.get("endpoint"))
+        if "messageEndpoint" in payload:
+            candidates.append(payload.get("messageEndpoint"))
+        if "url" in payload:
+            candidates.append(payload.get("url"))
+
+        params = payload.get("params")
+        if isinstance(params, dict):
+            candidates.extend(
+                [
+                    params.get("endpoint"),
+                    params.get("messageEndpoint"),
+                    params.get("url"),
+                ]
+            )
+
+        for candidate in candidates:
+            if isinstance(candidate, str) and candidate.strip():
+                self._set_message_endpoint(candidate)
+                return True
+
+        method = payload.get("method")
+        if method in {"endpoint", "message_endpoint", "transport/endpoint"} and isinstance(params, dict):
+            for key in ("endpoint", "messageEndpoint", "url"):
+                candidate = params.get(key)
+                if isinstance(candidate, str) and candidate.strip():
+                    self._set_message_endpoint(candidate)
+                    return True
+
+        return False
 
     def _set_message_endpoint(self, payload: str) -> None:
         endpoint_value = payload.strip()
@@ -196,10 +266,11 @@ class SSEMCPClient(BaseMCPClient):
 
         self._start_stream()
         if not self._stream_ready.wait(timeout=self.timeout):
-            self._stop_stream()
-            raise RuntimeError(
+            self._stream_error = RuntimeError(
                 f"Timed out connecting to SSE MCP stream after {self.timeout} seconds."
             )
+            self._stop_stream()
+            raise self._stream_error
 
         if self._stream_error and not self._message_endpoint:
             error = self._stream_error
@@ -210,19 +281,28 @@ class SSEMCPClient(BaseMCPClient):
             self._endpoint_ready.set()
 
         if not self._endpoint_ready.wait(timeout=self.timeout):
-            self._stop_stream()
-            raise RuntimeError(
+            self._stream_error = RuntimeError(
                 f"Timed out waiting for SSE MCP endpoint announcement after {self.timeout} seconds."
             )
+            self._stop_stream()
+            raise self._stream_error
 
         if not self._message_endpoint:
             error = self._stream_error
+            if error is None:
+                error = RuntimeError("SSE MCP stream did not provide a message endpoint.")
+                self._stream_error = error
             self._stop_stream()
-            if error:
-                raise RuntimeError(f"SSE MCP stream did not provide a message endpoint: {error}")
-            raise RuntimeError("SSE MCP stream did not provide a message endpoint.")
+            raise RuntimeError(f"SSE MCP stream did not provide a message endpoint: {error}")
 
-    def _post_jsonrpc(self, payload: Dict[str, Any]) -> None:
+    def _reset_connection_state(self) -> None:
+        self._stop_stream()
+        self._message_endpoint = self.config.get("message_endpoint", "") or ""
+        with self._buffer_lock:
+            self._buffered_responses.clear()
+        self._incoming_messages = queue.Queue()
+
+    def _post_jsonrpc_once(self, payload: Dict[str, Any]) -> None:
         self._ensure_stream_connected()
         data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
@@ -247,6 +327,24 @@ class SSEMCPClient(BaseMCPClient):
             ) from exc
         except Exception as exc:
             raise RuntimeError(f"Failed to send SSE MCP request: {exc}") from exc
+
+    def _post_jsonrpc(self, payload: Dict[str, Any]) -> None:
+        attempts = self.max_request_retries + 1
+        last_error: Optional[RuntimeError] = None
+
+        for attempt in range(attempts):
+            try:
+                self._post_jsonrpc_once(payload)
+                return
+            except RuntimeError as exc:
+                last_error = exc
+                if attempt >= attempts - 1:
+                    raise
+                self._stream_error = exc
+                self._reset_connection_state()
+
+        if last_error is not None:
+            raise last_error
 
     def _request(self, method: str, params: Dict[str, Any]) -> Dict[str, Any]:
         with self._request_lock:
@@ -393,9 +491,12 @@ class SSEMCPClient(BaseMCPClient):
             info["status"] = "connecting"
             return info
 
-        info["status"] = "skeleton" if self.endpoint else "disconnected"
         if self._stream_error:
+            info["status"] = "error"
             info["last_error"] = str(self._stream_error)
+            return info
+
+        info["status"] = "skeleton" if self.endpoint else "disconnected"
         return info
 
     def __del__(self):

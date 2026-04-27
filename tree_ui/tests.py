@@ -34,6 +34,7 @@ class _FakeSSEStreamResponse:
     def __init__(self):
         self._lines = queue.Queue()
         self._closed = False
+        self.headers = {}
 
     def enqueue_event(self, *, event: str, data: str):
         for line in [f"event: {event}\n", f"data: {data}\n", "\n"]:
@@ -62,8 +63,9 @@ class _FakeSSEStreamResponse:
 
 
 class _FakeHTTPResponse:
-    def __init__(self, body: bytes = b"{}"):
+    def __init__(self, body: bytes = b"{}", headers: dict | None = None):
         self._body = body
+        self.headers = headers or {}
 
     def read(self):
         return self._body
@@ -79,17 +81,46 @@ class _FakeHTTPResponse:
 
 
 class _FakeSSETransport:
-    def __init__(self, *, announce_endpoint: bool = True):
+    def __init__(
+        self,
+        *,
+        announce_endpoint: bool = True,
+        endpoint_event_name: str = "endpoint",
+        endpoint_payload_mode: str = "plain",
+        response_headers: dict | None = None,
+        fail_first_post: bool = False,
+    ):
         self.announce_endpoint = announce_endpoint
         self.stream = _FakeSSEStreamResponse()
         self.requests = []
         self.endpoint = "http://example.test/sse"
         self.message_endpoint = "http://example.test/messages?session_id=test-session"
         self._announced = False
+        self.endpoint_event_name = endpoint_event_name
+        self.endpoint_payload_mode = endpoint_payload_mode
+        self.response_headers = response_headers or {}
+        self.fail_first_post = fail_first_post
+        self._post_count = 0
+
+    def _new_stream(self):
+        self.stream = _FakeSSEStreamResponse()
+        self.stream.headers = self.response_headers
 
     def _maybe_announce_endpoint(self):
         if self.announce_endpoint and not self._announced:
-            self.stream.enqueue_event(event="endpoint", data="/messages?session_id=test-session")
+            if self.endpoint_payload_mode == "json":
+                payload = json.dumps({"endpoint": "/messages?session_id=test-session"})
+            elif self.endpoint_payload_mode == "jsonrpc_notification":
+                payload = json.dumps(
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "transport/endpoint",
+                        "params": {"endpoint": "/messages?session_id=test-session"},
+                    }
+                )
+            else:
+                payload = "/messages?session_id=test-session"
+            self.stream.enqueue_event(event=self.endpoint_event_name, data=payload)
             self._announced = True
 
     def _emit_jsonrpc(self, payload: dict):
@@ -169,9 +200,14 @@ class _FakeSSETransport:
     def urlopen(self, request, timeout=None):
         method = request.get_method()
         if method == "GET":
+            self._new_stream()
+            self._announced = False
             self._maybe_announce_endpoint()
             return self.stream
 
+        self._post_count += 1
+        if self.fail_first_post and self._post_count == 1:
+            raise OSError("simulated transient POST failure")
         payload = json.loads(request.data.decode("utf-8"))
         self._handle_post_payload(payload)
         return _FakeHTTPResponse()
@@ -2922,6 +2958,56 @@ class StdioMCPTransportTests(TestCase):
             self.assertIn("/messages?session_id=test-session", result.metadata["message_endpoint"])
             client._stop_stream()
 
+    def test_sse_client_accepts_endpoint_from_response_header(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport(
+            announce_endpoint=False,
+            response_headers={"X-MCP-Endpoint": "/messages?session_id=test-session"},
+        )
+        client = SSEMCPClient({"endpoint": transport.endpoint, "label": "Header SSE Server"})
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            tools = client.list_tools()
+            self.assertEqual(len(tools), 1)
+            self.assertEqual(tools[0].name, "echo")
+            self.assertEqual(client.get_server_info()["message_endpoint"], transport.message_endpoint)
+            client._stop_stream()
+
+    def test_sse_client_accepts_jsonrpc_endpoint_notification(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport(
+            endpoint_event_name="message",
+            endpoint_payload_mode="jsonrpc_notification",
+        )
+        client = SSEMCPClient({"endpoint": transport.endpoint, "label": "JSON Endpoint SSE"})
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            tools = client.list_tools()
+            self.assertEqual(len(tools), 1)
+            self.assertEqual(client.get_server_info()["message_endpoint"], transport.message_endpoint)
+            client._stop_stream()
+
+    def test_sse_client_retries_once_after_transient_post_failure(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport(fail_first_post=True)
+        client = SSEMCPClient(
+            {
+                "endpoint": transport.endpoint,
+                "label": "Retry SSE Server",
+                "max_request_retries": 1,
+            }
+        )
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            tools = client.list_tools()
+            self.assertEqual(len(tools), 1)
+            self.assertGreaterEqual(len(transport.requests), 2)
+            self.assertEqual(transport.requests[0]["method"], "initialize")
+            client._stop_stream()
+
     def test_sse_source_diagnostics_succeeds(self):
         transport = _FakeSSETransport()
         source = MCPSource.objects.create(
@@ -2954,6 +3040,7 @@ class StdioMCPTransportTests(TestCase):
             with self.assertRaises(RuntimeError) as cm:
                 client.list_tools()
             self.assertIn("endpoint announcement", str(cm.exception))
+            self.assertEqual(client.get_server_info()["status"], "error")
             client._stop_stream()
 
 

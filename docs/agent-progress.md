@@ -11,6 +11,57 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 12:08
+
+### Session Goal
+- Improve MCP SSE transport robustness now that baseline support is in place.
+- Reduce the risk that the client only works with one narrow style of SSE server.
+
+### Planned Tasks
+- update the progress log for this follow-up implementation session
+- broaden SSE message-endpoint discovery beyond a single event shape
+- add cleaner reconnect/retry behavior for SSE request failures
+- expose clearer client error status for diagnostics
+- add focused tests for the new robustness paths
+
+### Work Completed
+- Extended `tree_ui/services/mcp/sse_client.py` so SSE endpoint discovery now accepts:
+  explicit SSE endpoint events, compatible response headers, and JSON/JSON-RPC-style endpoint payloads on the stream.
+- Added one-shot retry behavior for transient SSE POST request failures by resetting the transport state and reconnecting before retrying the JSON-RPC request.
+- Improved `get_server_info()` so failed SSE connection states surface as `error` with the last transport error preserved for diagnostics.
+- Expanded the mocked SSE transport test harness to simulate:
+  response-header endpoint discovery, JSON-RPC endpoint notifications, reconnect flows, and transient POST failures.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.RemoteMCPAdapterTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran the full Django validation suite successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/sse_client.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- Baseline SSE support already exists on the current branch.
+- SSE support is now more tolerant of different server announcement styles and transient request failures.
+
+### Next Recommended Step
+- If MCP transport hardening continues, the next logical step is explicit reconnect/backoff policy and more detailed diagnostics around mid-stream disconnects.
+- If product delivery becomes the priority again, the next best use of time is adding more real MCP-backed tools now that transport compatibility is stronger.
+
+### Known Issues / Blockers / Tech Debt
+- The SSE client still assumes request/response ordering rather than a more advanced concurrent correlation model.
+- Mid-stream reconnect after a previously successful initialization is still conservative; the client retries requests, but does not yet keep a richer session-resume model.
+
 ## Session 2026-04-27 11:46
 
 ### Session Goal
