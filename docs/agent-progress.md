@@ -11,6 +11,55 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 10:06
+
+### Session Goal
+- Expand tool-trace observability in node chat so tool activity can be understood alongside the node's retrieved memory context.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- inspect current tool streaming payloads, persisted tool serialization, and node chat inspector rendering
+- enrich streaming tool events and/or serialized tool traces with missing provenance metadata
+- add a tool-trace context summary in the node chat UI that references retrieved memory availability
+- add focused tests and rerun Django validation
+
+### Work Completed
+- Reviewed the current tool streaming payloads in `tree_ui/services/node_creation.py`, the node chat inspector rendering in `tree_ui/static/tree_ui/js/node-chat.js`, and the relevant tool-trace tests.
+- Added a shared tool metadata resolver so streaming tool-call and tool-result events now carry `tool_type` and `source_id` consistently instead of leaving the inspector partially blank during generation.
+- Extended streaming tool-result events with explicit success/error metadata and stable call ids for better in-flight traceability.
+- Added a tool-trace summary block in node chat that reports the current node's retrieved-memory count, tool invocation counts, and active tool sources in one place.
+- Fixed a node chat state bug where streamed node updates refreshed messages and tool invocations but left `payload.memories` stale, causing the memory inspector to lag behind the latest reply.
+- Added focused tests for the new tool summary shell and the richer streaming tool-event metadata.
+- Ran `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests`; all 15 tests passed.
+- Ran `python3 manage.py test tree_ui.tests.MemoryInspectorTests`; all 2 tests passed.
+- Ran `python3 manage.py test tree_ui.tests`; all 127 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/templates/tree_ui/node_chat.html`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed yet
+
+### Current Status
+- Node chat now exposes tool activity with better in-flight source metadata and a context summary that can be read alongside retrieved memory state.
+
+### Next Recommended Step
+- Consider adding a workspace-level or node-level execution timeline that interleaves assistant output, tool calls, tool results, and memory retrieval summaries into one chronological trace.
+
+### Known Issues / Blockers / Tech Debt
+- The tool trace now shows the node-level memory context and tool sources, but it still does not provide a strict causal mapping between one specific final sentence and one specific tool result.
+
 ## Session 2026-04-27 09:44
 
 ### Session Goal

@@ -1724,6 +1724,9 @@ class ToolUseTests(TestCase):
         self.assertIn("event: tool_call", streamed)
         self.assertIn("event: tool_result", streamed)
         self.assertIn("compare_branches", streamed)
+        self.assertIn('"tool_type": "internal"', streamed)
+        self.assertIn('"source_id": "internal-registry"', streamed)
+        self.assertIn('"success": true', streamed)
 
     def test_openai_tool_call_parsing(self):
         from tree_ui.services.providers.openai_provider import _extract_tool_calls
@@ -2690,6 +2693,7 @@ class ToolTraceInspectorTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="tool-inspector-toggle-button"')
         self.assertContains(response, 'id="chat-tool-inspector"')
+        self.assertContains(response, 'id="chat-tool-summary"')
         self.assertContains(response, "Tool Trace")
 
 

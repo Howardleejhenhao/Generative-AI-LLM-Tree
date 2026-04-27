@@ -35,6 +35,7 @@ const editVariantFeedback = document.getElementById("edit-variant-feedback");
 const toolInspector = document.getElementById("chat-tool-inspector");
 const toolInspectorToggleButton = document.getElementById("tool-inspector-toggle-button");
 const toolInspectorCloseButton = document.getElementById("chat-tool-inspector-close-button");
+const toolSummary = document.getElementById("chat-tool-summary");
 const toolList = document.getElementById("chat-tool-list");
 
 const memoryInspector = document.getElementById("chat-memory-inspector");
@@ -101,6 +102,78 @@ function renderToolTrace() {
   if (!toolList) return;
 
   const allInvocations = [...(payload.tool_invocations || []), ...streamingToolInvocations];
+  const retrievedMemories = (payload.memories || []).filter((memory) => memory.is_retrieved);
+  const sourceLabels = Array.from(
+    new Set(
+      allInvocations
+        .map((inv) => inv.source_id || inv.tool_call?.source_id || "")
+        .filter(Boolean),
+    ),
+  );
+  const successCount = allInvocations.filter((inv) => {
+    const success = inv.success ?? inv.tool_result?.success ?? (inv.tool_result ? !inv.tool_result.is_error : false);
+    return Boolean(success);
+  }).length;
+  const failureCount = allInvocations.filter((inv) => {
+    if (!("success" in inv) && !inv.tool_result) {
+      return false;
+    }
+    const success = inv.success ?? inv.tool_result?.success ?? !inv.tool_result?.is_error;
+    return !success;
+  }).length;
+
+  if (toolSummary) {
+    toolSummary.innerHTML = "";
+
+    const summaryCard = document.createElement("div");
+    summaryCard.className = "tool-trace-summary-card";
+
+    const title = document.createElement("strong");
+    title.className = "tool-trace-summary-title";
+    title.textContent = "Context Snapshot";
+
+    const copy = document.createElement("p");
+    copy.className = "tool-trace-summary-copy";
+    copy.textContent = `This node currently exposes ${retrievedMemories.length} retrieved memor${retrievedMemories.length === 1 ? "y" : "ies"} and ${allInvocations.length} tool invocation${allInvocations.length === 1 ? "" : "s"}.`;
+
+    const stats = document.createElement("div");
+    stats.className = "tool-trace-summary-stats";
+
+    const statValues = [
+      `Retrieved memory ${retrievedMemories.length}`,
+      `Success ${successCount}`,
+      `Failed ${failureCount}`,
+    ];
+    for (const text of statValues) {
+      const pill = document.createElement("span");
+      pill.className = "tool-trace-summary-pill";
+      pill.textContent = text;
+      stats.appendChild(pill);
+    }
+
+    summaryCard.append(title, copy, stats);
+
+    if (sourceLabels.length) {
+      const sourceRow = document.createElement("div");
+      sourceRow.className = "tool-trace-summary-sources";
+      const sourceLabel = document.createElement("span");
+      sourceLabel.className = "tool-trace-summary-label";
+      sourceLabel.textContent = "Active sources";
+      sourceRow.appendChild(sourceLabel);
+
+      for (const sourceId of sourceLabels) {
+        const sourcePill = document.createElement("span");
+        sourcePill.className = "tool-trace-summary-pill tool-trace-summary-pill-source";
+        sourcePill.textContent = sourceId;
+        sourceRow.appendChild(sourcePill);
+      }
+
+      summaryCard.appendChild(sourceRow);
+    }
+
+    toolSummary.appendChild(summaryCard);
+  }
+
   toolList.innerHTML = "";
 
   if (allInvocations.length === 0) {
@@ -118,7 +191,7 @@ function renderToolTrace() {
     const result = inv.result || inv.tool_result?.result;
     const success = inv.success ?? (inv.tool_result ? !inv.tool_result.is_error : true);
     const toolType = inv.tool_type || (inv.tool_call ? "streaming" : "unknown");
-    const sourceId = inv.source_id || "";
+    const sourceId = inv.source_id || inv.tool_result?.source_id || "";
     const createdAt = inv.created_at;
 
     const card = document.createElement("div");
@@ -593,11 +666,17 @@ async function handleSubmit(event) {
         },
         tool_result(data) {
           extraStreamingMessages.push({ tool_result: data });
-          const inv = streamingToolInvocations.find(i => (i.name === data.name || (i.tool_call && i.tool_call.name === data.name)) && !i.tool_result);
+          const inv = streamingToolInvocations.find(i => (
+            i.name === data.name ||
+            (i.tool_call && i.tool_call.name === data.name) ||
+            (i.tool_call && i.tool_call.id === data.id)
+          ) && !i.tool_result);
           if (inv) {
             inv.tool_result = data;
             inv.result = data.result;
-            inv.success = !data.is_error;
+            inv.success = data.success ?? !data.is_error;
+            inv.source_id = data.source_id || inv.source_id;
+            inv.tool_type = data.tool_type || inv.tool_type;
           }
           renderTranscript(extraStreamingMessages);
           renderToolTrace();
@@ -610,6 +689,7 @@ async function handleSubmit(event) {
           }
           payload.messages = data.node.messages;
           payload.attachments = data.node.attachments || [];
+          payload.memories = data.node.memories || [];
           payload.tool_invocations = data.node.tool_invocations || [];
           streamingToolInvocations = [];
 

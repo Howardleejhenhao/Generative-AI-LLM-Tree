@@ -2181,6 +2181,58 @@ body.lightbox-open {
   font-style: italic;
 }
 
+.tool-trace-summary-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(250, 244, 235, 0.92), rgba(255, 255, 255, 0.92));
+  display: grid;
+  gap: 10px;
+}
+
+.tool-trace-summary-title {
+  color: var(--text-strong);
+  font-size: 0.95rem;
+}
+
+.tool-trace-summary-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.tool-trace-summary-stats,
+.tool-trace-summary-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tool-trace-summary-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tool-trace-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(71, 52, 32, 0.08);
+  color: var(--text-strong);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.tool-trace-summary-pill-source {
+  font-family: monospace;
+}
+
 .tool-trace-card {
   padding: 14px;
   border: 1px solid var(--border);

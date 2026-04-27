@@ -42,6 +42,13 @@ def _safe_parse_tool_arguments(raw_arguments: str) -> dict:
         }
 
 
+def _resolve_tool_metadata(tool_name: str) -> tuple[str, str]:
+    tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tool_name), None)
+    if tool_def is None:
+        return "unknown", ""
+    return tool_def.source_type, tool_def.source_id
+
+
 def _build_summary(prompt: str) -> str:
     prompt = " ".join(prompt.split())
     if len(prompt) <= 92:
@@ -397,7 +404,15 @@ def stream_assistant_reply(
                     call_id = delta.tool_call.call_id
                     if call_id not in turn_tool_calls:
                         turn_tool_calls[call_id] = {"name": delta.tool_call.name, "arguments": ""}
-                        yield ReplyChunk(tool_call={"name": delta.tool_call.name, "id": call_id})
+                        tool_type, source_id = _resolve_tool_metadata(delta.tool_call.name)
+                        yield ReplyChunk(
+                            tool_call={
+                                "name": delta.tool_call.name,
+                                "id": call_id,
+                                "tool_type": tool_type,
+                                "source_id": source_id,
+                            }
+                        )
                     turn_tool_calls[call_id]["arguments"] += delta.tool_call.arguments
         except ProviderError as exc:
             if emitted_anything:
@@ -439,13 +454,10 @@ def stream_assistant_reply(
         for tc_obj in tool_calls_objs:
             context = {"workspace": parent.workspace} if parent else {}
             mcp_result = default_dispatcher.execute_tool(tc_obj.name, tc_obj.arguments, context=context)
+            tool_type, source_id = _resolve_tool_metadata(tc_obj.name)
 
             # Standardize persistence using MCP result shape
             if parent:
-                tool_def = next((t for t in default_dispatcher.list_tools() if t.name == tc_obj.name), None)
-                tool_type = tool_def.source_type if tool_def else "unknown"
-                source_id = tool_def.source_id if tool_def else ""
-
                 ToolInvocation.objects.create(
                     node=parent,
                     tool_name=tc_obj.name,
@@ -457,7 +469,17 @@ def stream_assistant_reply(
                 )
 
             # Emit result for streaming consumers
-            yield ReplyChunk(tool_result={"name": tc_obj.name, "result": mcp_result.content})
+            yield ReplyChunk(
+                tool_result={
+                    "name": tc_obj.name,
+                    "result": mcp_result.content,
+                    "success": not mcp_result.is_error,
+                    "is_error": mcp_result.is_error,
+                    "tool_type": tool_type,
+                    "source_id": source_id,
+                    "id": tc_obj.call_id or tc_obj.name,
+                }
+            )
 
             # Feed back to model
             active_messages.append(
