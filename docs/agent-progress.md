@@ -11,6 +11,60 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 12:27
+
+### Session Goal
+- Improve MCP observability by surfacing richer live transport/client status in the MCP management UI.
+- Make SSE/stdio transport debugging easier without requiring full tool execution every time.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- extend MCP diagnostic metadata normalization for live client info
+- expose live client status, resolved endpoint, and last error on the MCP source list
+- add focused tests for diagnostic metadata and UI rendering
+- rerun focused MCP tests plus the full Django suite
+
+### Work Completed
+- Added lightweight live MCP client status inspection to the MCP source list so the UI can show current transport/client state without running a full tool discovery pass.
+- Extended `tree_ui/services/mcp/source_status.py` to normalize client metadata such as:
+  `transport`, `client_status`, `message_endpoint`, and `last_error`.
+- Updated the MCP source list UI to surface:
+  current client status, resolved message endpoint, and the latest runtime error when available.
+- Added focused tests for:
+  enriched diagnostic metadata and live client status rendering on the MCP source list page.
+- Ran focused MCP UI/diagnostic tests successfully:
+  `python3 manage.py test tree_ui.tests.RemoteMCPAdapterTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran the full Django validation suite successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP source diagnostics now expose more runtime observability directly in the management UI.
+
+### Next Recommended Step
+- If transport work continues, the next strongest step is persisting richer diagnostic metadata instead of only the latest summary text/tool count.
+- If feature work shifts back toward agent behavior, the next practical step is expanding the real tool catalog now that MCP transport/debug visibility is better.
+
+### Known Issues / Blockers / Tech Debt
+- Live client status on the list page is runtime-only and not persisted into the current `MCPSource` schema.
+- Diagnostics still store only summary fields in the database, not structured transport metadata.
+
 ## Session 2026-04-27 12:08
 
 ### Session Goal

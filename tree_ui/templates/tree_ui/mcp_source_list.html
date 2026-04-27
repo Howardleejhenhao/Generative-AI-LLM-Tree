@@ -70,7 +70,7 @@
             </thead>
 	            <tbody>
 	              {% for row in source_rows %}
-                  {% with source=row.source diagnostic=row.diagnostic support=row.support %}
+                  {% with source=row.source diagnostic=row.diagnostic support=row.support live_client=row.live_client %}
 	              <tr style="border-bottom: 1px solid var(--border); transition: background 160ms ease;">
 	                <td style="padding: 1.25rem 1rem;">
 	                  <div style="font-weight: 700; color: var(--text-strong); font-size: 1.05rem;">{{ source.name }}</div>
@@ -97,6 +97,14 @@
                       <div style="margin-top: 0.45rem; color: var(--muted); font-size: 0.82rem; line-height: 1.45;">
                         {{ support.detail }}
                       </div>
+                      {% if live_client %}
+                        <div style="margin-top: 0.55rem; color: var(--muted); font-size: 0.82rem; line-height: 1.45;">
+                          <div>Client: {{ live_client.client_status|default:"unknown" }}</div>
+                          {% if live_client.transport %}
+                            <div style="margin-top: 0.2rem;">Transport: {{ live_client.transport }}</div>
+                          {% endif %}
+                        </div>
+                      {% endif %}
                       {% if diagnostic %}
                         <div style="margin-top: 0.6rem;">
                           <span class="badge {% if diagnostic.ok %}badge-success{% else %}badge-danger{% endif %}">
@@ -130,6 +138,16 @@
                           <div>Tools: {{ diagnostic.tool_count }}</div>
                           {% if diagnostic.tool_names %}
                             <div style="margin-top: 0.25rem;">{{ diagnostic.tool_names|join:", " }}</div>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                      {% if live_client %}
+                        <div style="margin-top: 0.55rem; color: var(--muted); font-family: inherit; font-size: 0.82rem; line-height: 1.45;">
+                          {% if live_client.message_endpoint %}
+                            <div>Resolved endpoint: {{ live_client.message_endpoint }}</div>
+                          {% endif %}
+                          {% if live_client.last_error %}
+                            <div style="margin-top: 0.25rem;">Last error: {{ live_client.last_error }}</div>
                           {% endif %}
                         </div>
                       {% endif %}

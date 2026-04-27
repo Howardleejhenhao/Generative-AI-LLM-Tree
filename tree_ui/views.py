@@ -12,10 +12,12 @@ from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.mcp.dispatcher import default_dispatcher
+from tree_ui.services.mcp.dispatcher import create_adapter_from_model
 from tree_ui.services.mcp.source_status import (
     clear_diagnostics_result,
     diagnose_source,
     save_diagnostics_result,
+    summarize_client_info,
 )
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
@@ -648,6 +650,21 @@ def mcp_source_list(request):
 
     for source in sources:
         diag = None
+        live_client = None
+        adapter = create_adapter_from_model(source)
+        if adapter is not None and hasattr(adapter, "get_status"):
+            try:
+                base_status = adapter.get_status()
+            except Exception as exc:
+                live_client = {
+                    "transport": source.config.get("transport_kind", ""),
+                    "client_status": "error",
+                    "message_endpoint": "",
+                    "last_error": str(exc),
+                }
+            else:
+                client_info = base_status.get("client_info", {}) if isinstance(base_status, dict) else {}
+                live_client = summarize_client_info(client_info)
         if source.last_checked_at:
             diag = {
                 "ok": source.last_check_ok,
@@ -662,6 +679,7 @@ def mcp_source_list(request):
                 "source": source,
                 "diagnostic": diag,
                 "support": build_support_summary(source),
+                "live_client": live_client,
             }
         )
     return render(

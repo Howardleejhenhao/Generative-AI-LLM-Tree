@@ -2400,6 +2400,40 @@ class RemoteMCPAdapterTests(TestCase):
         self.assertTrue(result.is_error)
         self.assertIn("Remote MCP execution failed: Server crashed", result.content[0]["text"])
 
+    def test_diagnose_source_includes_client_metadata(self):
+        from tree_ui.services.mcp.source_status import diagnose_source
+
+        source = MCPSource(
+            name="Diag SSE",
+            source_id="diag-sse",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            config={"transport_kind": "sse", "endpoint": "http://example.test/sse"},
+            is_enabled=True,
+        )
+
+        class FakeAdapter:
+            def get_status(self):
+                return {
+                    "client_info": {
+                        "transport": "sse",
+                        "status": "error",
+                        "message_endpoint": "http://example.test/messages?id=1",
+                        "last_error": "stream closed unexpectedly",
+                    }
+                }
+
+            def list_tools(self):
+                raise RuntimeError("stream closed unexpectedly")
+
+        with patch("tree_ui.services.mcp.source_status.create_adapter_from_model", return_value=FakeAdapter()):
+            result = diagnose_source(source)
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["transport"], "sse")
+        self.assertEqual(result["client_status"], "error")
+        self.assertEqual(result["message_endpoint"], "http://example.test/messages?id=1")
+        self.assertEqual(result["last_error"], "stream closed unexpectedly")
+
 class MCPSourceManagementTests(TestCase):
     def setUp(self):
         from tree_ui.services.mcp.dispatcher import default_dispatcher
@@ -2442,6 +2476,40 @@ class MCPSourceManagementTests(TestCase):
         self.assertContains(response, "Supported (sse)")
         self.assertContains(response, "current production-ready MCP path")
         self.assertContains(response, "announce their message endpoint")
+
+    def test_mcp_source_list_page_shows_live_client_status_details(self):
+        source = MCPSource.objects.create(
+            name="Live SSE",
+            source_id="live-sse",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "sse", "endpoint": "http://example.test/sse"},
+        )
+
+        class FakeAdapter:
+            def get_status(self):
+                return {
+                    "client_info": {
+                        "transport": "sse",
+                        "status": "error",
+                        "message_endpoint": "http://example.test/messages?id=1",
+                        "last_error": "Timed out waiting for endpoint announcement.",
+                    }
+                }
+
+        def fake_create_adapter(source_model):
+            if source_model.pk == source.pk:
+                return FakeAdapter()
+            return None
+
+        with patch("tree_ui.views.create_adapter_from_model", side_effect=fake_create_adapter):
+            response = self.client.get(reverse("mcp_source_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Client: error")
+        self.assertContains(response, "Transport: sse")
+        self.assertContains(response, "Resolved endpoint: http://example.test/messages?id=1")
+        self.assertContains(response, "Last error: Timed out waiting for endpoint announcement.")
 
     def test_can_create_mcp_source(self):
         response = self.client.post(reverse("mcp_source_create"), {

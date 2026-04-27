@@ -4,6 +4,18 @@ from django.utils import timezone
 from .dispatcher import create_adapter_from_model
 
 
+def summarize_client_info(client_info: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(client_info, dict):
+        client_info = {}
+
+    return {
+        "transport": client_info.get("transport", ""),
+        "client_status": client_info.get("status", ""),
+        "message_endpoint": client_info.get("message_endpoint", ""),
+        "last_error": client_info.get("last_error", ""),
+    }
+
+
 def diagnose_source(source_model: Any) -> Dict[str, Any]:
     adapter = create_adapter_from_model(source_model)
     if adapter is None:
@@ -18,7 +30,8 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
 
     base_status = adapter.get_status() if hasattr(adapter, "get_status") else {}
     client_info = base_status.get("client_info", {}) if isinstance(base_status, dict) else {}
-    transport = client_info.get("transport") or source_model.config.get("transport_kind", "")
+    client_summary = summarize_client_info(client_info)
+    transport = client_summary.get("transport") or source_model.config.get("transport_kind", "")
 
     try:
         tools = adapter.list_tools()
@@ -31,7 +44,9 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
             "tool_count": 0,
             "tool_names": [],
             "transport": transport,
-            "client_status": client_info.get("status", "error"),
+            "client_status": client_summary.get("client_status", "error"),
+            "message_endpoint": client_summary.get("message_endpoint", ""),
+            "last_error": client_summary.get("last_error", ""),
         }
 
     unavailable_name = f"{source_model.source_id}__unavailable"
@@ -44,7 +59,9 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
             "tool_count": 0,
             "tool_names": [],
             "transport": transport,
-            "client_status": client_info.get("status", "error"),
+            "client_status": client_summary.get("client_status", "error"),
+            "message_endpoint": client_summary.get("message_endpoint", ""),
+            "last_error": client_summary.get("last_error", ""),
         }
 
     tool_names = [tool.name for tool in tools]
@@ -56,7 +73,9 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
         "tool_count": len(tool_names),
         "tool_names": tool_names,
         "transport": transport,
-        "client_status": client_info.get("status", "connected"),
+        "client_status": client_summary.get("client_status", "connected"),
+        "message_endpoint": client_summary.get("message_endpoint", ""),
+        "last_error": client_summary.get("last_error", ""),
     }
 
 
