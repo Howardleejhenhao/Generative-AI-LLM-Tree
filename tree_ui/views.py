@@ -633,8 +633,8 @@ def mcp_source_list(request):
             }
         if transport == "sse":
             return {
-                "label": "Planned (sse)",
-                "detail": "SSE transport is recognized in configuration, but the client implementation is not complete yet.",
+                "label": "Supported (sse)",
+                "detail": "Use this for MCP servers that expose an SSE stream and announce their message endpoint to the client.",
             }
         if transport == "stub":
             return {

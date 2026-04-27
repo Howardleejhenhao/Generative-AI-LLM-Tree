@@ -1,5 +1,7 @@
 import json
+import queue
 import tempfile
+import threading
 from unittest.mock import Mock, patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -26,6 +28,153 @@ from tree_ui.services.providers import ProviderError
 from tree_ui.services.providers.base import GenerationResult, ProviderDelta, ToolCallDelta
 from tree_ui.services.providers.registry import generate_text as registry_generate_text
 from tree_ui.services.router import route_model
+
+
+class _FakeSSEStreamResponse:
+    def __init__(self):
+        self._lines = queue.Queue()
+        self._closed = False
+
+    def enqueue_event(self, *, event: str, data: str):
+        for line in [f"event: {event}\n", f"data: {data}\n", "\n"]:
+            self._lines.put(line.encode("utf-8"))
+
+    def readline(self):
+        line = self._lines.get()
+        if line is None:
+            return b""
+        return line
+
+    def read(self):
+        return b""
+
+    def close(self):
+        if not self._closed:
+            self._closed = True
+            self._lines.put(None)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+class _FakeHTTPResponse:
+    def __init__(self, body: bytes = b"{}"):
+        self._body = body
+
+    def read(self):
+        return self._body
+
+    def close(self):
+        return None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _FakeSSETransport:
+    def __init__(self, *, announce_endpoint: bool = True):
+        self.announce_endpoint = announce_endpoint
+        self.stream = _FakeSSEStreamResponse()
+        self.requests = []
+        self.endpoint = "http://example.test/sse"
+        self.message_endpoint = "http://example.test/messages?session_id=test-session"
+        self._announced = False
+
+    def _maybe_announce_endpoint(self):
+        if self.announce_endpoint and not self._announced:
+            self.stream.enqueue_event(event="endpoint", data="/messages?session_id=test-session")
+            self._announced = True
+
+    def _emit_jsonrpc(self, payload: dict):
+        self.stream.enqueue_event(event="message", data=json.dumps(payload))
+
+    def _handle_post_payload(self, payload: dict):
+        self.requests.append(payload)
+        req_id = payload.get("id")
+        method = payload.get("method")
+
+        if method == "initialize":
+            self._emit_jsonrpc(
+                {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {"tools": {}},
+                        "serverInfo": {
+                            "name": "Test SSE Server",
+                            "version": "1.0.0",
+                        },
+                    },
+                }
+            )
+            return
+
+        if method == "notifications/initialized":
+            return
+
+        if method == "tools/list":
+            self._emit_jsonrpc(
+                {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "tools": [
+                            {
+                                "name": "echo",
+                                "description": "Echoes back the input over SSE",
+                                "inputSchema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {"type": "string"},
+                                    },
+                                    "required": ["message"],
+                                },
+                            }
+                        ]
+                    },
+                }
+            )
+            return
+
+        if method == "tools/call":
+            params = payload.get("params", {})
+            name = params.get("name")
+            arguments = params.get("arguments", {})
+            if name == "echo":
+                self._emit_jsonrpc(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"Echo: {arguments.get('message', '')}",
+                                }
+                            ],
+                            "isError": False,
+                        },
+                    }
+                )
+            return
+
+    def urlopen(self, request, timeout=None):
+        method = request.get_method()
+        if method == "GET":
+            self._maybe_announce_endpoint()
+            return self.stream
+
+        payload = json.loads(request.data.decode("utf-8"))
+        self._handle_post_payload(payload)
+        return _FakeHTTPResponse()
 
 
 class WorkspaceGraphViewTests(TestCase):
@@ -2060,8 +2209,9 @@ class RemoteMCPAdapterTests(TestCase):
         self.assertEqual(status2["config"]["timeout"], 60)
 
     def test_remote_adapter_uses_transport_specific_client_selection(self):
-        from tree_ui.services.mcp.client import StubMCPClient, UnsupportedTransportClient
+        from tree_ui.services.mcp.client import StubMCPClient
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
 
         stub_adapter = RemoteMCPSourceAdapter(
             source_id="stub-remote", name="Stub Remote", config={"transport_kind": "stub"}
@@ -2071,8 +2221,8 @@ class RemoteMCPAdapterTests(TestCase):
         sse_adapter = RemoteMCPSourceAdapter(
             source_id="sse-remote", name="SSE Remote", config={"transport_kind": "sse"}
         )
-        self.assertIsInstance(sse_adapter._client, UnsupportedTransportClient)
-        self.assertEqual(sse_adapter.get_status()["client_info"]["status"], "not_implemented")
+        self.assertIsInstance(sse_adapter._client, SSEMCPClient)
+        self.assertEqual(sse_adapter.get_status()["client_info"]["status"], "disconnected")
 
     def test_remote_adapter_lists_tools_via_stub_client(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
@@ -2131,7 +2281,7 @@ class RemoteMCPAdapterTests(TestCase):
         unavailable_tool = next(t for t in tools if t.name == "real-remote__unavailable")
         self.assertEqual(unavailable_tool.source_type, "mcp_server")
         self.assertEqual(unavailable_tool.source_id, "real-remote")
-        self.assertIn("not yet implemented", unavailable_tool.description)
+        self.assertIn("No endpoint configured", unavailable_tool.description)
 
     def test_multi_source_coexistence(self):
         from tree_ui.models import MCPSource
@@ -2253,8 +2403,9 @@ class MCPSourceManagementTests(TestCase):
         response = self.client.get(reverse("mcp_source_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Supported (stdio)")
-        self.assertContains(response, "Planned (sse)")
+        self.assertContains(response, "Supported (sse)")
         self.assertContains(response, "current production-ready MCP path")
+        self.assertContains(response, "announce their message endpoint")
 
     def test_can_create_mcp_source(self):
         response = self.client.post(reverse("mcp_source_create"), {
@@ -2437,7 +2588,8 @@ class MCPSourceManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Structured MCP Server Configuration")
         self.assertContains(response, "stdio")
-        self.assertContains(response, "recognized in configuration but not fully implemented yet")
+        self.assertContains(response, "supports both")
+        self.assertContains(response, "announces its message endpoint")
 
     def test_can_run_mcp_source_diagnostic_for_mock_source(self):
         source = MCPSource.objects.create(
@@ -2712,20 +2864,97 @@ class StdioMCPTransportTests(TestCase):
         self.assertTrue(result.is_error)
         self.assertIn("No command configured", result.content[0]["text"])
 
-    def test_sse_remains_unimplemented(self):
+    def test_sse_client_initialization(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        client = SSEMCPClient(
+            {
+                "transport_kind": "sse",
+                "endpoint": "http://localhost:8080/sse",
+                "timeout": 12,
+                "label": "SSE Server",
+                "headers": {"Authorization": "Bearer token"},
+            }
+        )
+        self.assertEqual(client.endpoint, "http://localhost:8080/sse")
+        self.assertEqual(client.timeout, 12)
+        self.assertEqual(client.headers, {"Authorization": "Bearer token"})
+        self.assertEqual(client.server_label, "SSE Server")
+        self.assertEqual(client.get_server_info()["status"], "skeleton")
+
+    def test_adapter_builds_sse_client(self):
         from tree_ui.services.mcp.remote_adapter import RemoteMCPSourceAdapter
-        from tree_ui.services.mcp.client import UnsupportedTransportClient
-        config = {"transport_kind": "sse"}
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        config = {"transport_kind": "sse", "endpoint": "http://localhost:8080/sse"}
         adapter = RemoteMCPSourceAdapter(source_id="sse-test", name="SSE", config=config)
-        self.assertIsInstance(adapter._client, UnsupportedTransportClient)
-        
-        # list_tools handles Exception and returns an "unavailable" indicator
-        tools = adapter.list_tools()
-        self.assertEqual(len(tools), 1)
-        self.assertEqual(tools[0].source_id, "sse-test")
-        self.assertIn("unavailable", tools[0].name.lower())
-        self.assertIn("unsupported", tools[0].description.lower())
-        self.assertIn("recognized but not yet implemented", tools[0].description)
+        self.assertIsInstance(adapter._client, SSEMCPClient)
+
+    def test_sse_client_real_handshake_and_discovery(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport()
+        client = SSEMCPClient({"endpoint": transport.endpoint, "label": "Real SSE Server"})
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            tools = client.list_tools()
+            self.assertEqual(len(tools), 1)
+            self.assertEqual(tools[0].name, "echo")
+            self.assertIn("over SSE", tools[0].description)
+
+            info = client.get_server_info()
+            self.assertEqual(info["status"], "connected")
+            self.assertEqual(info["server_info"]["name"], "Test SSE Server")
+            self.assertIn("/messages?session_id=test-session", info["message_endpoint"])
+            client._stop_stream()
+
+    def test_sse_client_real_call(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport()
+        client = SSEMCPClient({"endpoint": transport.endpoint, "label": "Real SSE Server"})
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            result = client.call_tool("echo", {"message": "Hello SSE"})
+            self.assertFalse(result.is_error)
+            self.assertEqual(result.content[0]["text"], "Echo: Hello SSE")
+            self.assertEqual(result.metadata["transport"], "sse")
+            self.assertIn("/messages?session_id=test-session", result.metadata["message_endpoint"])
+            client._stop_stream()
+
+    def test_sse_source_diagnostics_succeeds(self):
+        transport = _FakeSSETransport()
+        source = MCPSource.objects.create(
+            name="SSE Source",
+            source_id="sse-source",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "sse", "endpoint": transport.endpoint, "label": "SSE Source"},
+        )
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            response = self.client.post(reverse("mcp_source_test", args=[source.id]), follow=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Ready")
+            self.assertContains(response, "Connection succeeded. Discovered 1 tool(s).")
+            self.assertContains(response, "echo")
+
+            source.refresh_from_db()
+            self.assertTrue(source.last_check_ok)
+            self.assertEqual(source.last_check_label, "Ready")
+            self.assertEqual(source.last_check_tool_count, 1)
+
+    def test_sse_client_requires_endpoint_announcement(self):
+        from tree_ui.services.mcp.sse_client import SSEMCPClient
+
+        transport = _FakeSSETransport(announce_endpoint=False)
+        client = SSEMCPClient({"endpoint": transport.endpoint, "timeout": 0.2})
+
+        with patch("urllib.request.urlopen", side_effect=transport.urlopen):
+            with self.assertRaises(RuntimeError) as cm:
+                client.list_tools()
+            self.assertIn("endpoint announcement", str(cm.exception))
+            client._stop_stream()
 
 
 class MCPSourcePersistenceTests(TestCase):

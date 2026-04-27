@@ -129,17 +129,17 @@ Editing old history does not overwrite the original node. Instead, the app creat
 
 ## MCP Support Matrix
 
-LLM-Tree is currently a **stdio-first MCP integration**.
+LLM-Tree currently supports **stdio** and **SSE** MCP transports.
 
 | Source / Transport | Status | Notes |
 |---|---|---|
 | Internal registry | Supported | Built-in tools always available unless explicitly replaced by DB configuration |
 | `mock` source type | Demo only | Useful for UI/testing; not a real external MCP server |
-| `mcp_server` + `transport_kind=stdio` | Supported | Current production-ready MCP path |
-| `mcp_server` + `transport_kind=sse` | Recognized, not complete | Config is accepted but runtime transport is not fully implemented |
+| `mcp_server` + `transport_kind=stdio` | Supported | Good default for local and bundled demo servers |
+| `mcp_server` + `transport_kind=sse` | Supported | Expects an SSE stream that announces the message endpoint used for JSON-RPC POST requests |
 | `mcp_server` + `transport_kind=stub` | Demo only | Simulated remote server behavior for testing |
 
-If you want the project to demonstrate a real MCP integration today, use `stdio`.
+If you want the project to demonstrate a real MCP integration today, use either `stdio` or an SSE server that follows the endpoint-announcement flow.
 
 ## MCP Demo Setup
 
@@ -169,7 +169,7 @@ Timeout: 30
 
 ### Known MCP Limits
 
-- SSE transport is not complete yet.
+- The SSE client expects the server to announce a message endpoint over the stream before tool requests are sent.
 - The stdio client currently assumes a synchronous request/response flow.
 - MCP diagnostics persist only the latest check result, not a full history.
 - Tool routing exists, but the product still relies on a relatively small tool set.

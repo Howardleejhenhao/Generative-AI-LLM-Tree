@@ -5,7 +5,7 @@ from tree_ui.models import MCPSource
 class MCPSourceForm(forms.ModelForm):
     TRANSPORT_CHOICES = [
         ("stdio", "Stdio (supported)"),
-        ("sse", "SSE (planned / not yet implemented)"),
+        ("sse", "SSE (supported)"),
         ("stub", "Stub (demo only)"),
     ]
 

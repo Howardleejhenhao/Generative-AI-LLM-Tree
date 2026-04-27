@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from .base import ToolSource
 from .client import BaseMCPClient, StubMCPClient, UnsupportedTransportClient
+from .sse_client import SSEMCPClient
 from .stdio_client import StdioMCPClient
 from .schema import ToolDefinition, ToolResult
 
@@ -86,6 +87,8 @@ class RemoteMCPSourceAdapter(ToolSource):
             return StubMCPClient(config)
         if transport_kind == "stdio":
             return StdioMCPClient(config)
+        if transport_kind == "sse":
+            return SSEMCPClient(config)
         return UnsupportedTransportClient(config)
 
     def list_tools(self) -> List[ToolDefinition]:

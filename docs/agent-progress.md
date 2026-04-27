@@ -11,6 +11,115 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 11:46
+
+### Session Goal
+- Implement real MCP `sse` transport support so the MCP stack is no longer stdio-only.
+- Replace the current placeholder/wording that says SSE is recognized but not implemented.
+
+### Planned Tasks
+- add this session entry before implementation starts
+- inspect the existing stdio MCP client and remote adapter boundaries
+- implement a real SSE MCP client and wire it into the adapter
+- add/update tests for SSE config validation, diagnostics, tool discovery, and tool execution
+- update README and MCP management UI copy to reflect supported SSE transport
+
+### Work Completed
+- Implemented `tree_ui/services/mcp/sse_client.py` as a real MCP SSE transport client with:
+  SSE stream connection, endpoint announcement handling, JSON-RPC POST requests, initialize handshake, tool discovery, tool execution, and transport-level timeout/error handling.
+- Updated `tree_ui/services/mcp/remote_adapter.py` so `transport_kind=sse` now builds `SSEMCPClient` instead of falling back to the unsupported placeholder client.
+- Updated MCP support wording across the MCP management UI, form transport labels, support summaries, and `README.md` so the app no longer claims SSE is only recognized-but-unimplemented.
+- Replaced the old SSE placeholder tests with real supported-behavior tests covering:
+  client initialization, adapter selection, handshake/discovery, tool calls, diagnostics success, and missing endpoint-announcement failure.
+- Preserved sandbox-safe testability by using mocked SSE transport fixtures instead of opening local test sockets.
+- Ran focused MCP test coverage, full `tree_ui.tests`, and Django system checks successfully.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+- `tree_ui/forms.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/services/mcp/sse_client.py`
+- `tree_ui/templates/tree_ui/mcp_source_form.html`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/mcp-sse-transport`
+- Commits made:
+  - pending final session commit
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP now has working `stdio` and `sse` transport paths in the application codebase.
+- The test suite is green after the SSE transport integration.
+
+### Next Recommended Step
+- If the next milestone keeps expanding MCP, the highest-value follow-up is improving transport robustness:
+  richer SSE reconnection handling, better stream error diagnostics, and possibly shared JSON-RPC transport helpers between stdio and SSE.
+- If the milestone shifts back to product behavior, the next practical step is wiring more real MCP-backed tools into chat workflows now that both main transports are available.
+
+### Known Issues / Blockers / Tech Debt
+- The SSE client currently expects the server to announce its message endpoint over the stream before requests are sent; that assumption is now documented and tested, but not all third-party servers may follow it.
+- The stdio and SSE clients still duplicate some JSON-RPC lifecycle logic that could be refactored later if transport complexity grows.
+
+## Session 2026-04-27 11:28
+
+### Session Goal
+- Record the implementation decision for completing MCP transport support in the next session.
+- Leave a direct handoff note so the next session can immediately start the `sse` transport work.
+
+### Planned Tasks
+- review the current MCP implementation boundary
+- estimate the remaining effort for transport-complete MCP
+- record the exact next implementation target and file-level direction
+
+### Work Completed
+- Confirmed that the current repository is not missing MCP from scratch; it already has a working stdio-first MCP stack with dispatcher, adapters, diagnostics, UI management, and tests.
+- Confirmed that the main blocker for MCP transport-complete status is `sse` transport, not architecture.
+- Verified that `tree_ui/services/mcp/remote_adapter.py` recognizes `sse`, but currently routes it to `UnsupportedTransportClient` through `tree_ui/services/mcp/client.py`.
+- Verified that the current test suite intentionally encodes the incomplete state via the `test_sse_remains_unimplemented` coverage in `tree_ui/tests.py`.
+- Estimated the remaining effort as moderate rather than large:
+  MVP `sse` support should be roughly 0.5 to 1.5 days, while a more robust version with stronger reconnection/error handling/test depth is roughly 2 to 4 days.
+- Decided that the next session should directly implement `SSEMCPClient` and close the transport gap instead of continuing wording-only MCP polish.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch observed during this session: `main`
+- New branch created/switched: none in this session
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- MCP is functionally credible today as a stdio-first implementation.
+- The remaining gap to call it transport-complete is concentrated and well-bounded: real `sse` runtime support plus its diagnostics/tests/documentation integration.
+
+### Next Recommended Step
+- Create a dedicated branch such as `feature/mcp-sse-transport`.
+- Implement `tree_ui/services/mcp/sse_client.py` as a real MCP client for the `sse` transport.
+- Update `tree_ui/services/mcp/remote_adapter.py` so `transport_kind=sse` builds the new client instead of `UnsupportedTransportClient`.
+- Preserve the current MCP handshake/tool lifecycle shape:
+  `initialize` -> `notifications/initialized` -> `tools/list` -> `tools/call`.
+- Add focused tests for:
+  - SSE client initialization and config validation
+  - tool discovery
+  - tool execution
+  - timeout/error handling
+  - source diagnostics / persisted check results
+- Replace the current `test_sse_remains_unimplemented` expectation with real supported-behavior assertions.
+- Update README and MCP UI copy so the support matrix no longer says `Recognized, not complete` for `sse`.
+
+### Known Issues / Blockers / Tech Debt
+- The exact MCP-over-SSE wire expectations need to be implemented carefully; this is the only part that still represents real protocol work rather than app-level plumbing.
+- The stdio client is still synchronous/sequential, but that does not block finishing transport-complete support for this milestone.
+
 ## Session 2026-04-27 11:10
 
 ### Session Goal
