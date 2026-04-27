@@ -11,6 +11,100 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 09:44
+
+### Session Goal
+- Fix long-term memory retrieval so prompt construction includes lineage-valid branch memory instead of only the canonical workspace memory.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- inspect memory retrieval, prompt construction, and graph serialization behavior
+- implement branch-memory retrieval for generation with sensible ordering and limits
+- update or add tests for workspace memory, branch memory, and sibling isolation
+- run focused and full Django test validation
+
+### Work Completed
+- Reviewed `tree_ui/services/memory_service.py`, `tree_ui/services/context_builder.py`, `tree_ui/services/node_creation.py`, `tree_ui/services/graph_payload.py`, and the relevant memory tests.
+- Updated `retrieve_memories_for_generation()` so generation now pulls both workspace-scoped memories and lineage-valid branch-scoped memories instead of only the canonical workspace memory.
+- Preserved a deterministic retrieval order for generation: canonical workspace memory first when present, then other workspace memories, then branch memories ordered by lineage proximity to the selected node.
+- Added test coverage to verify branch memory inclusion, sibling branch isolation, and limit behavior that prefers the nearest branch memories.
+- Extended serialized memory payloads with provenance metadata including `branch_anchor_title`, `branch_anchor_url`, and a human-readable `retrieval_reason`.
+- Updated the node chat memory inspector to show why a memory was retrieved and, for branch memories, which anchor node in the current lineage caused it to be included.
+- Updated the branch comparison modal to show retrieved-memory provenance rather than only raw memory text.
+- Added payload-level tests for memory provenance fields in both graph serialization and the compare-nodes endpoint.
+- Ran `python3 manage.py test tree_ui.tests.MemoryFoundationTests`; all 12 tests passed.
+- Ran `python3 manage.py test tree_ui.tests.MemoryInspectorTests`; all 2 tests passed.
+- Ran `python3 manage.py test tree_ui.tests.BranchComparisonViewTests`; all 4 tests passed.
+- Ran `python3 manage.py test tree_ui.tests`; all 127 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/memory_service.py`
+- `tree_ui/services/graph_payload.py`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed
+
+### Current Status
+- Branch-scoped long-term memory now participates in prompt construction for the active lineage, and both node chat and branch comparison surfaces expose why specific memories were retrieved.
+
+### Next Recommended Step
+- Expand tool-trace observability so the node chat view can relate a final answer to both the retrieved memories and the specific tool invocations that shaped it.
+
+### Known Issues / Blockers / Tech Debt
+- Retrieval ordering is now deterministic, but it is still heuristic. There is not yet a relevance-scored retrieval layer beyond workspace-first plus lineage proximity.
+
+## Session 2026-04-27 09:38
+
+### Session Goal
+- Audit the current repository state and summarize what is already implemented versus what is still missing across the MVP and v2 milestone scope.
+
+### Planned Tasks
+- inspect `AGENTS.md`, the latest progress log, repository structure, and git status
+- verify current implementation coverage in models, views, services, templates, and tests
+- run local validation checks and produce a gap analysis
+
+### Work Completed
+- Reviewed `AGENTS.md`, `README.md`, `docs/agent-progress.md`, current git branch/status, and the main Django app structure.
+- Confirmed the repository is on `feature/v2-tool-use-groundwork` and is currently ahead of `origin/feature/v2-tool-use-groundwork` by 6 commits.
+- Inspected core implementation areas including models, graph/chat views, graph payload serialization, routing, memory retrieval, node creation, tool registry, and MCP dispatcher.
+- Ran `python3 manage.py test tree_ui.tests`; all 126 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+- Verified that the project already includes implemented slices for graph workspace UI, node-focused chat, image/PDF attachment handling, auto-routing metadata, tool invocation persistence, branch comparison UI, activity timeline UI, and MCP source management.
+- Identified remaining delivery gaps: branch-memory retrieval is only partially implemented in generation, tool use is still narrow in scope, multimodal support is image/PDF-first rather than broader, and several v2 items such as stronger memory UX, richer tool traces, broader MCP integration, and GitHub Project v2 / E3P deliverables are not complete.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this audit session
+- Push status:
+  - not pushed
+
+### Current Status
+- The project is no longer in initial scaffolding. It already has a substantial Django-based graph/chat product with working tests, but the v2 milestone is still incomplete and several advanced memory/tooling/integration goals remain partial.
+
+### Next Recommended Step
+- Prioritize correctness work on long-term memory retrieval and tool-trace completeness before expanding into broader integrations or polish.
+
+### Known Issues / Blockers / Tech Debt
+- `retrieve_memories_for_generation()` currently returns only the canonical workspace memory and does not yet retrieve branch-scoped memory records for prompt construction.
+- Tool orchestration exists, but the useful tool set is still small and observability is not yet complete enough for a strong agent-workspace demo.
+- MCP support has a real adapter/dispatcher foundation, but external integration breadth is still limited.
+
 ## Session 2026-04-17 12:15
 
 ### Session Goal

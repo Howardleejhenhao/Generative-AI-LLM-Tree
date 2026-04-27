@@ -382,6 +382,31 @@ function renderComparison(data) {
         const titlePrefix = memory.title ? `${memory.title}: ` : "";
         text.textContent = `${titlePrefix}${memory.content}`;
         item.append(label, text);
+
+        if (memory.retrieval_reason) {
+          const reason = document.createElement("span");
+          reason.className = "compare-memory-meta";
+          reason.textContent = memory.retrieval_reason;
+          item.appendChild(reason);
+        }
+
+        if (memory.branch_anchor_title) {
+          const anchor = document.createElement("span");
+          anchor.className = "compare-memory-meta";
+          anchor.append("Anchor: ");
+          if (memory.branch_anchor_url) {
+            const anchorLink = document.createElement("a");
+            anchorLink.className = "compare-memory-link";
+            anchorLink.href = memory.branch_anchor_url;
+            anchorLink.textContent = memory.branch_anchor_title;
+            anchor.appendChild(anchorLink);
+          } else {
+            const anchorLabel = document.createElement("span");
+            anchorLabel.textContent = memory.branch_anchor_title;
+            anchor.appendChild(anchorLabel);
+          }
+          item.appendChild(anchor);
+        }
         memoryList.appendChild(item);
       }
       memorySection.appendChild(memoryList);

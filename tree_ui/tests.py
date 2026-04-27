@@ -1203,9 +1203,89 @@ class MemoryFoundationTests(TestCase):
             {(item.id, item.scope) for item in retrieved},
             {
                 (workspace_memory.id, ConversationMemory.Scope.WORKSPACE),
+                (branch_memory.id, ConversationMemory.Scope.BRANCH),
             },
         )
-        self.assertNotIn(branch_memory.id, {item.id for item in retrieved})
+        self.assertNotIn("Sibling task", {item.title for item in retrieved})
+        self.assertEqual(retrieved[0].id, workspace_memory.id)
+        self.assertEqual(retrieved[1].id, branch_memory.id)
+
+    def test_retrieve_memories_for_generation_prioritizes_nearest_branch_memory_with_limit(self):
+        workspace = Workspace.objects.create(name="Main", slug="main")
+        root = ConversationNode.objects.create(
+            workspace=workspace,
+            title="Root",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        branch = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=root,
+            title="Branch",
+            summary="",
+            provider=ConversationNode.Provider.OPENAI,
+            model_name="gpt-4.1-mini",
+        )
+        leaf = ConversationNode.objects.create(
+            workspace=workspace,
+            parent=branch,
+            title="Leaf",
+            summary="",
+            provider=ConversationNode.Provider.GEMINI,
+            model_name="gemini-2.5-flash",
+        )
+
+        workspace_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.WORKSPACE,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Workspace memory",
+            source=ConversationMemory.Source.EXTRACTED,
+            content="Workspace-wide instruction.",
+            is_pinned=True,
+        )
+        root_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            memory_type=ConversationMemory.MemoryType.SUMMARY,
+            title="Root branch summary",
+            content="Older branch context.",
+            branch_anchor=root,
+        )
+        branch_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            memory_type=ConversationMemory.MemoryType.TASK,
+            title="Current branch task",
+            content="Most relevant branch context.",
+            branch_anchor=branch,
+        )
+        leaf_memory = create_memory(
+            workspace=workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            memory_type=ConversationMemory.MemoryType.FACT,
+            title="Leaf fact",
+            content="Current node detail.",
+            branch_anchor=leaf,
+        )
+
+        retrieved = retrieve_memories_for_generation(
+            workspace=workspace,
+            parent=leaf,
+            limit=3,
+        )
+
+        self.assertEqual(
+            [item.id for item in retrieved],
+            [
+                workspace_memory.id,
+                leaf_memory.id,
+                branch_memory.id,
+            ],
+        )
+        self.assertEqual(retrieved[0].scope, ConversationMemory.Scope.WORKSPACE)
+        self.assertNotIn(root_memory.id, [item.id for item in retrieved])
 
     def test_format_memories_for_prompt_produces_explicit_memory_block(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
@@ -2850,12 +2930,19 @@ class MemoryInspectorTests(TestCase):
 
         current_node_payload = next(m for m in data["memories"] if m["id"] == current_node_memory.id)
         self.assertTrue(current_node_payload["is_pinned"])
+        self.assertEqual(current_node_payload["branch_anchor_id"], self.child.id)
+        self.assertEqual(current_node_payload["branch_anchor_title"], self.child.title)
         self.assertEqual(current_node_payload["source_node_id"], self.child.id)
         self.assertEqual(current_node_payload["source_node_title"], self.child.title)
         self.assertEqual(
             current_node_payload["source_node_url"],
             reverse("workspace_node_chat", args=[self.workspace.slug, self.child.id]),
         )
+        self.assertIn("anchored to Child", current_node_payload["retrieval_reason"])
+
+        workspace_memory_payload = next(m for m in data["memories"] if m["title"] == "Workspace memory")
+        self.assertEqual(workspace_memory_payload["branch_anchor_title"], "")
+        self.assertIn("shared workspace memory", workspace_memory_payload["retrieval_reason"])
 
     def test_node_chat_page_renders_memory_inspector_button_and_panel(self):
         response = self.client.get(reverse("workspace_node_chat", args=[self.workspace.slug, self.root.id]))
@@ -2903,6 +2990,14 @@ class BranchComparisonViewTests(TestCase):
             content="Workspace-level comparison context.",
             is_pinned=True,
         )
+        ConversationMemory.objects.create(
+            workspace=self.workspace,
+            scope=ConversationMemory.Scope.BRANCH,
+            branch_anchor=self.node_a,
+            memory_type=ConversationMemory.MemoryType.TASK,
+            title="Node A branch task",
+            content="Only relevant to Node A lineage.",
+        )
 
     def test_compare_nodes_endpoint_returns_comparison_payload(self):
         url = reverse("compare_nodes", args=[self.workspace.slug])
@@ -2933,6 +3028,14 @@ class BranchComparisonViewTests(TestCase):
         self.assertEqual(data["node_b"]["messages"][0]["content"], "Assistant content B")
         self.assertTrue(any(memory["title"] == "Shared Context" for memory in data["node_a"]["memories"]))
         self.assertTrue(any(memory["title"] == "Shared Context" for memory in data["node_b"]["memories"]))
+        branch_memory = next(memory for memory in data["node_a"]["memories"] if memory["title"] == "Node A branch task")
+        self.assertTrue(branch_memory["is_retrieved"])
+        self.assertEqual(branch_memory["branch_anchor_title"], "Node A")
+        self.assertIn("anchored to Node A", branch_memory["retrieval_reason"])
+        self.assertEqual(
+            branch_memory["branch_anchor_url"],
+            reverse("workspace_node_chat", args=[self.workspace.slug, self.node_a.id]),
+        )
 
     def test_compare_nodes_requires_same_workspace(self):
         other_ws = Workspace.objects.create(name="Other", slug="other")

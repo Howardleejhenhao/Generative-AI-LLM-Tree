@@ -2392,6 +2392,13 @@ body.lightbox-open {
   white-space: pre-wrap;
 }
 
+.memory-trace-provenance {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-strong);
+}
+
 .memory-trace-source {
   margin-top: 8px;
   font-size: 0.78rem;
@@ -4322,6 +4329,21 @@ kbd {
   color: var(--text-strong);
   text-transform: capitalize;
   font-size: 0.8rem;
+}
+
+.compare-memory-meta {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.compare-memory-link {
+  color: var(--info);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.compare-memory-link:hover {
+  text-decoration: underline;
 }
 
 .compare-empty-copy {

@@ -144,30 +144,57 @@ def list_branch_memories(*, node: ConversationNode):
     ).select_related("branch_anchor", "source_node", "source_message")
 
 
+def _serialize_retrieved_memory(item: ConversationMemory) -> RetrievedMemory:
+    return RetrievedMemory(
+        id=item.id,
+        scope=item.scope,
+        memory_type=item.memory_type,
+        source=item.source,
+        title=item.title,
+        content=item.content,
+        branch_anchor_id=item.branch_anchor_id,
+        source_node_id=item.source_node_id,
+        source_message_id=item.source_message_id,
+        is_pinned=item.is_pinned,
+    )
+
+
 def retrieve_memories_for_generation(
     *,
     workspace: Workspace,
     parent: ConversationNode | None,
     limit: int = 8,
 ) -> list[RetrievedMemory]:
-    workspace_memory = get_workspace_memory(workspace=workspace)
-    combined = [workspace_memory] if workspace_memory is not None else []
+    canonical_workspace_memory = get_workspace_memory(workspace=workspace)
+    workspace_memories = list(list_workspace_memories(workspace=workspace))
+    ordered_workspace_memories: list[ConversationMemory] = []
 
-    return [
-        RetrievedMemory(
-            id=item.id,
-            scope=item.scope,
-            memory_type=item.memory_type,
-            source=item.source,
-            title=item.title,
-            content=item.content,
-            branch_anchor_id=item.branch_anchor_id,
-            source_node_id=item.source_node_id,
-            source_message_id=item.source_message_id,
-            is_pinned=item.is_pinned,
+    if canonical_workspace_memory is not None:
+        ordered_workspace_memories.append(canonical_workspace_memory)
+
+    ordered_workspace_memories.extend(
+        memory
+        for memory in workspace_memories
+        if canonical_workspace_memory is None or memory.id != canonical_workspace_memory.id
+    )
+
+    ordered_branch_memories: list[ConversationMemory] = []
+    if parent is not None:
+        lineage = build_branch_lineage(parent)
+        depth_by_node_id = {node.id: index for index, node in enumerate(lineage)}
+        ordered_branch_memories = sorted(
+            list(list_branch_memories(node=parent)),
+            key=lambda memory: (
+                memory.is_pinned,
+                depth_by_node_id.get(memory.branch_anchor_id, -1),
+                memory.updated_at,
+                memory.created_at,
+            ),
+            reverse=True,
         )
-        for item in combined[:limit]
-    ]
+
+    combined = ordered_workspace_memories + ordered_branch_memories
+    return [_serialize_retrieved_memory(item) for item in combined[:limit]]
 
 
 def format_memories_for_prompt(memories: list[RetrievedMemory]) -> str:

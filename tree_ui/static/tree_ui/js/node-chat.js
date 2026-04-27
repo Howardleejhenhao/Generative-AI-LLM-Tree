@@ -288,6 +288,32 @@ function renderMemoryInspector() {
 
     card.append(header, body);
 
+    if (mem.retrieval_reason) {
+      const provenance = document.createElement("div");
+      provenance.className = "memory-trace-provenance";
+      provenance.textContent = mem.retrieval_reason;
+      card.appendChild(provenance);
+    }
+
+    if (mem.branch_anchor_title) {
+      const anchor = document.createElement("div");
+      anchor.className = "memory-trace-source";
+      anchor.append("Branch anchor: ");
+
+      if (mem.branch_anchor_url) {
+        const anchorLink = document.createElement("a");
+        anchorLink.href = mem.branch_anchor_url;
+        anchorLink.textContent = mem.branch_anchor_title;
+        anchor.appendChild(anchorLink);
+      } else {
+        const anchorLabel = document.createElement("span");
+        anchorLabel.textContent = mem.branch_anchor_title;
+        anchor.appendChild(anchorLabel);
+      }
+
+      card.appendChild(anchor);
+    }
+
     if (mem.source_node_title) {
       const source = document.createElement("div");
       source.className = "memory-trace-source";

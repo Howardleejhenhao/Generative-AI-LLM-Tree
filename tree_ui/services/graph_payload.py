@@ -9,6 +9,49 @@ from tree_ui.services.memory_service import (
 )
 
 
+def _build_memory_payload(mem, *, workspace: Workspace, retrieved_ids: set[int]) -> dict:
+    is_retrieved = mem.id in retrieved_ids
+    branch_anchor_title = mem.branch_anchor.title if mem.branch_anchor_id else ""
+    branch_anchor_url = (
+        reverse("workspace_node_chat", args=[workspace.slug, mem.branch_anchor_id])
+        if mem.branch_anchor_id
+        else ""
+    )
+
+    retrieval_reason = ""
+    if is_retrieved:
+        if mem.scope == "workspace":
+            retrieval_reason = "Retrieved as shared workspace memory for all branches in this workspace."
+        elif branch_anchor_title:
+            retrieval_reason = (
+                f"Retrieved because this branch memory is anchored to {branch_anchor_title} in the current lineage."
+            )
+        else:
+            retrieval_reason = "Retrieved from the current branch lineage."
+
+    return {
+        "id": mem.id,
+        "title": mem.title or (f"Memory {mem.id}"),
+        "content": mem.content,
+        "scope": mem.scope,
+        "memory_type": mem.memory_type,
+        "is_pinned": mem.is_pinned,
+        "is_retrieved": is_retrieved,
+        "retrieval_reason": retrieval_reason,
+        "updated_at": mem.updated_at.isoformat() if mem.updated_at else None,
+        "branch_anchor_id": mem.branch_anchor_id,
+        "branch_anchor_title": branch_anchor_title,
+        "branch_anchor_url": branch_anchor_url,
+        "source_node_id": mem.source_node_id,
+        "source_node_title": mem.source_node.title if mem.source_node_id else "",
+        "source_node_url": (
+            reverse("workspace_node_chat", args=[workspace.slug, mem.source_node_id])
+            if mem.source_node_id
+            else ""
+        ),
+    }
+
+
 def serialize_node(node: ConversationNode) -> dict:
     workspace = node.workspace
     
@@ -22,23 +65,7 @@ def serialize_node(node: ConversationNode) -> dict:
 
     all_memories = []
     for mem in list(ws_memories) + list(br_memories):
-        all_memories.append({
-            "id": mem.id,
-            "title": mem.title or (f"Memory {mem.id}"),
-            "content": mem.content,
-            "scope": mem.scope,
-            "memory_type": mem.memory_type,
-            "is_pinned": mem.is_pinned,
-            "is_retrieved": mem.id in retrieved_ids,
-            "updated_at": mem.updated_at.isoformat() if mem.updated_at else None,
-            "source_node_id": mem.source_node_id,
-            "source_node_title": mem.source_node.title if mem.source_node_id else "",
-            "source_node_url": (
-                reverse("workspace_node_chat", args=[workspace.slug, mem.source_node_id])
-                if mem.source_node_id
-                else ""
-            ),
-        })
+        all_memories.append(_build_memory_payload(mem, workspace=workspace, retrieved_ids=retrieved_ids))
 
     status_badges = []
     
