@@ -12,10 +12,12 @@ from tree_ui.forms import MCPSourceForm
 from tree_ui.services.attachments import create_node_attachments
 from tree_ui.services.model_catalog import resolve_model_name
 from tree_ui.services.mcp.dispatcher import default_dispatcher
+from tree_ui.services.mcp.dispatcher import create_adapter_from_model
 from tree_ui.services.mcp.source_status import (
     clear_diagnostics_result,
     diagnose_source,
     save_diagnostics_result,
+    summarize_client_info,
 )
 from tree_ui.services.router import route_model
 from tree_ui.services.graph_payload import serialize_node, serialize_workspace
@@ -633,8 +635,8 @@ def mcp_source_list(request):
             }
         if transport == "sse":
             return {
-                "label": "Planned (sse)",
-                "detail": "SSE transport is recognized in configuration, but the client implementation is not complete yet.",
+                "label": "Supported (sse)",
+                "detail": "Use this for MCP servers that expose an SSE stream and announce their message endpoint to the client.",
             }
         if transport == "stub":
             return {
@@ -648,6 +650,22 @@ def mcp_source_list(request):
 
     for source in sources:
         diag = None
+        live_client = None
+        recent_checks = []
+        adapter = create_adapter_from_model(source)
+        if adapter is not None and hasattr(adapter, "get_status"):
+            try:
+                base_status = adapter.get_status()
+            except Exception as exc:
+                live_client = {
+                    "transport": source.config.get("transport_kind", ""),
+                    "client_status": "error",
+                    "message_endpoint": "",
+                    "last_error": str(exc),
+                }
+            else:
+                client_info = base_status.get("client_info", {}) if isinstance(base_status, dict) else {}
+                live_client = summarize_client_info(client_info)
         if source.last_checked_at:
             diag = {
                 "ok": source.last_check_ok,
@@ -656,12 +674,39 @@ def mcp_source_list(request):
                 "tool_count": source.last_check_tool_count,
                 "tool_names": source.last_check_tools_summary.split(", ") if source.last_check_tools_summary else [],
                 "checked_at": source.last_checked_at,
+                "transport": source.last_check_transport,
+                "client_status": source.last_check_client_status,
+                "message_endpoint": source.last_check_message_endpoint,
+                "last_error": source.last_check_last_error,
             }
+        if live_client is None and source.last_checked_at:
+            live_client = {
+                "transport": source.last_check_transport,
+                "client_status": source.last_check_client_status,
+                "message_endpoint": source.last_check_message_endpoint,
+                "last_error": source.last_check_last_error,
+            }
+        for check in source.checks.all()[:3]:
+            recent_checks.append(
+                {
+                    "label": check.label,
+                    "ok": check.ok,
+                    "message": check.message,
+                    "tool_count": check.tool_count,
+                    "transport": check.transport,
+                    "client_status": check.client_status,
+                    "message_endpoint": check.message_endpoint,
+                    "last_error": check.last_error,
+                    "created_at": check.created_at,
+                }
+            )
         source_rows.append(
             {
                 "source": source,
                 "diagnostic": diag,
                 "support": build_support_summary(source),
+                "live_client": live_client,
+                "recent_checks": recent_checks,
             }
         )
     return render(

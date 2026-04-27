@@ -11,6 +11,340 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 12:56
+
+### Session Goal
+- Add persistent MCP diagnostic history instead of only keeping the latest snapshot.
+- Make repeated MCP checks auditable from the UI.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- add an `MCPSourceCheck` history model and migration
+- append a history row on each diagnostic save while preserving the existing latest snapshot fields
+- surface recent check history on the MCP source list
+- add focused tests for history persistence and rendering
+
+### Work Completed
+- Added persistent `MCPSourceCheck` history records so every MCP diagnostic run now appends an immutable per-check row instead of only updating the latest snapshot fields on `MCPSource`.
+- Added migration `0013_mcpsourcecheck.py` for the new MCP check-history model.
+- Updated `save_diagnostics_result()` so it now preserves the existing latest snapshot behavior while also inserting a new historical record for each check.
+- Updated the MCP source list UI to surface recent check history directly in the source row, including recent labels, client statuses, transports, tool counts, and resolved endpoints.
+- Kept `clear_diagnostics_result()` scoped to clearing the latest snapshot only; edit/reset flows now preserve diagnostic history as an audit trail.
+- Added focused history coverage for:
+  check-row creation on success/failure, repeated retest appends, persisted history rendering, and history preservation when the latest snapshot is cleared.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.MCPSourcePersistenceTests tree_ui.tests.MCPSourceManagementTests`
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests`
+- Ran full validation successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+  `python3 manage.py makemigrations --check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0013_mcpsourcecheck.py`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+  - `0224cfa` - `feat: surface live MCP client diagnostics`
+  - `f56a1e9` - `feat: persist structured MCP diagnostics`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP diagnostics now persist a structured latest snapshot.
+- MCP diagnostics now include both a latest snapshot and a persistent per-check history trail.
+
+### Next Recommended Step
+- If observability work continues, the next worthwhile step is adding a dedicated history/detail view or retention policy instead of rendering only the latest three checks inline.
+- If product work becomes the priority again, the next highest-value step is using these diagnostics to support richer MCP source health workflows or more real tool integrations.
+
+### Known Issues / Blockers / Tech Debt
+- Recent check history is currently rendered inline in the list view; a dedicated details surface would scale better.
+- There is no retention or pruning policy yet for very long-running MCP source histories.
+
+## Session 2026-04-27 12:41
+
+### Session Goal
+- Persist richer MCP diagnostic metadata instead of keeping it runtime-only.
+- Make transport/client observability survive page refreshes and source edits until explicitly cleared or retested.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- extend `MCPSource` with structured persisted diagnostic fields
+- wire the diagnostic save/clear flow to those fields
+- make the MCP source list fall back to persisted client metadata when live runtime data is unavailable
+- add migration and focused persistence tests
+
+### Work Completed
+- Extended `MCPSource` with structured persisted diagnostic fields for:
+  `transport`, `client_status`, `message_endpoint`, and `last_error`.
+- Added migration `0012_mcpsource_last_check_transport_and_more.py` to persist those new MCP diagnostic fields.
+- Updated `tree_ui/services/mcp/source_status.py` so diagnostic save/clear flows now write and reset the structured transport metadata alongside the existing summary fields.
+- Updated the MCP source list view so persisted diagnostic metadata becomes the fallback client-status payload when no live runtime adapter status is available.
+- Fixed `diagnose_source()` so successful diagnostics refresh client status after tool discovery, which avoids saving stale pre-connect values such as `skeleton`.
+- Added focused persistence coverage for:
+  SSE diagnostic persistence, stdio failure persistence, persisted status rendering, and clearing stale structured fields on edit.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran schema drift and full validation successfully:
+  `python3 manage.py makemigrations --check`
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0012_mcpsource_last_check_transport_and_more.py`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+  - `0224cfa` - `feat: surface live MCP client diagnostics`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- Live MCP client diagnostics already exist in the UI.
+- Persisted structured MCP diagnostic metadata is now implemented and wired into both save/clear flows and list-page fallback rendering.
+
+### Next Recommended Step
+- If observability work continues, the next worthwhile step is storing richer per-check history rather than only the latest snapshot on `MCPSource`.
+- If agent/product work becomes the priority again, the next high-value step is expanding the real MCP/internal tool catalog now that transport and diagnostics are substantially more complete.
+
+### Known Issues / Blockers / Tech Debt
+- MCP diagnostics still keep only the latest snapshot, not a historical timeline of checks.
+- Runtime adapter state is still richer than the persisted model in some cases, so a future history/event model could still be justified.
+
+## Session 2026-04-27 12:27
+
+### Session Goal
+- Improve MCP observability by surfacing richer live transport/client status in the MCP management UI.
+- Make SSE/stdio transport debugging easier without requiring full tool execution every time.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- extend MCP diagnostic metadata normalization for live client info
+- expose live client status, resolved endpoint, and last error on the MCP source list
+- add focused tests for diagnostic metadata and UI rendering
+- rerun focused MCP tests plus the full Django suite
+
+### Work Completed
+- Added lightweight live MCP client status inspection to the MCP source list so the UI can show current transport/client state without running a full tool discovery pass.
+- Extended `tree_ui/services/mcp/source_status.py` to normalize client metadata such as:
+  `transport`, `client_status`, `message_endpoint`, and `last_error`.
+- Updated the MCP source list UI to surface:
+  current client status, resolved message endpoint, and the latest runtime error when available.
+- Added focused tests for:
+  enriched diagnostic metadata and live client status rendering on the MCP source list page.
+- Ran focused MCP UI/diagnostic tests successfully:
+  `python3 manage.py test tree_ui.tests.RemoteMCPAdapterTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran the full Django validation suite successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP source diagnostics now expose more runtime observability directly in the management UI.
+
+### Next Recommended Step
+- If transport work continues, the next strongest step is persisting richer diagnostic metadata instead of only the latest summary text/tool count.
+- If feature work shifts back toward agent behavior, the next practical step is expanding the real tool catalog now that MCP transport/debug visibility is better.
+
+### Known Issues / Blockers / Tech Debt
+- Live client status on the list page is runtime-only and not persisted into the current `MCPSource` schema.
+- Diagnostics still store only summary fields in the database, not structured transport metadata.
+
+## Session 2026-04-27 12:08
+
+### Session Goal
+- Improve MCP SSE transport robustness now that baseline support is in place.
+- Reduce the risk that the client only works with one narrow style of SSE server.
+
+### Planned Tasks
+- update the progress log for this follow-up implementation session
+- broaden SSE message-endpoint discovery beyond a single event shape
+- add cleaner reconnect/retry behavior for SSE request failures
+- expose clearer client error status for diagnostics
+- add focused tests for the new robustness paths
+
+### Work Completed
+- Extended `tree_ui/services/mcp/sse_client.py` so SSE endpoint discovery now accepts:
+  explicit SSE endpoint events, compatible response headers, and JSON/JSON-RPC-style endpoint payloads on the stream.
+- Added one-shot retry behavior for transient SSE POST request failures by resetting the transport state and reconnecting before retrying the JSON-RPC request.
+- Improved `get_server_info()` so failed SSE connection states surface as `error` with the last transport error preserved for diagnostics.
+- Expanded the mocked SSE transport test harness to simulate:
+  response-header endpoint discovery, JSON-RPC endpoint notifications, reconnect flows, and transient POST failures.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.RemoteMCPAdapterTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran the full Django validation suite successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/mcp/sse_client.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- Baseline SSE support already exists on the current branch.
+- SSE support is now more tolerant of different server announcement styles and transient request failures.
+
+### Next Recommended Step
+- If MCP transport hardening continues, the next logical step is explicit reconnect/backoff policy and more detailed diagnostics around mid-stream disconnects.
+- If product delivery becomes the priority again, the next best use of time is adding more real MCP-backed tools now that transport compatibility is stronger.
+
+### Known Issues / Blockers / Tech Debt
+- The SSE client still assumes request/response ordering rather than a more advanced concurrent correlation model.
+- Mid-stream reconnect after a previously successful initialization is still conservative; the client retries requests, but does not yet keep a richer session-resume model.
+
+## Session 2026-04-27 11:46
+
+### Session Goal
+- Implement real MCP `sse` transport support so the MCP stack is no longer stdio-only.
+- Replace the current placeholder/wording that says SSE is recognized but not implemented.
+
+### Planned Tasks
+- add this session entry before implementation starts
+- inspect the existing stdio MCP client and remote adapter boundaries
+- implement a real SSE MCP client and wire it into the adapter
+- add/update tests for SSE config validation, diagnostics, tool discovery, and tool execution
+- update README and MCP management UI copy to reflect supported SSE transport
+
+### Work Completed
+- Implemented `tree_ui/services/mcp/sse_client.py` as a real MCP SSE transport client with:
+  SSE stream connection, endpoint announcement handling, JSON-RPC POST requests, initialize handshake, tool discovery, tool execution, and transport-level timeout/error handling.
+- Updated `tree_ui/services/mcp/remote_adapter.py` so `transport_kind=sse` now builds `SSEMCPClient` instead of falling back to the unsupported placeholder client.
+- Updated MCP support wording across the MCP management UI, form transport labels, support summaries, and `README.md` so the app no longer claims SSE is only recognized-but-unimplemented.
+- Replaced the old SSE placeholder tests with real supported-behavior tests covering:
+  client initialization, adapter selection, handshake/discovery, tool calls, diagnostics success, and missing endpoint-announcement failure.
+- Preserved sandbox-safe testability by using mocked SSE transport fixtures instead of opening local test sockets.
+- Ran focused MCP test coverage, full `tree_ui.tests`, and Django system checks successfully.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+- `tree_ui/forms.py`
+- `tree_ui/services/mcp/remote_adapter.py`
+- `tree_ui/services/mcp/sse_client.py`
+- `tree_ui/templates/tree_ui/mcp_source_form.html`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+- `tree_ui/views.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `feature/mcp-sse-transport`
+- Commits made:
+  - pending final session commit
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP now has working `stdio` and `sse` transport paths in the application codebase.
+- The test suite is green after the SSE transport integration.
+
+### Next Recommended Step
+- If the next milestone keeps expanding MCP, the highest-value follow-up is improving transport robustness:
+  richer SSE reconnection handling, better stream error diagnostics, and possibly shared JSON-RPC transport helpers between stdio and SSE.
+- If the milestone shifts back to product behavior, the next practical step is wiring more real MCP-backed tools into chat workflows now that both main transports are available.
+
+### Known Issues / Blockers / Tech Debt
+- The SSE client currently expects the server to announce its message endpoint over the stream before requests are sent; that assumption is now documented and tested, but not all third-party servers may follow it.
+- The stdio and SSE clients still duplicate some JSON-RPC lifecycle logic that could be refactored later if transport complexity grows.
+
+## Session 2026-04-27 11:28
+
+### Session Goal
+- Record the implementation decision for completing MCP transport support in the next session.
+- Leave a direct handoff note so the next session can immediately start the `sse` transport work.
+
+### Planned Tasks
+- review the current MCP implementation boundary
+- estimate the remaining effort for transport-complete MCP
+- record the exact next implementation target and file-level direction
+
+### Work Completed
+- Confirmed that the current repository is not missing MCP from scratch; it already has a working stdio-first MCP stack with dispatcher, adapters, diagnostics, UI management, and tests.
+- Confirmed that the main blocker for MCP transport-complete status is `sse` transport, not architecture.
+- Verified that `tree_ui/services/mcp/remote_adapter.py` recognizes `sse`, but currently routes it to `UnsupportedTransportClient` through `tree_ui/services/mcp/client.py`.
+- Verified that the current test suite intentionally encodes the incomplete state via the `test_sse_remains_unimplemented` coverage in `tree_ui/tests.py`.
+- Estimated the remaining effort as moderate rather than large:
+  MVP `sse` support should be roughly 0.5 to 1.5 days, while a more robust version with stronger reconnection/error handling/test depth is roughly 2 to 4 days.
+- Decided that the next session should directly implement `SSEMCPClient` and close the transport gap instead of continuing wording-only MCP polish.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch observed during this session: `main`
+- New branch created/switched: none in this session
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- MCP is functionally credible today as a stdio-first implementation.
+- The remaining gap to call it transport-complete is concentrated and well-bounded: real `sse` runtime support plus its diagnostics/tests/documentation integration.
+
+### Next Recommended Step
+- Create a dedicated branch such as `feature/mcp-sse-transport`.
+- Implement `tree_ui/services/mcp/sse_client.py` as a real MCP client for the `sse` transport.
+- Update `tree_ui/services/mcp/remote_adapter.py` so `transport_kind=sse` builds the new client instead of `UnsupportedTransportClient`.
+- Preserve the current MCP handshake/tool lifecycle shape:
+  `initialize` -> `notifications/initialized` -> `tools/list` -> `tools/call`.
+- Add focused tests for:
+  - SSE client initialization and config validation
+  - tool discovery
+  - tool execution
+  - timeout/error handling
+  - source diagnostics / persisted check results
+- Replace the current `test_sse_remains_unimplemented` expectation with real supported-behavior assertions.
+- Update README and MCP UI copy so the support matrix no longer says `Recognized, not complete` for `sse`.
+
+### Known Issues / Blockers / Tech Debt
+- The exact MCP-over-SSE wire expectations need to be implemented carefully; this is the only part that still represents real protocol work rather than app-level plumbing.
+- The stdio client is still synchronous/sequential, but that does not block finishing transport-complete support for this milestone.
+
 ## Session 2026-04-27 11:10
 
 ### Session Goal
