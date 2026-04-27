@@ -11,6 +11,58 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 10:21
+
+### Session Goal
+- Move MCP toward a stdio-first externally presentable integration by improving source configuration UX, support-state clarity, and setup documentation.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- replace the MCP source form's JSON-only setup with structured stdio-oriented fields
+- surface transport support status more explicitly in the MCP source list
+- add README guidance for the current stdio-first MCP story and demo flow
+- run focused MCP validation plus the full Django test suite
+
+### Work Completed
+- Expanded `MCPSourceForm` with structured MCP fields for transport, label, endpoint, timeout, stdio command, stdio args, stdio env, stdio cwd, and enabled-tool allowlists.
+- Kept `config_json` as an advanced override channel, but changed the primary UX to stdio-first structured configuration.
+- Added form validation for stdio command presence, SSE endpoint presence, JSON-array parsing for stdio args, and JSON-object parsing for stdio env.
+- Updated the MCP source form template to explain the stdio-first support policy and provide a concrete bundled stdio demo-server setup example.
+- Updated the MCP source list view/template to expose support-state copy such as `Supported (stdio)`, `Planned (sse)`, and `Demo only (stub/mock)`.
+- Expanded `README.md` with an MCP feature summary, support matrix, stdio demo setup steps, and explicit known MCP limits.
+- Added management tests for structured stdio source creation, support-state rendering, stdio guidance copy, and new form validation behavior.
+- Ran `python3 manage.py test tree_ui.tests.MCPSourceManagementTests tree_ui.tests.StdioMCPTransportTests tree_ui.tests.MCPSourcePersistenceTests`; all 32 tests passed.
+- Ran `python3 manage.py test tree_ui.tests.RemoteMCPAdapterTests`; all 7 tests passed.
+- Ran `python3 manage.py test tree_ui.tests`; all 132 tests passed.
+- Ran `python3 manage.py makemigrations --check`; no model drift was detected.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+- `tree_ui/forms.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_form.html`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/v2-tool-use-groundwork`
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP is now much closer to a credible stdio-first integration story: the product UI, support messaging, and README all align on what is actually supported today.
+
+### Next Recommended Step
+- Finish MCP product-level closure by wiring one stronger end-to-end stdio demo flow into the graph/chat experience, then decide explicitly whether `sse` will be implemented now or formally scoped out of this milestone.
+
+### Known Issues / Blockers / Tech Debt
+- SSE transport is still recognized but unimplemented, so MCP is not yet transport-complete.
+- The stdio client is still a synchronous sequential-request implementation rather than a richer concurrent MCP client.
+
 ## Session 2026-04-27 10:06
 
 ### Session Goal

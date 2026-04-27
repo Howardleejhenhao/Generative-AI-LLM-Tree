@@ -2233,6 +2233,28 @@ class MCPSourceManagementTests(TestCase):
         self.assertContains(response, "test-source")
         self.assertContains(response, "Internal Registry")
 
+    def test_mcp_source_list_page_shows_support_status_labels(self):
+        MCPSource.objects.create(
+            name="Supported Stdio",
+            source_id="supported-stdio",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "stdio", "command": "python3"},
+        )
+        MCPSource.objects.create(
+            name="Planned SSE",
+            source_id="planned-sse",
+            source_type=MCPSource.SourceType.MCP_SERVER,
+            is_enabled=True,
+            config={"transport_kind": "sse", "endpoint": "http://localhost:8080"},
+        )
+
+        response = self.client.get(reverse("mcp_source_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Supported (stdio)")
+        self.assertContains(response, "Planned (sse)")
+        self.assertContains(response, "current production-ready MCP path")
+
     def test_can_create_mcp_source(self):
         response = self.client.post(reverse("mcp_source_create"), {
             "name": "New Remote",
@@ -2240,12 +2262,51 @@ class MCPSourceManagementTests(TestCase):
             "source_type": "mcp_server",
             "is_enabled": True,
             "description": "A new remote source",
-            "config_json": json.dumps({"transport_kind": "sse", "endpoint": "http://localhost:8080"})
+            "transport_kind": "sse",
+            "server_label": "Remote SSE",
+            "endpoint": "http://localhost:8080",
+            "timeout": "15",
+            "stdio_command": "",
+            "stdio_args": "[]",
+            "stdio_env_json": "{}",
+            "stdio_cwd": "",
+            "enabled_tools_csv": "",
+            "config_json": "{}",
         })
         self.assertEqual(response.status_code, 302)
         source = MCPSource.objects.get(source_id="new-remote")
         self.assertEqual(source.name, "New Remote")
         self.assertEqual(source.config["transport_kind"], "sse")
+        self.assertEqual(source.config["endpoint"], "http://localhost:8080")
+        self.assertEqual(source.config["label"], "Remote SSE")
+
+    def test_can_create_stdio_mcp_source_from_structured_fields(self):
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "Stdio Source",
+            "source_id": "stdio-source",
+            "source_type": "mcp_server",
+            "is_enabled": True,
+            "description": "Structured stdio source",
+            "transport_kind": "stdio",
+            "server_label": "Demo Stdio",
+            "endpoint": "",
+            "timeout": "22",
+            "stdio_command": "python3",
+            "stdio_args": '["tree_ui/services/mcp/test_mcp_server.py"]',
+            "stdio_env_json": '{"DEMO_MODE": "1"}',
+            "stdio_cwd": "/tmp",
+            "enabled_tools_csv": "echo, remote_fetch",
+            "config_json": '{"custom_flag": true}',
+        })
+        self.assertEqual(response.status_code, 302)
+        source = MCPSource.objects.get(source_id="stdio-source")
+        self.assertEqual(source.config["transport_kind"], "stdio")
+        self.assertEqual(source.config["command"], "python3")
+        self.assertEqual(source.config["args"], ["tree_ui/services/mcp/test_mcp_server.py"])
+        self.assertEqual(source.config["env"], {"DEMO_MODE": "1"})
+        self.assertEqual(source.config["cwd"], "/tmp")
+        self.assertEqual(source.config["enabled_tools"], ["echo", "remote_fetch"])
+        self.assertTrue(source.config["custom_flag"])
 
     def test_can_edit_mcp_source(self):
         source = MCPSource.objects.create(
@@ -2260,6 +2321,15 @@ class MCPSourceManagementTests(TestCase):
             "source_type": "mock",
             "is_enabled": False,
             "description": "Updated",
+            "transport_kind": "stdio",
+            "server_label": "",
+            "endpoint": "",
+            "timeout": "30",
+            "stdio_command": "",
+            "stdio_args": "[]",
+            "stdio_env_json": "{}",
+            "stdio_cwd": "",
+            "enabled_tools_csv": "",
             "config_json": "{}"
         })
         self.assertEqual(response.status_code, 302)
@@ -2267,12 +2337,63 @@ class MCPSourceManagementTests(TestCase):
         self.assertEqual(source.name, "Updated Name")
         self.assertFalse(source.is_enabled)
 
+    def test_invalid_stdio_env_returns_error(self):
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "Invalid Env",
+            "source_id": "invalid-env",
+            "source_type": "mcp_server",
+            "is_enabled": True,
+            "description": "",
+            "transport_kind": "stdio",
+            "server_label": "",
+            "endpoint": "",
+            "timeout": "30",
+            "stdio_command": "python3",
+            "stdio_args": "[]",
+            "stdio_env_json": '["bad"]',
+            "stdio_cwd": "",
+            "enabled_tools_csv": "",
+            "config_json": "{}",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Stdio env must be a JSON object.")
+
+    def test_missing_stdio_command_returns_error(self):
+        response = self.client.post(reverse("mcp_source_create"), {
+            "name": "Missing Command",
+            "source_id": "missing-command",
+            "source_type": "mcp_server",
+            "is_enabled": True,
+            "description": "",
+            "transport_kind": "stdio",
+            "server_label": "",
+            "endpoint": "",
+            "timeout": "30",
+            "stdio_command": "",
+            "stdio_args": "[]",
+            "stdio_env_json": "{}",
+            "stdio_cwd": "",
+            "enabled_tools_csv": "",
+            "config_json": "{}",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Stdio command is required for stdio MCP sources.")
+
     def test_invalid_json_config_returns_error(self):
         response = self.client.post(reverse("mcp_source_create"), {
             "name": "Invalid Config",
             "source_id": "invalid-config",
             "source_type": "mcp_server",
             "is_enabled": True,
+            "transport_kind": "stdio",
+            "server_label": "",
+            "endpoint": "",
+            "timeout": "30",
+            "stdio_command": "python3",
+            "stdio_args": "[]",
+            "stdio_env_json": "{}",
+            "stdio_cwd": "",
+            "enabled_tools_csv": "",
             "config_json": "{ invalid json"
         })
         self.assertEqual(response.status_code, 200)
@@ -2309,6 +2430,13 @@ class MCPSourceManagementTests(TestCase):
         updated_tool_names = [t.name for t in default_dispatcher.list_tools()]
         self.assertIn("compare_branches", updated_tool_names)
         self.assertIn("external_echo", updated_tool_names)
+
+    def test_mcp_source_form_page_renders_stdio_first_guidance(self):
+        response = self.client.get(reverse("mcp_source_create"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Structured MCP Server Configuration")
+        self.assertContains(response, "stdio")
+        self.assertContains(response, "recognized in configuration but not fully implemented yet")
 
     def test_can_run_mcp_source_diagnostic_for_mock_source(self):
         source = MCPSource.objects.create(
@@ -2645,6 +2773,15 @@ class MCPSourcePersistenceTests(TestCase):
                 "source_type": "mock",
                 "is_enabled": False,
                 "description": "Updated",
+                "transport_kind": "stdio",
+                "server_label": "",
+                "endpoint": "",
+                "timeout": "30",
+                "stdio_command": "",
+                "stdio_args": "[]",
+                "stdio_env_json": "{}",
+                "stdio_cwd": "",
+                "enabled_tools_csv": "",
                 "config_json": "{}",
             },
             follow=True,

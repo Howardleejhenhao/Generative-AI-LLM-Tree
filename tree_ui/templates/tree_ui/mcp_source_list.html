@@ -26,8 +26,29 @@
     <div class="graph-canvas-shell">
       <div style="padding: 2.5rem 2rem; max-width: 1000px; margin: 0 auto; color: var(--text);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-          <h2 style="margin: 0; font-size: 1.8rem; color: var(--text-strong);">Registered MCP Sources</h2>
+          <div>
+            <h2 style="margin: 0; font-size: 1.8rem; color: var(--text-strong);">Registered MCP Sources</h2>
+            <p style="margin: 0.45rem 0 0; color: var(--muted); line-height: 1.5;">
+              LLM-Tree currently treats <strong>stdio</strong> as the supported MCP integration path.
+              <strong>SSE</strong> is recognized but not complete, and <strong>stub</strong> remains demo-only.
+            </p>
+          </div>
           <a href="{% url 'mcp_source_create' %}" class="action-btn">Add Source</a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);">
+            <strong style="display: block; color: var(--text-strong);">Supported now</strong>
+            <p style="margin: 0.45rem 0 0; color: var(--muted); line-height: 1.45;"><code>mcp_server</code> with <code>transport_kind=stdio</code></p>
+          </div>
+          <div style="padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);">
+            <strong style="display: block; color: var(--text-strong);">Recognized, not complete</strong>
+            <p style="margin: 0.45rem 0 0; color: var(--muted); line-height: 1.45;"><code>mcp_server</code> with <code>transport_kind=sse</code></p>
+          </div>
+          <div style="padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);">
+            <strong style="display: block; color: var(--text-strong);">Demo / test only</strong>
+            <p style="margin: 0.45rem 0 0; color: var(--muted); line-height: 1.45;"><code>mock</code> sources and <code>transport_kind=stub</code></p>
+          </div>
         </div>
 
         <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);">
@@ -43,7 +64,7 @@
             </thead>
 	            <tbody>
 	              {% for row in source_rows %}
-                  {% with source=row.source diagnostic=row.diagnostic %}
+                  {% with source=row.source diagnostic=row.diagnostic support=row.support %}
 	              <tr style="border-bottom: 1px solid var(--border); transition: background 160ms ease;">
 	                <td style="padding: 1.25rem 1rem;">
 	                  <div style="font-weight: 700; color: var(--text-strong); font-size: 1.05rem;">{{ source.name }}</div>
@@ -64,6 +85,12 @@
 	                      <span style="font-size: 0.7rem; opacity: 0.5;">○</span> Disabled
 	                    </span>
 	                  {% endif %}
+                      <div style="margin-top: 0.6rem;">
+                        <span class="badge badge-info">{{ support.label }}</span>
+                      </div>
+                      <div style="margin-top: 0.45rem; color: var(--muted); font-size: 0.82rem; line-height: 1.45;">
+                        {{ support.detail }}
+                      </div>
                       {% if diagnostic %}
                         <div style="margin-top: 0.6rem;">
                           <span class="badge {% if diagnostic.ok %}badge-success{% else %}badge-danger{% endif %}">
@@ -82,7 +109,13 @@
 	                </td>
 	                <td style="padding: 1.25rem 1rem; font-family: monospace; font-size: 0.85rem; color: var(--text);">
 	                  {% if source.source_type == "mcp_server" %}
-	                    <span style="opacity: 0.7; font-family: inherit;">Transport:</span> {{ source.config.transport_kind|default:"stub" }}
+	                    <div><span style="opacity: 0.7; font-family: inherit;">Transport:</span> {{ source.config.transport_kind|default:"stub" }}</div>
+                        {% if source.config.command %}
+                          <div style="margin-top: 0.35rem;"><span style="opacity: 0.7; font-family: inherit;">Command:</span> {{ source.config.command }}</div>
+                        {% endif %}
+                        {% if source.config.endpoint %}
+                          <div style="margin-top: 0.35rem;"><span style="opacity: 0.7; font-family: inherit;">Endpoint:</span> {{ source.config.endpoint }}</div>
+                        {% endif %}
 	                  {% else %}
 	                    <span style="color: var(--muted);">-</span>
 	                  {% endif %}

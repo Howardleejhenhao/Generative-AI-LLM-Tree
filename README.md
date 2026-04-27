@@ -48,6 +48,15 @@ The project is intentionally built with Django Templates plus modular JavaScript
 - Legacy Gemini model alias resolution for older saved nodes
 - Clearly labeled fallback responses when provider keys are missing or upstream streaming fails before any tokens arrive
 
+### MCP Integration
+
+- MCP source management UI for creating, editing, deleting, enabling, and testing sources
+- Internal dispatcher that aggregates built-in tools plus MCP-managed sources
+- Tool provenance persisted on each node through `tool_type` and `source_id`
+- Working stdio-backed MCP client with initialize, tool discovery, and tool execution
+- Readiness diagnostics for registered MCP sources, including discovered tool counts
+- Node chat tool trace UI that surfaces tool sources and execution outcomes
+
 ## Core Concepts
 
 ### Workspace
@@ -116,6 +125,55 @@ Editing old history does not overwrite the original node. Instead, the app creat
 - `tree_ui/services/node_editing.py`: edited variant creation
 - `tree_ui/services/model_catalog.py`: provider defaults and legacy Gemini alias mapping
 - `tree_ui/services/providers/`: provider-specific OpenAI and Gemini integrations behind a shared interface
+- `tree_ui/services/mcp/`: MCP dispatcher, adapters, clients, diagnostics, and test fixtures
+
+## MCP Support Matrix
+
+LLM-Tree is currently a **stdio-first MCP integration**.
+
+| Source / Transport | Status | Notes |
+|---|---|---|
+| Internal registry | Supported | Built-in tools always available unless explicitly replaced by DB configuration |
+| `mock` source type | Demo only | Useful for UI/testing; not a real external MCP server |
+| `mcp_server` + `transport_kind=stdio` | Supported | Current production-ready MCP path |
+| `mcp_server` + `transport_kind=sse` | Recognized, not complete | Config is accepted but runtime transport is not fully implemented |
+| `mcp_server` + `transport_kind=stub` | Demo only | Simulated remote server behavior for testing |
+
+If you want the project to demonstrate a real MCP integration today, use `stdio`.
+
+## MCP Demo Setup
+
+### Recommended Stdio Demo Source
+
+Use the bundled MCP test server to validate the full source-management and tool-execution path.
+
+1. Start the Django app.
+2. Open `MCP Settings`.
+3. Create a new source with:
+
+```text
+Name: Demo Stdio Server
+Source ID: demo-stdio
+Source Type: Remote MCP Server
+Transport: stdio
+Server label: Demo Stdio Server
+Stdio command: python3
+Stdio args: ["tree_ui/services/mcp/test_mcp_server.py"]
+Timeout: 30
+```
+
+4. Save the source.
+5. On the MCP source list page, click `Test`.
+6. Confirm the source reports `Ready` and shows discovered tools.
+7. Return to a node chat flow and use a prompt that encourages tool use.
+8. Inspect `Tool Trace` in node chat to confirm the tool source and result are visible.
+
+### Known MCP Limits
+
+- SSE transport is not complete yet.
+- The stdio client currently assumes a synchronous request/response flow.
+- MCP diagnostics persist only the latest check result, not a full history.
+- Tool routing exists, but the product still relies on a relatively small tool set.
 
 ## Running The Project
 

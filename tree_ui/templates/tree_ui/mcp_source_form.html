@@ -63,10 +63,86 @@
             </div>
           </div>
 
+          <div style="margin-bottom: 2rem; padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-accent);">
+            <strong style="display: block; color: var(--text-strong);">Support note</strong>
+            <p style="margin: 0.45rem 0 0; color: var(--muted); line-height: 1.5;">
+              LLM-Tree currently supports <strong>stdio</strong> as the real MCP integration path.
+              <strong>SSE</strong> is recognized in configuration but not fully implemented yet.
+              <strong>Stub</strong> is for demo/testing only.
+            </p>
+          </div>
+
           <div style="margin-bottom: 2rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 700; color: var(--text-strong);">{{ form.description.label }}</label>
             {{ form.description }}
             {% if form.description.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.description.errors }}</div>{% endif %}
+          </div>
+
+          <div style="border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem; background: rgba(255,255,255,0.7); margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem; color: var(--text-strong); font-size: 1.05rem;">Structured MCP Server Configuration</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.transport_kind.label }}</label>
+                {{ form.transport_kind }}
+                {% if form.transport_kind.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.transport_kind.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.transport_kind.help_text }}</small>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.server_label.label }}</label>
+                {{ form.server_label }}
+                {% if form.server_label.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.server_label.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.server_label.help_text }}</small>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.endpoint.label }}</label>
+                {{ form.endpoint }}
+                {% if form.endpoint.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.endpoint.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.endpoint.help_text }}</small>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.timeout.label }}</label>
+                {{ form.timeout }}
+                {% if form.timeout.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.timeout.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.timeout.help_text }}</small>
+              </div>
+            </div>
+            <div style="padding: 1rem; border: 1px dashed var(--border); border-radius: 10px; background: rgba(250,244,235,0.6); margin-bottom: 1rem;">
+              <strong style="display:block; color: var(--text-strong); margin-bottom: 0.8rem;">Stdio transport fields</strong>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                  <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.stdio_command.label }}</label>
+                  {{ form.stdio_command }}
+                  {% if form.stdio_command.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.stdio_command.errors }}</div>{% endif %}
+                  <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.stdio_command.help_text }}</small>
+                </div>
+                <div>
+                  <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.stdio_cwd.label }}</label>
+                  {{ form.stdio_cwd }}
+                  {% if form.stdio_cwd.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.stdio_cwd.errors }}</div>{% endif %}
+                  <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.stdio_cwd.help_text }}</small>
+                </div>
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.stdio_args.label }}</label>
+                {{ form.stdio_args }}
+                {% if form.stdio_args.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.stdio_args.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.stdio_args.help_text }}</small>
+              </div>
+              <div>
+                <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.stdio_env_json.label }}</label>
+                {{ form.stdio_env_json }}
+                {% if form.stdio_env_json.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.stdio_env_json.errors }}</div>{% endif %}
+                <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.stdio_env_json.help_text }}</small>
+              </div>
+            </div>
+            <div>
+              <label style="display:block; margin-bottom:0.45rem; font-weight:700; color: var(--text-strong);">{{ form.enabled_tools_csv.label }}</label>
+              {{ form.enabled_tools_csv }}
+              {% if form.enabled_tools_csv.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.enabled_tools_csv.errors }}</div>{% endif %}
+              <small style="display:block; color: var(--muted); margin-top:0.35rem;">{{ form.enabled_tools_csv.help_text }}</small>
+            </div>
           </div>
 
           <div style="margin-bottom: 2.5rem;">
@@ -75,10 +151,13 @@
             {% if form.config_json.errors %}<div class="status-danger" style="font-size: 0.85rem; margin-top: 0.4rem;">{{ form.config_json.errors }}</div>{% endif %}
             <small style="display: block; color: var(--muted); margin-top: 0.4rem;">{{ form.config_json.help_text }}</small>
             <div id="config-hints" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text); background: var(--bg-accent); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-              <strong style="display: block; margin-bottom: 0.5rem;">Common fields for mcp_server:</strong> 
-              <code>"transport_kind": "stub" | "sse" | "stdio"</code>, 
-              <code>"endpoint": "URL"</code>, 
-              <code>"label": "Display Name"</code>
+              <strong style="display: block; margin-bottom: 0.5rem;">Recommended stdio demo flow</strong>
+              <div style="line-height: 1.5;">
+                1. Choose <code>mcp_server</code> + <code>stdio</code>.<br>
+                2. Set command to <code>python3</code>.<br>
+                3. Set args to <code>["tree_ui/services/mcp/test_mcp_server.py"]</code>.<br>
+                4. Save the source, then run <strong>Test</strong> from the MCP source list.
+              </div>
             </div>
           </div>
 

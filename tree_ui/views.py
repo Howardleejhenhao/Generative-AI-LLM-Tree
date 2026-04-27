@@ -610,6 +610,40 @@ def mcp_source_list(request):
     workspace = list_workspaces().first() or get_or_create_default_workspace()
     sources = MCPSource.objects.all().order_by("created_at")
     source_rows = []
+
+    def build_support_summary(source: MCPSource) -> dict:
+        if source.source_type == MCPSource.SourceType.INTERNAL:
+            return {
+                "label": "Built-in",
+                "detail": "Internal registry tools ship with the app and do not require external MCP transport setup.",
+            }
+        if source.source_type == MCPSource.SourceType.MOCK:
+            return {
+                "label": "Demo only",
+                "detail": "Mock sources are useful for testing orchestration and UI flows, but they are not external MCP servers.",
+            }
+
+        transport = source.config.get("transport_kind", "stub")
+        if transport == "stdio":
+            return {
+                "label": "Supported (stdio)",
+                "detail": "This is the current production-ready MCP path in LLM-Tree.",
+            }
+        if transport == "sse":
+            return {
+                "label": "Planned (sse)",
+                "detail": "SSE transport is recognized in configuration, but the client implementation is not complete yet.",
+            }
+        if transport == "stub":
+            return {
+                "label": "Demo only (stub)",
+                "detail": "Stub transport simulates a remote MCP source for demos and testing only.",
+            }
+        return {
+            "label": f"Unknown ({transport})",
+            "detail": "This transport is not part of the supported MCP surface.",
+        }
+
     for source in sources:
         diag = None
         if source.last_checked_at:
@@ -625,6 +659,7 @@ def mcp_source_list(request):
             {
                 "source": source,
                 "diagnostic": diag,
+                "support": build_support_summary(source),
             }
         )
     return render(
