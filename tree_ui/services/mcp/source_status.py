@@ -85,6 +85,8 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
 
 
 def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
+    from tree_ui.models import MCPSourceCheck
+
     source_model.last_checked_at = timezone.now()
     source_model.last_check_ok = result.get("ok", False)
     source_model.last_check_label = result.get("label", "Unknown")
@@ -109,6 +111,19 @@ def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
             "last_check_last_error",
             "updated_at",
         ]
+    )
+
+    MCPSourceCheck.objects.create(
+        source=source_model,
+        ok=result.get("ok", False),
+        label=result.get("label", "Unknown"),
+        message=result.get("message", ""),
+        tool_count=result.get("tool_count", 0) or 0,
+        tool_names_summary=", ".join(result.get("tool_names", [])),
+        transport=result.get("transport", ""),
+        client_status=result.get("client_status", ""),
+        message_endpoint=result.get("message_endpoint", ""),
+        last_error=result.get("last_error", ""),
     )
 
 

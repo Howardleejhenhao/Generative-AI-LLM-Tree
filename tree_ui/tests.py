@@ -9,7 +9,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
-from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace, MCPSource
+from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace, MCPSource, MCPSourceCheck
 from tree_ui.services.context_builder import build_generation_messages
 from tree_ui.services.memory_drafting import (
     WORKSPACE_MEMORY_FALLBACK_CONTENT,
@@ -3138,6 +3138,10 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertEqual(source.last_check_client_status, "")
         self.assertEqual(source.last_check_message_endpoint, "")
         self.assertEqual(source.last_check_last_error, "")
+        self.assertEqual(source.checks.count(), 1)
+        check = source.checks.first()
+        self.assertEqual(check.label, "Ready")
+        self.assertEqual(check.tool_count, 2)
 
     def test_diagnostic_persistence_on_failure(self):
         source = MCPSource.objects.create(
@@ -3159,6 +3163,8 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertEqual(source.last_check_client_status, "skeleton")
         self.assertEqual(source.last_check_message_endpoint, "")
         self.assertEqual(source.last_check_last_error, "")
+        self.assertEqual(source.checks.count(), 1)
+        self.assertEqual(source.checks.first().label, "Unavailable")
 
     def test_list_page_displays_persisted_status(self):
         from django.utils import timezone
@@ -3177,6 +3183,18 @@ class MCPSourcePersistenceTests(TestCase):
             last_check_message_endpoint="http://example.test/messages?id=1",
             last_check_last_error="",
         )
+        MCPSourceCheck.objects.create(
+            source=source,
+            ok=True,
+            label="Ready",
+            message="Connection succeeded. Discovered 5 tool(s).",
+            tool_count=5,
+            tool_names_summary="tool1, tool2, tool3",
+            transport="sse",
+            client_status="connected",
+            message_endpoint="http://example.test/messages?id=1",
+            last_error="",
+        )
 
         response = self.client.get(reverse("mcp_source_list"))
         self.assertEqual(response.status_code, 200)
@@ -3187,6 +3205,7 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertContains(response, "Client: connected")
         self.assertContains(response, "Transport: sse")
         self.assertContains(response, "Resolved endpoint: http://example.test/messages?id=1")
+        self.assertContains(response, "Recent checks")
 
     def test_editing_source_clears_stale_diagnostic_status(self):
         from django.utils import timezone
@@ -3206,6 +3225,18 @@ class MCPSourcePersistenceTests(TestCase):
             last_check_client_status="connected",
             last_check_message_endpoint="http://example.test/messages?id=1",
             last_check_last_error="",
+        )
+        MCPSourceCheck.objects.create(
+            source=source,
+            ok=True,
+            label="Persisted Ready",
+            message="Everything is fine",
+            tool_count=5,
+            tool_names_summary="tool1, tool2, tool3",
+            transport="sse",
+            client_status="connected",
+            message_endpoint="http://example.test/messages?id=1",
+            last_error="",
         )
 
         response = self.client.post(
@@ -3242,8 +3273,26 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertEqual(source.last_check_client_status, "")
         self.assertEqual(source.last_check_message_endpoint, "")
         self.assertEqual(source.last_check_last_error, "")
-        self.assertNotContains(response, "Persisted Ready")
-        self.assertNotContains(response, "Resolved endpoint: http://example.test/messages?id=1")
+        self.assertEqual(source.checks.count(), 1)
+        self.assertContains(response, "Recent checks")
+        self.assertContains(response, "Persisted Ready")
+        self.assertContains(response, "Endpoint: http://example.test/messages?id=1")
+
+    def test_retesting_source_appends_new_check_history(self):
+        source = MCPSource.objects.create(
+            name="Mock Source",
+            source_id="mock-source-history",
+            source_type=MCPSource.SourceType.MOCK,
+            is_enabled=True,
+        )
+
+        self.client.post(reverse("mcp_source_test", args=[source.id]))
+        self.client.post(reverse("mcp_source_test", args=[source.id]))
+        source.refresh_from_db()
+
+        self.assertEqual(source.checks.count(), 2)
+        labels = list(source.checks.values_list("label", flat=True))
+        self.assertEqual(labels, ["Ready", "Ready"])
 
 
 class ToolTraceInspectorTests(TestCase):

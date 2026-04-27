@@ -270,3 +270,29 @@ class MCPSource(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.source_id})"
+
+
+class MCPSourceCheck(models.Model):
+    source = models.ForeignKey(
+        MCPSource,
+        related_name="checks",
+        on_delete=models.CASCADE,
+    )
+    ok = models.BooleanField(default=False)
+    label = models.CharField(max_length=120, blank=True)
+    message = models.TextField(blank=True)
+    tool_count = models.PositiveIntegerField(default=0)
+    tool_names_summary = models.TextField(blank=True)
+    transport = models.CharField(max_length=40, blank=True)
+    client_status = models.CharField(max_length=40, blank=True)
+    message_endpoint = models.TextField(blank=True)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = "MCP Source Check"
+        verbose_name_plural = "MCP Source Checks"
+
+    def __str__(self) -> str:
+        return f"{self.source_id}:{self.label or 'check'}:{self.created_at.isoformat()}"

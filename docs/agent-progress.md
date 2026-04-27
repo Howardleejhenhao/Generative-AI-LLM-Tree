@@ -11,6 +11,67 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 12:56
+
+### Session Goal
+- Add persistent MCP diagnostic history instead of only keeping the latest snapshot.
+- Make repeated MCP checks auditable from the UI.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- add an `MCPSourceCheck` history model and migration
+- append a history row on each diagnostic save while preserving the existing latest snapshot fields
+- surface recent check history on the MCP source list
+- add focused tests for history persistence and rendering
+
+### Work Completed
+- Added persistent `MCPSourceCheck` history records so every MCP diagnostic run now appends an immutable per-check row instead of only updating the latest snapshot fields on `MCPSource`.
+- Added migration `0013_mcpsourcecheck.py` for the new MCP check-history model.
+- Updated `save_diagnostics_result()` so it now preserves the existing latest snapshot behavior while also inserting a new historical record for each check.
+- Updated the MCP source list UI to surface recent check history directly in the source row, including recent labels, client statuses, transports, tool counts, and resolved endpoints.
+- Kept `clear_diagnostics_result()` scoped to clearing the latest snapshot only; edit/reset flows now preserve diagnostic history as an audit trail.
+- Added focused history coverage for:
+  check-row creation on success/failure, repeated retest appends, persisted history rendering, and history preservation when the latest snapshot is cleared.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.MCPSourcePersistenceTests tree_ui.tests.MCPSourceManagementTests`
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests`
+- Ran full validation successfully:
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+  `python3 manage.py makemigrations --check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0013_mcpsourcecheck.py`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/templates/tree_ui/mcp_source_list.html`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+  - `0224cfa` - `feat: surface live MCP client diagnostics`
+  - `f56a1e9` - `feat: persist structured MCP diagnostics`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- MCP diagnostics now persist a structured latest snapshot.
+- MCP diagnostics now include both a latest snapshot and a persistent per-check history trail.
+
+### Next Recommended Step
+- If observability work continues, the next worthwhile step is adding a dedicated history/detail view or retention policy instead of rendering only the latest three checks inline.
+- If product work becomes the priority again, the next highest-value step is using these diagnostics to support richer MCP source health workflows or more real tool integrations.
+
+### Known Issues / Blockers / Tech Debt
+- Recent check history is currently rendered inline in the list view; a dedicated details surface would scale better.
+- There is no retention or pruning policy yet for very long-running MCP source histories.
+
 ## Session 2026-04-27 12:41
 
 ### Session Goal

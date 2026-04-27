@@ -651,6 +651,7 @@ def mcp_source_list(request):
     for source in sources:
         diag = None
         live_client = None
+        recent_checks = []
         adapter = create_adapter_from_model(source)
         if adapter is not None and hasattr(adapter, "get_status"):
             try:
@@ -685,12 +686,27 @@ def mcp_source_list(request):
                 "message_endpoint": source.last_check_message_endpoint,
                 "last_error": source.last_check_last_error,
             }
+        for check in source.checks.all()[:3]:
+            recent_checks.append(
+                {
+                    "label": check.label,
+                    "ok": check.ok,
+                    "message": check.message,
+                    "tool_count": check.tool_count,
+                    "transport": check.transport,
+                    "client_status": check.client_status,
+                    "message_endpoint": check.message_endpoint,
+                    "last_error": check.last_error,
+                    "created_at": check.created_at,
+                }
+            )
         source_rows.append(
             {
                 "source": source,
                 "diagnostic": diag,
                 "support": build_support_summary(source),
                 "live_client": live_client,
+                "recent_checks": recent_checks,
             }
         )
     return render(
