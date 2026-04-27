@@ -11,6 +11,56 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 11:10
+
+### Session Goal
+- Audit the current repository against the homework-v2-style requirements:
+  long-term memory, multimodal, auto routing, tool use, MCP, and other useful functions.
+
+### Planned Tasks
+- update the progress log for this review session
+- inspect git status, active branch, AGENTS instructions, and the latest development log
+- verify implementation evidence in models, services, views, templates, README, and tests
+- run Django validation commands before reporting the compliance status
+
+### Work Completed
+- Reviewed the current branch state on `feature/v2-tool-use-groundwork` at commit `79ddd1f`.
+- Verified that the repository already contains concrete implementation layers for:
+  long-term memory (`ConversationMemory` plus retrieval/prompt integration),
+  multimodal attachments (`NodeAttachment` plus provider payload mapping),
+  auto routing (`routing_mode` plus `route_model()`),
+  tool invocation persistence (`ToolInvocation`),
+  and MCP source management (`MCPSource` plus dispatcher/adapters/stdio client).
+- Confirmed that the node chat UI surfaces both `Memory Context` and `Tool Trace`, and that MCP settings have their own management pages.
+- Ran `python3 manage.py check`; Django reported no issues.
+- Ran `python3 manage.py test tree_ui.tests`; all 134 tests passed.
+- Determined that the project is strongest in long-term memory, multimodal image/PDF attachments, auto routing, tool tracing, and stdio-first MCP.
+- Determined that the main gap versus a stricter interpretation of the requirement list is MCP completeness: stdio is implemented, while `sse` transport is only recognized and explicitly not complete.
+- Determined that the tool layer is real but still narrow in breadth; the built-in registry currently only registers `compare_branches`, with the wider capability coming from the MCP dispatcher path.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch observed during review: `main` (`HEAD` `79ddd1f`; same commit is also pointed to by `feature/v2-tool-use-groundwork`)
+- New branch created/switched: none
+- Commits made:
+  - none in this session
+- Push status:
+  - not pushed in this review session
+
+### Current Status
+- The repository substantially satisfies the requested homework-v2 capability areas at an MVP/demo level.
+- The least complete requirement area is MCP transport breadth, because the codebase is intentionally stdio-first rather than fully transport-complete.
+
+### Next Recommended Step
+- If this project will be graded strictly on MCP support rather than MCP-ready architecture, implement or clearly scope out `sse` transport next.
+- If the current grading emphasis is demoable capability breadth, prepare a requirement-by-requirement evidence checklist and a short demo script from the existing features.
+
+### Known Issues / Blockers / Tech Debt
+- MCP `sse` transport is recognized but not fully implemented.
+- The internal built-in tool catalog is still small even though the dispatcher and trace architecture are present.
+
 ## Session 2026-04-27 10:31
 
 ### Session Goal
