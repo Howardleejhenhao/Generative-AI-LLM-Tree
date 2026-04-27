@@ -673,6 +673,17 @@ def mcp_source_list(request):
                 "tool_count": source.last_check_tool_count,
                 "tool_names": source.last_check_tools_summary.split(", ") if source.last_check_tools_summary else [],
                 "checked_at": source.last_checked_at,
+                "transport": source.last_check_transport,
+                "client_status": source.last_check_client_status,
+                "message_endpoint": source.last_check_message_endpoint,
+                "last_error": source.last_check_last_error,
+            }
+        if live_client is None and source.last_checked_at:
+            live_client = {
+                "transport": source.last_check_transport,
+                "client_status": source.last_check_client_status,
+                "message_endpoint": source.last_check_message_endpoint,
+                "last_error": source.last_check_last_error,
             }
         source_rows.append(
             {

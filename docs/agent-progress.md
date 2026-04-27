@@ -11,6 +11,65 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 12:41
+
+### Session Goal
+- Persist richer MCP diagnostic metadata instead of keeping it runtime-only.
+- Make transport/client observability survive page refreshes and source edits until explicitly cleared or retested.
+
+### Planned Tasks
+- update the progress log for this implementation session
+- extend `MCPSource` with structured persisted diagnostic fields
+- wire the diagnostic save/clear flow to those fields
+- make the MCP source list fall back to persisted client metadata when live runtime data is unavailable
+- add migration and focused persistence tests
+
+### Work Completed
+- Extended `MCPSource` with structured persisted diagnostic fields for:
+  `transport`, `client_status`, `message_endpoint`, and `last_error`.
+- Added migration `0012_mcpsource_last_check_transport_and_more.py` to persist those new MCP diagnostic fields.
+- Updated `tree_ui/services/mcp/source_status.py` so diagnostic save/clear flows now write and reset the structured transport metadata alongside the existing summary fields.
+- Updated the MCP source list view so persisted diagnostic metadata becomes the fallback client-status payload when no live runtime adapter status is available.
+- Fixed `diagnose_source()` so successful diagnostics refresh client status after tool discovery, which avoids saving stale pre-connect values such as `skeleton`.
+- Added focused persistence coverage for:
+  SSE diagnostic persistence, stdio failure persistence, persisted status rendering, and clearing stale structured fields on edit.
+- Ran focused MCP tests successfully:
+  `python3 manage.py test tree_ui.tests.StdioMCPTransportTests tree_ui.tests.MCPSourceManagementTests tree_ui.tests.MCPSourcePersistenceTests`
+- Ran schema drift and full validation successfully:
+  `python3 manage.py makemigrations --check`
+  `python3 manage.py test tree_ui.tests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/models.py`
+- `tree_ui/migrations/0012_mcpsource_last_check_transport_and_more.py`
+- `tree_ui/services/mcp/source_status.py`
+- `tree_ui/views.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: none
+- Commits made:
+  - `9229551` - `feat: implement SSE MCP transport support`
+  - `2b37281` - `fix: harden SSE MCP transport behavior`
+  - `0224cfa` - `feat: surface live MCP client diagnostics`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- Live MCP client diagnostics already exist in the UI.
+- Persisted structured MCP diagnostic metadata is now implemented and wired into both save/clear flows and list-page fallback rendering.
+
+### Next Recommended Step
+- If observability work continues, the next worthwhile step is storing richer per-check history rather than only the latest snapshot on `MCPSource`.
+- If agent/product work becomes the priority again, the next high-value step is expanding the real MCP/internal tool catalog now that transport and diagnostics are substantially more complete.
+
+### Known Issues / Blockers / Tech Debt
+- MCP diagnostics still keep only the latest snapshot, not a historical timeline of checks.
+- Runtime adapter state is still richer than the persisted model in some cases, so a future history/event model could still be justified.
+
 ## Session 2026-04-27 12:27
 
 ### Session Goal

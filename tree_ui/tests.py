@@ -3097,6 +3097,10 @@ class StdioMCPTransportTests(TestCase):
             self.assertTrue(source.last_check_ok)
             self.assertEqual(source.last_check_label, "Ready")
             self.assertEqual(source.last_check_tool_count, 1)
+            self.assertEqual(source.last_check_transport, "sse")
+            self.assertEqual(source.last_check_client_status, "connected")
+            self.assertEqual(source.last_check_message_endpoint, transport.message_endpoint)
+            self.assertEqual(source.last_check_last_error, "")
 
     def test_sse_client_requires_endpoint_announcement(self):
         from tree_ui.services.mcp.sse_client import SSEMCPClient
@@ -3130,6 +3134,10 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertEqual(source.last_check_label, "Ready")
         self.assertEqual(source.last_check_tool_count, 2)
         self.assertIn("external_echo", source.last_check_tools_summary)
+        self.assertEqual(source.last_check_transport, "")
+        self.assertEqual(source.last_check_client_status, "")
+        self.assertEqual(source.last_check_message_endpoint, "")
+        self.assertEqual(source.last_check_last_error, "")
 
     def test_diagnostic_persistence_on_failure(self):
         source = MCPSource.objects.create(
@@ -3147,6 +3155,10 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertFalse(source.last_check_ok)
         self.assertEqual(source.last_check_label, "Unavailable")
         self.assertIn("Failed to start subprocess", source.last_check_message)
+        self.assertEqual(source.last_check_transport, "stdio")
+        self.assertEqual(source.last_check_client_status, "skeleton")
+        self.assertEqual(source.last_check_message_endpoint, "")
+        self.assertEqual(source.last_check_last_error, "")
 
     def test_list_page_displays_persisted_status(self):
         from django.utils import timezone
@@ -3160,6 +3172,10 @@ class MCPSourcePersistenceTests(TestCase):
             last_check_message="Everything is fine",
             last_check_tool_count=5,
             last_check_tools_summary="tool1, tool2, tool3",
+            last_check_transport="sse",
+            last_check_client_status="connected",
+            last_check_message_endpoint="http://example.test/messages?id=1",
+            last_check_last_error="",
         )
 
         response = self.client.get(reverse("mcp_source_list"))
@@ -3168,6 +3184,9 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertContains(response, "Everything is fine")
         self.assertContains(response, "Tools: 5")
         self.assertContains(response, "tool1, tool2, tool3")
+        self.assertContains(response, "Client: connected")
+        self.assertContains(response, "Transport: sse")
+        self.assertContains(response, "Resolved endpoint: http://example.test/messages?id=1")
 
     def test_editing_source_clears_stale_diagnostic_status(self):
         from django.utils import timezone
@@ -3183,6 +3202,10 @@ class MCPSourcePersistenceTests(TestCase):
             last_check_message="Everything is fine",
             last_check_tool_count=5,
             last_check_tools_summary="tool1, tool2, tool3",
+            last_check_transport="sse",
+            last_check_client_status="connected",
+            last_check_message_endpoint="http://example.test/messages?id=1",
+            last_check_last_error="",
         )
 
         response = self.client.post(
@@ -3215,7 +3238,12 @@ class MCPSourcePersistenceTests(TestCase):
         self.assertEqual(source.last_check_message, "")
         self.assertIsNone(source.last_check_tool_count)
         self.assertEqual(source.last_check_tools_summary, "")
+        self.assertEqual(source.last_check_transport, "")
+        self.assertEqual(source.last_check_client_status, "")
+        self.assertEqual(source.last_check_message_endpoint, "")
+        self.assertEqual(source.last_check_last_error, "")
         self.assertNotContains(response, "Persisted Ready")
+        self.assertNotContains(response, "Resolved endpoint: http://example.test/messages?id=1")
 
 
 class ToolTraceInspectorTests(TestCase):

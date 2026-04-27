@@ -255,6 +255,10 @@ class MCPSource(models.Model):
     last_check_message = models.TextField(blank=True)
     last_check_tool_count = models.PositiveIntegerField(null=True, blank=True)
     last_check_tools_summary = models.TextField(blank=True)
+    last_check_transport = models.CharField(max_length=40, blank=True)
+    last_check_client_status = models.CharField(max_length=40, blank=True)
+    last_check_message_endpoint = models.TextField(blank=True)
+    last_check_last_error = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

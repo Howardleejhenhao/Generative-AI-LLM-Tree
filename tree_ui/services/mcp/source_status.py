@@ -64,6 +64,11 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
             "last_error": client_summary.get("last_error", ""),
         }
 
+    refreshed_status = adapter.get_status() if hasattr(adapter, "get_status") else {}
+    refreshed_client_info = (
+        refreshed_status.get("client_info", {}) if isinstance(refreshed_status, dict) else {}
+    )
+    refreshed_client_summary = summarize_client_info(refreshed_client_info)
     tool_names = [tool.name for tool in tools]
     return {
         "source_id": source_model.source_id,
@@ -72,10 +77,10 @@ def diagnose_source(source_model: Any) -> Dict[str, Any]:
         "message": f"Connection succeeded. Discovered {len(tool_names)} tool(s).",
         "tool_count": len(tool_names),
         "tool_names": tool_names,
-        "transport": transport,
-        "client_status": client_summary.get("client_status", "connected"),
-        "message_endpoint": client_summary.get("message_endpoint", ""),
-        "last_error": client_summary.get("last_error", ""),
+        "transport": refreshed_client_summary.get("transport") or transport,
+        "client_status": refreshed_client_summary.get("client_status", "connected"),
+        "message_endpoint": refreshed_client_summary.get("message_endpoint", ""),
+        "last_error": refreshed_client_summary.get("last_error", ""),
     }
 
 
@@ -86,6 +91,10 @@ def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
     source_model.last_check_message = result.get("message", "")
     source_model.last_check_tool_count = result.get("tool_count", 0)
     source_model.last_check_tools_summary = ", ".join(result.get("tool_names", []))
+    source_model.last_check_transport = result.get("transport", "")
+    source_model.last_check_client_status = result.get("client_status", "")
+    source_model.last_check_message_endpoint = result.get("message_endpoint", "")
+    source_model.last_check_last_error = result.get("last_error", "")
     source_model.save(
         update_fields=[
             "last_checked_at",
@@ -94,6 +103,10 @@ def save_diagnostics_result(source_model: Any, result: Dict[str, Any]) -> None:
             "last_check_message",
             "last_check_tool_count",
             "last_check_tools_summary",
+            "last_check_transport",
+            "last_check_client_status",
+            "last_check_message_endpoint",
+            "last_check_last_error",
             "updated_at",
         ]
     )
@@ -106,6 +119,10 @@ def clear_diagnostics_result(source_model: Any) -> None:
     source_model.last_check_message = ""
     source_model.last_check_tool_count = None
     source_model.last_check_tools_summary = ""
+    source_model.last_check_transport = ""
+    source_model.last_check_client_status = ""
+    source_model.last_check_message_endpoint = ""
+    source_model.last_check_last_error = ""
     source_model.save(
         update_fields=[
             "last_checked_at",
@@ -114,6 +131,10 @@ def clear_diagnostics_result(source_model: Any) -> None:
             "last_check_message",
             "last_check_tool_count",
             "last_check_tools_summary",
+            "last_check_transport",
+            "last_check_client_status",
+            "last_check_message_endpoint",
+            "last_check_last_error",
             "updated_at",
         ]
     )
