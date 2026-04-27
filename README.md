@@ -2,7 +2,7 @@
 
 LLM-Tree is a Django-based experimental chat workspace that treats conversations as a branchable graph instead of a single linear thread. The main interface is a graph-first canvas where each node represents a conversation unit, and every continuation can branch from any earlier point in the history.
 
-The project is intentionally built with Django Templates plus modular JavaScript rather than a separate SPA. It runs through Docker Compose, stores secrets in `.env`, supports both OpenAI and Gemini, streams replies into the UI, and keeps generation context branch-local.
+The project is intentionally built with Django Templates plus modular JavaScript rather than a separate SPA. It runs through Docker Compose, stores secrets in `.env`, supports both OpenAI and Gemini, streams replies into the UI, keeps generation context branch-local, and already includes early v2 features such as automatic workspace memory, multimodal attachments, transparent model routing, and MCP-ready tool orchestration.
 
 ## What The App Does
 
@@ -12,8 +12,12 @@ The project is intentionally built with Django Templates plus modular JavaScript
 - Supports branching from any existing node
 - Supports version-safe edited variants of older nodes
 - Lets each new node choose its provider, model, system prompt, and common generation parameters independently
+- Supports manual and auto-routed model selection with recorded routing decisions
 - Streams assistant replies to the browser over SSE
 - Preserves branch-local context by building prompts only from the selected lineage
+- Retrieves visible long-term memory alongside branch-local prompt context
+- Accepts image and PDF attachments in node chat flows
+- Records tool usage and recent workspace activity for debugging and demos
 - Persists manual node positions so graph layouts remain stable
 - Provides a dedicated chat page for each node in addition to the graph view
 
@@ -34,10 +38,21 @@ The project is intentionally built with Django Templates plus modular JavaScript
 - Dedicated page for a selected node
 - Ordered transcript rendering from that node's internal messages
 - Composer for continuing the branch
+- Image and PDF attachment upload from the chat composer
 - Automatic in-place continuation for leaf nodes
 - Automatic child-branch creation when replying from a historical node that already has children
 - Lineage navigation and child branch links
 - Edited-source and edited-variant navigation
+- Tool trace and memory context inspector panels
+
+### Memory, Routing, And Comparison
+
+- Automatic read-only workspace memory refreshed from current conversation state
+- Retrieved memory surfaced per node in both the graph inspector and node chat
+- Manual routing plus `auto-fast`, `auto-balanced`, and `auto-quality` modes
+- Persisted routing decision text for routed generations
+- Node rename and two-node branch comparison from the graph workspace
+- Recent workspace activity timeline that includes node, memory, and tool events
 
 ### Providers And Generation
 
@@ -53,8 +68,9 @@ The project is intentionally built with Django Templates plus modular JavaScript
 - MCP source management UI for creating, editing, deleting, enabling, and testing sources
 - Internal dispatcher that aggregates built-in tools plus MCP-managed sources
 - Tool provenance persisted on each node through `tool_type` and `source_id`
-- Working stdio-backed MCP client with initialize, tool discovery, and tool execution
+- Working stdio and SSE MCP clients with initialize, tool discovery, and tool execution
 - Readiness diagnostics for registered MCP sources, including discovered tool counts
+- Persisted MCP check history plus latest-snapshot status fields
 - Node chat tool trace UI that surfaces tool sources and execution outcomes
 
 ## Core Concepts
@@ -78,13 +94,21 @@ A conversation node is a graph node. It stores:
 
 Each node contains one or more ordered messages with roles such as `system`, `user`, or `assistant`. This lets a node represent either a single exchange or a short bundled sequence.
 
-### Branch-Local Memory
+### Short-Term Branch Context
 
 When LLM-Tree generates a new reply, it walks only the current lineage:
 
 `root -> ... -> selected node -> new prompt`
 
 Sibling branches are excluded from the prompt context on purpose.
+
+### Long-Term Memory
+
+LLM-Tree also keeps a separate long-term memory layer. Today that is strongest for automatic workspace memory generation and retrieved-memory visibility in the UI. The data model and prompt builder also support branch-scoped memory, but the product-facing authoring flow for branch memory is still limited.
+
+### Node Attachments
+
+Node chat turns can include uploaded images or PDFs. Attachment metadata is stored per node/message, surfaced in the UI, and passed into supported generation flows.
 
 ### Edited Variants
 
@@ -106,9 +130,9 @@ Editing old history does not overwrite the original node. Instead, the app creat
 .
 |-- llm_tree_project/          # Django project settings and root URLs
 |-- tree_ui/
-|   |-- models.py             # Workspace, ConversationNode, NodeMessage
+|   |-- models.py             # Workspace, nodes, messages, attachments, memory, tools, MCP
 |   |-- views.py              # Graph page, node chat page, JSON/SSE endpoints
-|   |-- services/             # Context building, node creation/editing, providers
+|   |-- services/             # Context, memory, routing, attachments, providers, MCP, tools
 |   |-- templates/tree_ui/    # Django templates
 |   `-- static/tree_ui/js/    # Canvas, viewport, API, streaming, chat behavior
 |-- docker-compose.yml
@@ -123,9 +147,15 @@ Editing old history does not overwrite the original node. Instead, the app creat
 - `tree_ui/services/context_builder.py`: lineage-only prompt construction
 - `tree_ui/services/node_creation.py`: node creation, continuation, reply streaming, fallback behavior
 - `tree_ui/services/node_editing.py`: edited variant creation
+- `tree_ui/services/attachments.py`: upload validation plus image/PDF attachment handling
+- `tree_ui/services/memory_service.py`: workspace/branch memory persistence and retrieval
+- `tree_ui/services/memory_drafting.py`: automatic workspace-memory refresh and memory drafting helpers
+- `tree_ui/services/router.py`: manual/auto model routing decisions
+- `tree_ui/services/graph_payload.py`: graph serialization, inspector payloads, workspace timeline
 - `tree_ui/services/model_catalog.py`: provider defaults and legacy Gemini alias mapping
 - `tree_ui/services/providers/`: provider-specific OpenAI and Gemini integrations behind a shared interface
 - `tree_ui/services/mcp/`: MCP dispatcher, adapters, clients, diagnostics, and test fixtures
+- `tree_ui/services/tools/`: internal tool registry and built-in tools
 
 ## MCP Support Matrix
 
@@ -171,8 +201,8 @@ Timeout: 30
 
 - The SSE client expects the server to announce a message endpoint over the stream before tool requests are sent.
 - The stdio client currently assumes a synchronous request/response flow.
-- MCP diagnostics persist only the latest check result, not a full history.
-- Tool routing exists, but the product still relies on a relatively small tool set.
+- MCP diagnostics now persist latest status and per-check history, but the UI only surfaces a compact recent history inline.
+- Tool orchestration exists, but the built-in internal tool catalog is still small.
 
 ## Running The Project
 
@@ -201,6 +231,7 @@ Notes:
 - The container entrypoint automatically runs `python manage.py migrate --noinput`.
 - Source code is mounted into the container with `.:/app` for live development.
 - The default command is `python manage.py runserver 0.0.0.0:8000`.
+- The Docker image installs `poppler-utils`, which is used for PDF attachment preview/rendering.
 
 ### Option 2: Local Python Environment
 
@@ -222,6 +253,8 @@ pyenv activate LLM-Tree
 ```
 
 That is optional. Docker Compose remains the default expected runtime path.
+
+If you want PDF attachment rendering outside Docker, make sure `pdftoppm` is available locally.
 
 ## Environment Variables
 
@@ -274,9 +307,11 @@ Key API routes:
 - `POST /api/workspaces/<slug>/nodes/`
 - `POST /api/workspaces/<slug>/nodes/<node_id>/delete/`
 - `POST /api/workspaces/<slug>/nodes/<node_id>/position/`
+- `POST /api/workspaces/<slug>/nodes/<node_id>/title/`
 - `POST /api/workspaces/<slug>/nodes/stream/`
 - `POST /api/workspaces/<slug>/nodes/<node_id>/messages/stream/`
 - `POST /api/workspaces/<slug>/nodes/<node_id>/edit-variant/`
+- `POST /api/workspaces/<slug>/nodes/compare/`
 
 ## Development Checks
 
@@ -300,7 +335,9 @@ node --check tree_ui/static/tree_ui/js/model-options.js
 
 - The data model is still a single-parent branching tree even though the UI is graph-like.
 - SQLite is the default development database; no production database configuration is included yet.
-- Provider integrations are implemented directly with HTTP requests and currently focus on text generation workflows.
+- Provider integrations are implemented directly with HTTP requests rather than a heavier agent framework.
+- The product exposes retrieved memory and automatic workspace memory, but it does not yet ship a full end-user memory management workflow.
+- Multimodal support is currently attachment-first, focused on images and PDFs rather than broader file/audio/video pipelines.
 - Browser verification against live provider keys is still the main remaining hardening step for streaming edge cases.
 
 ## Progress Tracking

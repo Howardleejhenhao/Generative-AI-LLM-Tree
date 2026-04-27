@@ -11,6 +11,109 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 21:38
+
+### Session Goal
+- Audit whether `README.md` still matches the actual repository state.
+- Refresh the README so it better reflects the current product surface and known limits.
+
+### Planned Tasks
+- inspect current git state and confirm the working branch
+- review the latest progress notes before touching docs
+- compare README claims against the current Django models, views, services, templates, and routes
+- run lightweight validation commands to confirm runtime/docs alignment
+- update README and record the documentation audit outcome
+
+### Work Completed
+- Verified the session started on `main` with an already-modified `docs/agent-progress.md`.
+- Audited README claims against the current codebase, including:
+  models, graph/chat UI, routing, memory, attachments, MCP plumbing, and HTTP routes.
+- Ran documentation-alignment checks successfully:
+  `python3 manage.py check`
+  `python3 manage.py makemigrations --check`
+- Identified one direct README mismatch:
+  the README still claimed MCP diagnostics only persisted the latest check result, but the code now persists per-check history through `MCPSourceCheck`.
+- Identified several meaningful omissions in the old README:
+  automatic workspace memory, visible retrieved memory, image/PDF attachments, auto routing modes, branch comparison, recent activity timeline, title-update/compare endpoints, and local PDF-rendering requirements.
+- Updated `README.md` to better match the real project state while also being more explicit about current limits:
+  limited end-user memory management, small internal tool catalog, and attachment-first multimodal scope.
+
+### Files Changed
+- `docs/agent-progress.md`
+- `README.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The README is now materially closer to the current repository state and more honest about the v2 surface area.
+- Documentation still remains on `main` as an uncommitted docs change set.
+
+### Next Recommended Step
+- If documentation polish continues, add a few UI screenshots or a short architecture diagram so the graph-first product identity is immediately obvious.
+- If product work resumes, the next implementation slice is still the internal tool-catalog expansion noted in the earlier session:
+  `search_workspace_memory`, `search_branch_memory`, `list_branch_attachments`, `explain_routing_for_node`.
+
+### Known Issues / Blockers / Tech Debt
+- README can describe current memory support more accurately now, but the product itself still lacks a full user-facing memory CRUD flow.
+- The built-in tool catalog remains intentionally small even though MCP/tool orchestration infrastructure is already present.
+
+## Session 2026-04-27 14:06
+
+### Session Goal
+- Continue from the completed MCP transport/diagnostics session and define the next high-value internal/MCP tool backlog.
+- Produce a concrete recommendation set for which tools should be built next and in what order.
+
+### Planned Tasks
+- inspect git state and confirm the merged baseline on `main`
+- review the latest agent progress notes before planning
+- inspect the current internal tool registry, dispatcher, memory, and tool invocation flow
+- identify missing tool categories that best fit the v2 graph-agent milestone
+- update this progress log with the planning outcome
+
+### Work Completed
+- Reviewed the merged `main` baseline after the MCP transport/diagnostics workstream.
+- Verified the current internal tool/runtime architecture:
+  `BaseTool`, `ToolRegistry`, internal-to-MCP adapter, lazy dispatcher, provider tool-call support, persisted `ToolInvocation`, memory retrieval, routing, and graph timeline serialization.
+- Confirmed that the current internal catalog is still minimal and effectively contains only `compare_branches`.
+- Identified the next highest-value tool backlog for the v2 milestone:
+  1. memory lookup tools
+  2. attachment/context lookup tools
+  3. routing explanation tools
+  4. branch summary/divergence tools
+  5. controlled memory-write tools after the read path is stable
+- Chose the recommended next implementation slice:
+  `search_workspace_memory`, `search_branch_memory`, `list_branch_attachments`, and `explain_routing_for_node`.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: none
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The project already has a solid tool execution foundation plus MCP transport/diagnostics.
+- The main remaining gap is the small internal tool catalog rather than missing orchestration plumbing.
+
+### Next Recommended Step
+- Start a focused tool-catalog branch and implement the first deterministic read tools before adding tool-driven writes:
+  `search_workspace_memory`, `search_branch_memory`, `list_branch_attachments`, `explain_routing_for_node`.
+
+### Known Issues / Blockers / Tech Debt
+- `compare_branches` currently behaves more like a raw branch transcript dump than a high-signal comparison tool.
+- There is not yet a first-class internal tool for memory lookup, attachment lookup, routing inspection, or branch summarization.
+- Memory write tools should probably be added only after read/query tools are stable enough to avoid opaque or low-confidence auto-saves.
+
 ## Session 2026-04-27 13:09
 
 ### Session Goal
