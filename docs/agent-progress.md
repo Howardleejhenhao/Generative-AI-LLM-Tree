@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-27 13:09
+
+### Session Goal
+- Close the current MCP workstream by merging `feature/mcp-sse-transport` back into `main`.
+- Leave the repository ready for the next session to start new tool-planning work on top of a consolidated main branch.
+
+### Planned Tasks
+- confirm the repository state on `feature/mcp-sse-transport`
+- switch to `main`
+- merge the MCP feature branch back into `main`
+- record the merge result in the progress log
+
+### Work Completed
+- Verified that `feature/mcp-sse-transport` was five commits ahead of `main`.
+- Merged `feature/mcp-sse-transport` into `main` with a non-fast-forward merge commit.
+- Preserved the MCP workstream as a coherent merged slice covering:
+  SSE transport support, SSE hardening, live diagnostics, persisted structured diagnostics, and diagnostic history.
+- Left `main` ready for the next session's work without additional code conflicts or uncommitted changes.
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `feature/mcp-sse-transport`
+- New branch created/switched: switched to `main`
+- Commits made:
+  - `fceb039` - `merge: integrate MCP transport and diagnostics improvements`
+- Push status:
+  - not pushed yet
+
+### Current Status
+- The MCP feature work has been merged into `main`.
+- `main` is ahead of `origin/main` and ready for the next development session.
+
+### Next Recommended Step
+- Start the next session on `main` and shift focus from MCP transport plumbing to selecting and implementing additional real tools.
+
+### Known Issues / Blockers / Tech Debt
+- The MCP subsystem is in a good mergeable state, but further work remains optional rather than blocking:
+  richer tool catalog, dedicated diagnostic detail pages, and longer-term transport hardening.
+
 ## Session 2026-04-27 12:56
 
 ### Session Goal
