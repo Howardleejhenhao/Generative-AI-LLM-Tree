@@ -11,6 +11,53 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-28 18:41
+
+### Session Goal
+- Fix the node-chat `Memory Context` inspector so it can be minimized/closed reliably.
+- Keep the change narrow and safe for the existing node chat UX.
+
+### Planned Tasks
+- inspect the current node-chat template and JavaScript inspector toggle logic
+- identify why the memory inspector does not reliably minimize
+- patch the inspector state handling and any related template wiring
+- run lightweight verification and record the result
+
+### Work Completed
+- Session started; current git branch, clean worktree state, and latest progress log were reviewed.
+- Created a dedicated bugfix branch for the memory inspector issue.
+- Inspected the node-chat template and JavaScript inspector wiring before implementation.
+- Reworked the node-chat inspector controls so `Memory Context` and `Tool Trace` now use a shared open/close state controller instead of separate ad hoc toggles.
+- Made the two inspector panels mutually exclusive, so opening one closes the other instead of leaving overlapping sidebar state behind.
+- Added explicit accessibility wiring for the inspector toggle buttons and close buttons, and bumped the node-chat script version to avoid stale browser cache after deployment.
+- Added `Escape` handling to close any open inspector panel.
+- Verified the change with:
+  `python3 manage.py check`
+  `node --check tree_ui/static/tree_ui/js/node-chat.js`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/memory-context-minimize`
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The node-chat memory inspector should now close reliably via the same toggle button, the panel close button, or the `Escape` key.
+- The script version bump should force browsers to load the fixed `node-chat.js` instead of keeping the older cached module.
+
+### Next Recommended Step
+- Have the human verify the fixed node-chat behavior in the browser and confirm whether the next UI polish should add outside-click dismissal or a collapsed peek state.
+
+### Known Issues / Blockers / Tech Debt
+- There is still no browser-driven regression test for inspector open/close behavior, so this UI flow is only covered by manual verification plus lightweight syntax/runtime checks.
+
 ## Session 2026-04-27 21:38
 
 ### Session Goal

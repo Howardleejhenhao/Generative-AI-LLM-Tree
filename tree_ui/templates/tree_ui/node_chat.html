@@ -10,8 +10,8 @@
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
         <a class="ghost-link" href="{% url 'mcp_source_list' %}">MCP Settings</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
-        <button class="chat-shell-action" id="memory-inspector-toggle-button" type="button">Memory Context</button>
-        <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button">Tool Trace</button>
+        <button class="chat-shell-action" id="memory-inspector-toggle-button" type="button" aria-controls="chat-memory-inspector" aria-expanded="false">Memory Context</button>
+        <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button" aria-controls="chat-tool-inspector" aria-expanded="false">Tool Trace</button>
         <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
@@ -123,7 +123,7 @@
       <aside class="chat-inspector-panel" id="chat-tool-inspector" hidden>
         <div class="chat-inspector-header">
           <h2>Tool Trace</h2>
-          <button class="chat-inspector-close" id="chat-tool-inspector-close-button" type="button">×</button>
+          <button class="chat-inspector-close" id="chat-tool-inspector-close-button" type="button" aria-label="Close tool trace">×</button>
         </div>
         <div class="chat-inspector-content" id="chat-tool-summary">
           <!-- Tool trace summary goes here -->
@@ -136,7 +136,7 @@
       <aside class="chat-inspector-panel" id="chat-memory-inspector" hidden>
         <div class="chat-inspector-header">
           <h2>Memory Context</h2>
-          <button class="chat-inspector-close" id="chat-memory-inspector-close-button" type="button">×</button>
+          <button class="chat-inspector-close" id="chat-memory-inspector-close-button" type="button" aria-label="Close memory context">×</button>
         </div>
         <div class="chat-inspector-content" id="chat-memory-list">
           <!-- Memory records go here -->
@@ -155,5 +155,5 @@
   </div>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer-fix2"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260428-memory-inspector-fix"></script>
 {% endblock %}
