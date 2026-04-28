@@ -10,8 +10,8 @@
         <a class="ghost-link" href="{% url 'workspace_graph' workspace.slug %}">Back to graph</a>
         <a class="ghost-link" href="{% url 'mcp_source_list' %}">MCP Settings</a>
         <a class="ghost-link" href="{{ workspace_memory_url }}">Workspace memory</a>
-        <button class="chat-shell-action" id="memory-inspector-toggle-button" type="button">Memory Context</button>
-        <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button">Tool Trace</button>
+        <button class="chat-shell-action" id="memory-inspector-toggle-button" type="button" aria-controls="chat-memory-inspector" aria-expanded="false">Memory Context</button>
+        <button class="chat-shell-action" id="tool-inspector-toggle-button" type="button" aria-controls="chat-tool-inspector" aria-expanded="false">Tool Trace</button>
         <button class="chat-shell-action" id="edit-variant-toggle-button" type="button">Edit as variant</button>
       </div>
       <div class="chat-shell-copy chat-shell-copy-inline">
@@ -96,25 +96,14 @@
                     placeholder="{% if can_append_in_place %}想問就問{% else %}Start the next child branch{% endif %}"
                   ></textarea>
                 </label>
+                <button class="primary-button chat-submit-inline" id="chat-submit-button" type="submit">
+                  {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
+                </button>
               </div>
               <label class="sr-only" for="chat-image-input">Attach images</label>
               <input id="chat-image-input" name="images" type="file" accept="image/*,application/pdf" multiple hidden>
               <div class="chat-selected-files" id="chat-selected-files" hidden></div>
-              <div class="chat-composer-actions">
-                <p class="form-feedback" id="chat-feedback" role="status" aria-live="polite"></p>
-                <button class="primary-button" id="chat-submit-button" type="submit">
-                  {% if can_append_in_place %}Send{% else %}Continue in child{% endif %}
-                </button>
-              </div>
-              <div class="chat-composer-meta">
-                <p class="chat-composer-note">
-                  {% if can_append_in_place %}
-                    Enter sends. Shift + Enter adds a new line.
-                  {% else %}
-                    This node already has child branches. Your message will be written into a newly created child branch, not this historical node.
-                  {% endif %}
-                </p>
-              </div>
+              <p class="form-feedback sr-only" id="chat-feedback" role="status" aria-live="polite"></p>
             </form>
           </div>
         </div>
@@ -123,7 +112,7 @@
       <aside class="chat-inspector-panel" id="chat-tool-inspector" hidden>
         <div class="chat-inspector-header">
           <h2>Tool Trace</h2>
-          <button class="chat-inspector-close" id="chat-tool-inspector-close-button" type="button">×</button>
+          <button class="chat-inspector-close" id="chat-tool-inspector-close-button" type="button" aria-label="Close tool trace">×</button>
         </div>
         <div class="chat-inspector-content" id="chat-tool-summary">
           <!-- Tool trace summary goes here -->
@@ -136,7 +125,7 @@
       <aside class="chat-inspector-panel" id="chat-memory-inspector" hidden>
         <div class="chat-inspector-header">
           <h2>Memory Context</h2>
-          <button class="chat-inspector-close" id="chat-memory-inspector-close-button" type="button">×</button>
+          <button class="chat-inspector-close" id="chat-memory-inspector-close-button" type="button" aria-label="Close memory context">×</button>
         </div>
         <div class="chat-inspector-content" id="chat-memory-list">
           <!-- Memory records go here -->
@@ -155,5 +144,5 @@
   </div>
 
   {{ node_payload|json_script:"node-chat-node-payload" }}
-  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260414-chatgpt-composer-fix2"></script>
+  <script type="module" src="{% static 'tree_ui/js/node-chat.js' %}?v=20260428-tool-message-alignment"></script>
 {% endblock %}

@@ -3,12 +3,6 @@ const NODE_FOOTPRINT_WIDTH = 320;
 const NODE_FOOTPRINT_HEIGHT = 180;
 const NODE_MIDPOINT_Y = 70;
 const DRAG_THRESHOLD = 6;
-const DOUBLE_CLICK_MS = 320;
-
-let lastNodeClick = {
-  nodeId: null,
-  timestamp: 0,
-};
 
 export function getNodeBounds(node) {
   return {
@@ -264,20 +258,8 @@ export function renderCanvas(nodes, selectedNodeId, handlers = {}) {
       }
 
       if (!didMove) {
-        const now = Date.now();
-        const isRepeatClick = lastNodeClick.nodeId === node.id && (now - lastNodeClick.timestamp) <= DOUBLE_CLICK_MS;
-        lastNodeClick = {
-          nodeId: node.id,
-          timestamp: now,
-        };
         onSelect?.(node.id);
-        if (isRepeatClick) {
-          onOpenChat?.(node.id);
-          lastNodeClick = {
-            nodeId: null,
-            timestamp: 0,
-          };
-        }
+        onOpenChat?.(node.id);
         return;
       }
 

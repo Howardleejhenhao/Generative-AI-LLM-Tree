@@ -65,15 +65,44 @@ function renderMessageAttachments(container, attachments) {
   }
 }
 
+function buildMessageRow(...classes) {
+  const row = document.createElement("div");
+  row.className = ["message-row", ...classes.filter(Boolean)].join(" ");
+  return row;
+}
+
 function renderToolBlock(container, data, type) {
-  const details = document.createElement("details");
-  details.className = `chat-tool-block chat-tool-${type}`;
-  const summary = document.createElement("summary");
-  summary.textContent = type === "call" ? `🛠️ Tool Call: ${data.name}` : `✅ Tool Result: ${data.name}`;
+  const row = buildMessageRow(type === "call" ? "tool-call" : "tool-result");
+  const card = document.createElement("article");
+  card.className = "tool-message-card";
+
+  const title = document.createElement("div");
+  title.className = "tool-message-title";
+
+  const icon = document.createElement("span");
+  icon.className = "tool-message-icon";
+  icon.textContent = type === "call" ? "🛠️" : "✅";
+
+  const titleText = document.createElement("span");
+  titleText.textContent = type === "call" ? "Tool Call" : "Tool Result";
+
+  title.append(icon, titleText);
+
+  const body = document.createElement("div");
+  body.className = "tool-message-body";
+
+  const name = document.createElement("div");
+  name.className = "tool-message-name";
+  name.textContent = data.name || "Unknown Tool";
+
   const pre = document.createElement("pre");
-  pre.textContent = JSON.stringify(data.args || data.result, null, 2);
-  details.append(summary, pre);
-  container.append(details);
+  const payload = type === "call" ? (data.args || {}) : (data.result ?? {});
+  pre.textContent = JSON.stringify(payload, null, 2);
+
+  body.append(name, pre);
+  card.append(title, body);
+  row.append(card);
+  container.append(row);
 }
 
 export function renderNodeDetails(container, messages) {
@@ -147,10 +176,6 @@ export function renderChatTranscript(container, messages, options = {}) {
   container.innerHTML = "";
 
   if (!messages.length) {
-    const empty = document.createElement("p");
-    empty.className = "chat-empty-copy";
-    empty.textContent = "This conversation has not started yet. Send the first message below.";
-    container.appendChild(empty);
     return;
   }
 
@@ -164,6 +189,7 @@ export function renderChatTranscript(container, messages, options = {}) {
       continue;
     }
 
+    const row = buildMessageRow(message.role);
     const article = document.createElement("article");
     article.className = "chat-message";
     article.dataset.role = message.role;
@@ -189,6 +215,7 @@ export function renderChatTranscript(container, messages, options = {}) {
       }
     }
 
-    container.appendChild(article);
+    row.appendChild(article);
+    container.appendChild(row);
   }
 }

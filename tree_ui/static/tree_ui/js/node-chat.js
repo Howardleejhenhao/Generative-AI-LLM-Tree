@@ -1,4 +1,4 @@
-import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260414-message-images";
+import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260428-tool-message-alignment";
 import { streamJSON } from "./streaming.js?v=20260413-image-upload";
 
 const payload = JSON.parse(document.getElementById("node-chat-node-payload").textContent);
@@ -704,7 +704,7 @@ async function handleSubmit(event) {
             routingDecisionLabel.hidden = false;
           }
 
-          feedback.textContent = "Reply added to this node.";
+          feedback.textContent = "";
           for (const attachment of pendingPreviewAttachments) {
             if (attachment.url) {
               URL.revokeObjectURL(attachment.url);
@@ -819,6 +819,56 @@ function handlePromptPaste(event) {
   updateComposerState();
 }
 
+const inspectorRegistry = [
+  {
+    panel: toolInspector,
+    toggleButton: toolInspectorToggleButton,
+    closeButton: toolInspectorCloseButton,
+    render: renderToolTrace,
+  },
+  {
+    panel: memoryInspector,
+    toggleButton: memoryInspectorToggleButton,
+    closeButton: memoryInspectorCloseButton,
+    render: renderMemoryInspector,
+  },
+];
+
+function syncInspectorState(targetPanel, isOpen) {
+  const entry = inspectorRegistry.find(({ panel }) => panel === targetPanel);
+  if (!entry) {
+    return;
+  }
+
+  entry.panel.hidden = !isOpen;
+  if (isOpen) {
+    entry.panel.removeAttribute("hidden");
+  } else {
+    entry.panel.setAttribute("hidden", "");
+  }
+  entry.panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  entry.toggleButton.classList.toggle("chat-shell-action-active", isOpen);
+  entry.toggleButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+
+  if (isOpen) {
+    entry.render();
+  }
+}
+
+function closeAllInspectors() {
+  for (const entry of inspectorRegistry) {
+    syncInspectorState(entry.panel, false);
+  }
+}
+
+function toggleInspector(targetPanel) {
+  const shouldOpen = targetPanel.hidden;
+  closeAllInspectors();
+  if (shouldOpen) {
+    syncInspectorState(targetPanel, true);
+  }
+}
+
 if (payload.messages.length) {
   editVariantToggleButton.hidden = false;
   editVariantToggleButton.setAttribute("aria-expanded", "false");
@@ -829,30 +879,19 @@ if (payload.messages.length) {
   editVariantToggleButton.hidden = true;
 }
 
-toolInspectorToggleButton.addEventListener("click", () => {
-  toolInspector.hidden = !toolInspector.hidden;
-  toolInspectorToggleButton.classList.toggle("chat-shell-action-active", !toolInspector.hidden);
-  if (!toolInspector.hidden) {
-    renderToolTrace();
+toolInspectorToggleButton.addEventListener("click", () => toggleInspector(toolInspector));
+toolInspectorCloseButton.addEventListener("click", () => syncInspectorState(toolInspector, false));
+memoryInspectorToggleButton.addEventListener("click", () => toggleInspector(memoryInspector));
+memoryInspectorCloseButton.addEventListener("click", () => syncInspectorState(memoryInspector, false));
+
+chatPage.addEventListener("click", (event) => {
+  if (event.target.closest("#chat-tool-inspector-close-button")) {
+    syncInspectorState(toolInspector, false);
+    return;
   }
-});
-
-toolInspectorCloseButton.addEventListener("click", () => {
-  toolInspector.hidden = true;
-  toolInspectorToggleButton.classList.toggle("chat-shell-action-active", false);
-});
-
-memoryInspectorToggleButton.addEventListener("click", () => {
-  memoryInspector.hidden = !memoryInspector.hidden;
-  memoryInspectorToggleButton.classList.toggle("chat-shell-action-active", !memoryInspector.hidden);
-  if (!memoryInspector.hidden) {
-    renderMemoryInspector();
+  if (event.target.closest("#chat-memory-inspector-close-button")) {
+    syncInspectorState(memoryInspector, false);
   }
-});
-
-memoryInspectorCloseButton.addEventListener("click", () => {
-  memoryInspector.hidden = true;
-  memoryInspectorToggleButton.classList.toggle("chat-shell-action-active", false);
 });
 
 promptInput.addEventListener("input", resizePromptInput);
@@ -874,6 +913,10 @@ lightboxCloseButton.addEventListener("click", closeImageLightbox);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !lightbox.hidden) {
     closeImageLightbox();
+    return;
+  }
+  if (event.key === "Escape") {
+    closeAllInspectors();
   }
 });
 jumpButton.addEventListener("click", scrollToBottom);

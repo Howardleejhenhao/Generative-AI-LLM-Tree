@@ -11,6 +11,232 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-28 19:27
+
+### Session Goal
+- Fix the visual alignment of the node chat transcript so inline tool call and tool result entries sit inside the same centered conversation column as normal chat messages.
+
+### Planned Tasks
+- inspect the current node chat transcript DOM structure, CSS width rules, and tool-message rendering path
+- update transcript rendering to emit explicit row classes for tool call and tool result entries
+- restyle the transcript column and tool cards so they align with assistant messages on desktop and mobile
+- run focused frontend and Django validation checks and record the result
+
+### Work Completed
+- Session started; current git state, active branch, relevant node-chat files, and latest progress log were reviewed.
+- Created a dedicated branch for transcript alignment polish on top of the integrated node-chat/Gemini bugfix baseline.
+- Reworked transcript rendering so every chat item now renders inside a shared `.message-row` container, with explicit row classes for user, assistant, tool call, and tool result entries.
+- Replaced the previous full-width `details`-based inline tool transcript blocks with compact transcript cards using:
+  `.message-row.tool-call`
+  `.message-row.tool-result`
+  `.tool-message-card`
+  `.tool-message-title`
+  `.tool-message-body`
+- Updated transcript CSS so the node chat uses a single centered max-width conversation column, while user messages remain right-aligned and assistant/tool entries remain left-aligned.
+- Styled inline tool call and tool result entries as compact cards with bounded width, rounded corners, colored left borders, and mobile-safe wrapping instead of full-width bars.
+- Bumped the shared CSS and node-chat module cache-busting versions so browsers load the new transcript layout immediately.
+- Verified the change with:
+  `node --check tree_ui/static/tree_ui/js/node-panel.js`
+  `node --check tree_ui/static/tree_ui/js/node-chat.js`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests tree_ui.tests.ToolTraceInspectorTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `fix/memory-context-minimize`
+- New branch created/switched: `fix/node-chat-tool-message-alignment`
+- Commits made:
+  - `40de3f7` - `fix: align node chat tool transcript cards`
+- Push status:
+  - pushed to `origin/fix/node-chat-tool-message-alignment`
+
+### Current Status
+- The transcript layout now constrains all inline chat items to a centered chat column instead of letting tool entries stretch across the full shell width.
+- Tool call and tool result entries now render as compact left-aligned cards that visually align with assistant-side transcript content.
+
+### Next Recommended Step
+- Verify the updated node chat visually in the browser with both a normal text-only reply and a tool-calling reply, since this session only completed code-level validation and not a live browser walkthrough.
+
+### Known Issues / Blockers / Tech Debt
+- There is still no browser automation for transcript layout, so visual verification remains manual.
+
+## Session 2026-04-28 18:41
+
+### Session Goal
+- Fix the node-chat `Memory Context` inspector so it can be minimized/closed reliably.
+- Keep the change narrow and safe for the existing node chat UX.
+
+### Planned Tasks
+- inspect the current node-chat template and JavaScript inspector toggle logic
+- identify why the memory inspector does not reliably minimize
+- patch the inspector state handling and any related template wiring
+- run lightweight verification and record the result
+
+### Work Completed
+- Session started; current git branch, clean worktree state, and latest progress log were reviewed.
+- Created a dedicated bugfix branch for the memory inspector issue.
+- Inspected the node-chat template and JavaScript inspector wiring before implementation.
+- Reworked the node-chat inspector controls so `Memory Context` and `Tool Trace` now use a shared open/close state controller instead of separate ad hoc toggles.
+- Made the two inspector panels mutually exclusive, so opening one closes the other instead of leaving overlapping sidebar state behind.
+- Added explicit accessibility wiring for the inspector toggle buttons and close buttons, and bumped the node-chat script version to avoid stale browser cache after deployment.
+- Added `Escape` handling to close any open inspector panel.
+- After human verification showed the `×` button still left the panel visible, added an explicit `.chat-inspector-panel[hidden] { display: none !important; }` rule so the inspector is forcibly removed from layout when closed.
+- Hardened inspector close behavior by syncing both the DOM `hidden` attribute and `aria-hidden`, and added delegated close handling on the chat page container.
+- Bumped the shared app stylesheet version in `base.html` so browsers load the corrected inspector CSS instead of keeping an older cached copy.
+- After a second human report showed the top `Memory Context` button itself would not open the panel, identified the actual click-through bug:
+  `.chat-shell-header` had `pointer-events: none`, but `.chat-shell-action` buttons were never opted back into pointer events.
+- Updated the node-chat header layout so the action cluster and title block align more cleanly while keeping the immersive transcript view intact.
+- Removed the empty transcript placeholder sentence from the node chat view so a brand-new node opens into a visually clean workspace.
+- Bumped both the shared stylesheet version and node-chat module versions again so browsers load the corrected header/button behavior and transcript rendering.
+- After human feedback on the graph workspace, removed the old double-click requirement for opening a node from the graph canvas.
+- Changed graph node click handling so a normal click now selects the node and immediately opens its node-chat view instead of first filling the workspace detail header.
+- Preserved compare-mode behavior by preventing the new auto-open path from firing while the human is selecting a second node for comparison.
+- Tightened the node-chat composer into a single-row layout by moving the submit button into the same row as the attach button and prompt textarea.
+- Removed the visible post-send/status copy under the composer, including the `Reply added to this node.` and keyboard-hint lines, so the bottom input stays visually compact.
+- Kept the live-region feedback element in the DOM as screen-reader-only while suppressing the visible success copy after message append.
+- Verified the change with:
+  `python3 manage.py check`
+  `node --check tree_ui/static/tree_ui/js/app.js`
+  `node --check tree_ui/static/tree_ui/js/canvas.js`
+  `node --check tree_ui/static/tree_ui/js/node-chat.js`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/memory-context-minimize`
+- Commits made:
+  - `9fdb92c` - `fix: restore node chat memory inspector toggle`
+- Push status:
+  - pushed to `origin/fix/memory-context-minimize`
+
+### Current Status
+- The top header action buttons should now be clickable again, including `Memory Context`.
+- The memory inspector should open/close reliably, and the blank-node transcript no longer renders the previous placeholder sentence.
+- In normal graph browsing, clicking a node should now enter that node's chat immediately on the first click instead of requiring a second click.
+- The node-chat composer should now read as a single horizontal input row with the `Send` button aligned alongside the textarea.
+- The latest script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
+
+### Next Recommended Step
+- Have the human verify the fixed node-chat behavior in the browser and confirm whether the next UI polish should add outside-click dismissal or a collapsed peek state.
+
+### Known Issues / Blockers / Tech Debt
+- There is still no browser-driven regression test for inspector open/close behavior, so this UI flow is only covered by manual verification plus lightweight syntax/runtime checks.
+
+## Session 2026-04-28 19:06
+
+### Session Goal
+- Fix the Gemini function-calling follow-up payload so MCP/tool demos do not fail after a successful tool call.
+- Keep the fix focused on provider compatibility and add regression coverage.
+
+### Planned Tasks
+- inspect the current Gemini provider tool-call and tool-result payload mapping
+- patch the Gemini function response history shape to match the current API expectations
+- preserve or improve function call ID mapping for follow-up tool responses
+- add focused tests for Gemini tool-call extraction and tool-result payload building
+- run targeted verification and record the result
+
+### Work Completed
+- Session started; current git state, active branch, AGENTS instructions, and latest progress log were reviewed.
+- Switched from `fix/memory-context-minimize` to a dedicated branch for the Gemini/MCP compatibility fix.
+- Identified the concrete Gemini incompatibility in the tool follow-up payload:
+  MCP-style tool results were being serialized as a JSON list directly into `functionResponse.response`, which Gemini rejects because that field must be an object.
+- Updated the Gemini provider so tool result turns now:
+  use `role="user"` for `functionResponse`,
+  wrap non-object tool payloads under `{"result": ...}`,
+  and pass through the tool call `id` when available.
+- Updated Gemini tool-call parsing and streaming delta parsing to preserve `functionCall.id` for later tool-response correlation.
+- Added focused regression coverage for:
+  Gemini tool-call ID extraction,
+  list-shaped tool result payload normalization,
+  and streaming function-call ID preservation.
+- Verified the fix with:
+  `python3 manage.py test tree_ui.tests.ToolUseTests.test_gemini_tool_call_parsing tree_ui.tests.ToolUseTests.test_gemini_payload_wraps_list_tool_results_for_function_response tree_ui.tests.ToolUseTests.test_gemini_stream_delta_preserves_function_call_id`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `fix/memory-context-minimize`
+- New branch created/switched: `fix/gemini-function-response-payload`
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The Gemini provider now builds tool follow-up payloads in a shape that matches the current function-calling workflow documented by Google.
+- The MCP/tool regression that produced `Unknown name "response" ... cannot start list` should be fixed for both non-streaming and streaming tool-call flows.
+
+### Next Recommended Step
+- Verify the MCP demo in the browser or via the existing node flow using Gemini, specifically with a tool that returns MCP-style `content[]` output such as `echo`.
+
+### Known Issues / Blockers / Tech Debt
+- This fix is covered by provider/unit tests, but the repository still does not have a live provider integration test against the real Gemini API.
+
+## Session 2026-04-28 19:20
+
+### Session Goal
+- Integrate the Gemini MCP payload fix back onto the active UI bugfix branch so the previously completed node-chat fixes and the new Gemini fix ship together.
+
+### Planned Tasks
+- inspect both active bugfix branches and confirm whether any prior work was actually lost
+- cherry-pick the Gemini fix commit onto `fix/memory-context-minimize`
+- resolve any conflicts without dropping the existing UI fixes
+- rerun targeted validation and update this progress log with the integration result
+
+### Work Completed
+- Verified that the previously completed node-chat fixes were not lost; they remained on `fix/memory-context-minimize`, while the Gemini fix had been created separately from `main`.
+- Confirmed the branch split using `git log --graph --all` and `git reflog`.
+- Cherry-picked Gemini commit `fd3d822` onto `fix/memory-context-minimize`.
+- Resolved the only cherry-pick conflict in `docs/agent-progress.md` by preserving both the earlier UI session notes and the later Gemini fix session notes.
+- Re-ran validation successfully after integration:
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `fix/gemini-function-response-payload`
+- New branch created/switched: `fix/memory-context-minimize`
+- Commits made:
+  - `ab387c4` - `fix: normalize Gemini tool response payloads`
+- Push status:
+  - pending final push for the integrated branch
+
+### Current Status
+- This branch now contains both:
+  the node-chat/UI fixes from `fix/memory-context-minimize`
+  and the Gemini tool-response fix from `fd3d822`.
+
+### Next Recommended Step
+- push the updated `fix/memory-context-minimize` branch so the integrated state is available remotely
+
+### Known Issues / Blockers / Tech Debt
+- The original mistake was branch hygiene, not code deletion: the Gemini fix was created from `main` instead of from the active UI bugfix branch.
+
 ## Session 2026-04-27 21:38
 
 ### Session Goal
