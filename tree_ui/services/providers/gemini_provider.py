@@ -17,14 +17,29 @@ from tree_ui.services.providers.base import (
 )
 
 
+def _normalize_function_response_payload(raw_content: str) -> dict:
+    if not raw_content:
+        return {}
+
+    try:
+        parsed = json.loads(raw_content)
+    except json.JSONDecodeError:
+        return {"result": raw_content}
+
+    if isinstance(parsed, dict):
+        return parsed
+    return {"result": parsed}
+
+
 def _build_contents(messages: list[ContextMessage]) -> list[dict]:
     contents = []
     for message in messages:
         if message.role == "system":
             continue
-        # Gemini roles: user, model, function
+        # Gemini REST payloads use `model` for assistant turns and `user`
+        # when returning a function response back to the model.
         if message.role == "tool":
-            role = "function"
+            role = "user"
         elif message.role == "assistant":
             role = "model"
         else:
@@ -42,22 +57,14 @@ def _build_contents(messages: list[ContextMessage]) -> list[dict]:
 def _build_parts(message: ContextMessage) -> list[dict]:
     parts: list[dict] = []
     if message.content:
-        # If it's a tool result, Gemini expects it in a functionResponse part
         if message.role == "tool":
-            try:
-                # Try to parse content as JSON for the response
-                response_data = json.loads(message.content)
-            except json.JSONDecodeError:
-                response_data = {"result": message.content}
-                
-            parts.append(
-                {
-                    "functionResponse": {
-                        "name": message.tool_name or message.tool_call_id or "unknown",
-                        "response": response_data,
-                    }
-                }
-            )
+            function_response = {
+                "name": message.tool_name or message.tool_call_id or "unknown",
+                "response": _normalize_function_response_payload(message.content),
+            }
+            if message.tool_call_id:
+                function_response["id"] = message.tool_call_id
+            parts.append({"functionResponse": function_response})
         else:
             parts.append({"text": message.content})
             
@@ -122,7 +129,7 @@ def _extract_tool_calls(response_data: dict) -> list[ToolCall]:
                 fc = part["functionCall"]
                 tool_calls.append(
                     ToolCall(
-                        call_id="",  # Gemini beta usually doesn't have call IDs in this format
+                        call_id=fc.get("id", ""),
                         name=fc.get("name", ""),
                         arguments=fc.get("args", {}),
                     )
@@ -176,7 +183,7 @@ def _extract_stream_delta(response_data: dict) -> ProviderDelta | None:
             if "functionCall" in part:
                 fc = part["functionCall"]
                 tool_call_delta = ToolCallDelta(
-                    call_id="",
+                    call_id=fc.get("id", ""),
                     name=fc.get("name", ""),
                     arguments=json.dumps(fc.get("args", {})),
                 )

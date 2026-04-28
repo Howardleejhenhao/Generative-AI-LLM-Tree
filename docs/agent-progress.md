@@ -11,6 +11,61 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-28 19:06
+
+### Session Goal
+- Fix the Gemini function-calling follow-up payload so MCP/tool demos do not fail after a successful tool call.
+- Keep the fix focused on provider compatibility and add regression coverage.
+
+### Planned Tasks
+- inspect the current Gemini provider tool-call and tool-result payload mapping
+- patch the Gemini function response history shape to match the current API expectations
+- preserve or improve function call ID mapping for follow-up tool responses
+- add focused tests for Gemini tool-call extraction and tool-result payload building
+- run targeted verification and record the result
+
+### Work Completed
+- Session started; current git state, active branch, AGENTS instructions, and latest progress log were reviewed.
+- Switched from `fix/memory-context-minimize` to a dedicated branch for the Gemini/MCP compatibility fix.
+- Identified the concrete Gemini incompatibility in the tool follow-up payload:
+  MCP-style tool results were being serialized as a JSON list directly into `functionResponse.response`, which Gemini rejects because that field must be an object.
+- Updated the Gemini provider so tool result turns now:
+  use `role="user"` for `functionResponse`,
+  wrap non-object tool payloads under `{"result": ...}`,
+  and pass through the tool call `id` when available.
+- Updated Gemini tool-call parsing and streaming delta parsing to preserve `functionCall.id` for later tool-response correlation.
+- Added focused regression coverage for:
+  Gemini tool-call ID extraction,
+  list-shaped tool result payload normalization,
+  and streaming function-call ID preservation.
+- Verified the fix with:
+  `python3 manage.py test tree_ui.tests.ToolUseTests.test_gemini_tool_call_parsing tree_ui.tests.ToolUseTests.test_gemini_payload_wraps_list_tool_results_for_function_response tree_ui.tests.ToolUseTests.test_gemini_stream_delta_preserves_function_call_id`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/providers/gemini_provider.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `fix/memory-context-minimize`
+- New branch created/switched: `fix/gemini-function-response-payload`
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The Gemini provider now builds tool follow-up payloads in a shape that matches the current function-calling workflow documented by Google.
+- The MCP/tool regression that produced `Unknown name "response" ... cannot start list` should be fixed for both non-streaming and streaming tool-call flows.
+
+### Next Recommended Step
+- Verify the MCP demo in the browser or via the existing node flow using Gemini, specifically with a tool that returns MCP-style `content[]` output such as `echo`.
+
+### Known Issues / Blockers / Tech Debt
+- This fix is covered by provider/unit tests, but the repository still does not have a live provider integration test against the real Gemini API.
+
 ## Session 2026-04-27 21:38
 
 ### Session Goal

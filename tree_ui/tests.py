@@ -1945,6 +1945,7 @@ class ToolUseTests(TestCase):
                         "parts": [
                             {
                                 "functionCall": {
+                                    "id": "call_gem_123",
                                     "name": "compare_branches",
                                     "args": {"node_id_a": 123, "node_id_b": 456}
                                 }
@@ -1956,8 +1957,79 @@ class ToolUseTests(TestCase):
         }
         tool_calls = _extract_tool_calls(response_data)
         self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(tool_calls[0].call_id, "call_gem_123")
         self.assertEqual(tool_calls[0].name, "compare_branches")
         self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)
+
+    def test_gemini_payload_wraps_list_tool_results_for_function_response(self):
+        from tree_ui.services.context_builder import ContextMessage
+        from tree_ui.services.providers.base import ToolCall
+        from tree_ui.services.providers.gemini_provider import _build_payload
+
+        payload = _build_payload(
+            messages=[
+                ContextMessage(
+                    role="assistant",
+                    content="",
+                    tool_calls=(
+                        ToolCall(
+                            call_id="call_gem_echo_1",
+                            name="echo",
+                            arguments={"message": "MCP demo passed"},
+                        ),
+                    ),
+                ),
+                ContextMessage(
+                    role="tool",
+                    content='[{"type": "text", "text": "Echo: MCP demo passed"}]',
+                    tool_call_id="call_gem_echo_1",
+                    tool_name="echo",
+                ),
+            ],
+            system_instruction="test system prompt",
+            tools=None,
+            temperature=None,
+            top_p=None,
+            max_output_tokens=None,
+        )
+
+        self.assertEqual(payload["contents"][0]["role"], "model")
+        self.assertEqual(payload["contents"][1]["role"], "user")
+        function_response = payload["contents"][1]["parts"][0]["functionResponse"]
+        self.assertEqual(function_response["id"], "call_gem_echo_1")
+        self.assertEqual(function_response["name"], "echo")
+        self.assertEqual(
+            function_response["response"],
+            {"result": [{"type": "text", "text": "Echo: MCP demo passed"}]},
+        )
+
+    def test_gemini_stream_delta_preserves_function_call_id(self):
+        from tree_ui.services.providers.gemini_provider import _extract_stream_delta
+
+        delta = _extract_stream_delta(
+            {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "functionCall": {
+                                        "id": "call_stream_1",
+                                        "name": "echo",
+                                        "args": {"message": "MCP demo passed"},
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+
+        self.assertIsNotNone(delta)
+        self.assertIsNotNone(delta.tool_call)
+        self.assertEqual(delta.tool_call.call_id, "call_stream_1")
+        self.assertEqual(delta.tool_call.name, "echo")
 
     def test_serialize_node_handles_empty_metadata(self):
         workspace = Workspace.objects.create(name="Main", slug="main")
