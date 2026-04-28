@@ -11,6 +11,47 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-28 20:07
+
+### Session Goal
+- Merge the completed node-chat UI fixes, Gemini MCP payload fix, and tool transcript alignment polish back into `main`.
+
+### Planned Tasks
+- confirm the active feature branch is clean and ahead of `main`
+- switch to `main` and merge the completed fix branch with an explicit merge commit
+- rerun focused verification on `main`
+- update the progress log with the merge result and push `main`
+
+### Work Completed
+- Reviewed the integrated branch state and confirmed it contained the intended node-chat UI, Gemini provider, and transcript alignment fixes.
+- Switched to `main` and merged `fix/node-chat-tool-message-alignment` with a non-fast-forward merge commit to preserve the integration history.
+- Verified the merged `main` state with:
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests tree_ui.tests.ToolTraceInspectorTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+
+### Git Workflow
+- Current branch at session start: `fix/node-chat-tool-message-alignment`
+- New branch created/switched: `main`
+- Commits made:
+  - `dc3fc26` - `merge: integrate node chat UI and Gemini fixes`
+- Push status:
+  - pending push of updated `main`
+
+### Current Status
+- `main` now contains:
+  memory inspector/UI interaction fixes,
+  Gemini function-response payload normalization,
+  and compact aligned tool transcript cards in the node chat view.
+
+### Next Recommended Step
+- push the updated `main` branch to `origin/main`
+
+### Known Issues / Blockers / Tech Debt
+- Browser-level visual verification for the transcript layout is still manual; this merge only revalidated the code paths and focused tests on `main`.
+
 ## Session 2026-04-28 19:27
 
 ### Session Goal
