@@ -34,6 +34,11 @@
 - After human verification showed the `×` button still left the panel visible, added an explicit `.chat-inspector-panel[hidden] { display: none !important; }` rule so the inspector is forcibly removed from layout when closed.
 - Hardened inspector close behavior by syncing both the DOM `hidden` attribute and `aria-hidden`, and added delegated close handling on the chat page container.
 - Bumped the shared app stylesheet version in `base.html` so browsers load the corrected inspector CSS instead of keeping an older cached copy.
+- After a second human report showed the top `Memory Context` button itself would not open the panel, identified the actual click-through bug:
+  `.chat-shell-header` had `pointer-events: none`, but `.chat-shell-action` buttons were never opted back into pointer events.
+- Updated the node-chat header layout so the action cluster and title block align more cleanly while keeping the immersive transcript view intact.
+- Removed the empty transcript placeholder sentence from the node chat view so a brand-new node opens into a visually clean workspace.
+- Bumped both the shared stylesheet version and node-chat module versions again so browsers load the corrected header/button behavior and transcript rendering.
 - Verified the change with:
   `python3 manage.py check`
   `node --check tree_ui/static/tree_ui/js/node-chat.js`
@@ -41,6 +46,7 @@
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-panel.js`
 - `tree_ui/static/tree_ui/js/node-chat.js`
 - `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/templates/tree_ui/node_chat.html`
@@ -54,8 +60,9 @@
   - pushed to `origin/fix/memory-context-minimize`
 
 ### Current Status
-- The node-chat memory inspector should now close reliably via the same toggle button, the panel close button, or the `Escape` key.
-- The script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
+- The top header action buttons should now be clickable again, including `Memory Context`.
+- The memory inspector should open/close reliably, and the blank-node transcript no longer renders the previous placeholder sentence.
+- The latest script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
 
 ### Next Recommended Step
 - Have the human verify the fixed node-chat behavior in the browser and confirm whether the next UI polish should add outside-click dismissal or a collapsed peek state.

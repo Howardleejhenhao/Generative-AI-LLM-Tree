@@ -147,10 +147,6 @@ export function renderChatTranscript(container, messages, options = {}) {
   container.innerHTML = "";
 
   if (!messages.length) {
-    const empty = document.createElement("p");
-    empty.className = "chat-empty-copy";
-    empty.textContent = "This conversation has not started yet. Send the first message below.";
-    container.appendChild(empty);
     return;
   }
 
