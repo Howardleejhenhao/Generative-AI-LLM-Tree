@@ -779,7 +779,12 @@ function renderGraphCanvas() {
     activeLineageIds,
     matchedNodeIds,
     onSelect: updateSelection,
-    onOpenChat: openNodeChat,
+    onOpenChat: (nodeId) => {
+      if (isCompareMode) {
+        return;
+      }
+      openNodeChat(nodeId);
+    },
     onPositionCommit: handleNodePositionCommit,
     onMetricsChange: handleCanvasMetricsChange,
     getViewportScale: () => viewport.getScale(),

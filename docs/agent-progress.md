@@ -39,13 +39,20 @@
 - Updated the node-chat header layout so the action cluster and title block align more cleanly while keeping the immersive transcript view intact.
 - Removed the empty transcript placeholder sentence from the node chat view so a brand-new node opens into a visually clean workspace.
 - Bumped both the shared stylesheet version and node-chat module versions again so browsers load the corrected header/button behavior and transcript rendering.
+- After human feedback on the graph workspace, removed the old double-click requirement for opening a node from the graph canvas.
+- Changed graph node click handling so a normal click now selects the node and immediately opens its node-chat view instead of first filling the workspace detail header.
+- Preserved compare-mode behavior by preventing the new auto-open path from firing while the human is selecting a second node for comparison.
 - Verified the change with:
   `python3 manage.py check`
+  `node --check tree_ui/static/tree_ui/js/app.js`
+  `node --check tree_ui/static/tree_ui/js/canvas.js`
   `node --check tree_ui/static/tree_ui/js/node-chat.js`
 
 ### Files Changed
 - `docs/agent-progress.md`
 - `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/app.js`
+- `tree_ui/static/tree_ui/js/canvas.js`
 - `tree_ui/static/tree_ui/js/node-panel.js`
 - `tree_ui/static/tree_ui/js/node-chat.js`
 - `tree_ui/templates/tree_ui/base.html`
@@ -62,6 +69,7 @@
 ### Current Status
 - The top header action buttons should now be clickable again, including `Memory Context`.
 - The memory inspector should open/close reliably, and the blank-node transcript no longer renders the previous placeholder sentence.
+- In normal graph browsing, clicking a node should now enter that node's chat immediately on the first click instead of requiring a second click.
 - The latest script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
 
 ### Next Recommended Step
