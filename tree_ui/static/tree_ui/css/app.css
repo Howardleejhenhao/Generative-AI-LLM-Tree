@@ -1599,9 +1599,9 @@ body:has(.chat-page-immersive) .page-shell {
 
 .chat-input-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   gap: 10px;
-  align-items: end;
+  align-items: stretch;
 }
 
 .chat-attach-button {
@@ -1634,6 +1634,14 @@ body:has(.chat-page-immersive) .page-shell {
   line-height: 1.45;
   resize: none;
   overflow-y: hidden;
+}
+
+.chat-submit-inline {
+  align-self: stretch;
+  min-width: 132px;
+  height: 52px;
+  padding: 0 22px;
+  border-radius: 22px;
 }
 
 .chat-composer-row {

@@ -704,7 +704,7 @@ async function handleSubmit(event) {
             routingDecisionLabel.hidden = false;
           }
 
-          feedback.textContent = "Reply added to this node.";
+          feedback.textContent = "";
           for (const attachment of pendingPreviewAttachments) {
             if (attachment.url) {
               URL.revokeObjectURL(attachment.url);

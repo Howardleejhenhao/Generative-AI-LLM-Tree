@@ -42,6 +42,9 @@
 - After human feedback on the graph workspace, removed the old double-click requirement for opening a node from the graph canvas.
 - Changed graph node click handling so a normal click now selects the node and immediately opens its node-chat view instead of first filling the workspace detail header.
 - Preserved compare-mode behavior by preventing the new auto-open path from firing while the human is selecting a second node for comparison.
+- Tightened the node-chat composer into a single-row layout by moving the submit button into the same row as the attach button and prompt textarea.
+- Removed the visible post-send/status copy under the composer, including the `Reply added to this node.` and keyboard-hint lines, so the bottom input stays visually compact.
+- Kept the live-region feedback element in the DOM as screen-reader-only while suppressing the visible success copy after message append.
 - Verified the change with:
   `python3 manage.py check`
   `node --check tree_ui/static/tree_ui/js/app.js`
@@ -70,6 +73,7 @@
 - The top header action buttons should now be clickable again, including `Memory Context`.
 - The memory inspector should open/close reliably, and the blank-node transcript no longer renders the previous placeholder sentence.
 - In normal graph browsing, clicking a node should now enter that node's chat immediately on the first click instead of requiring a second click.
+- The node-chat composer should now read as a single horizontal input row with the `Send` button aligned alongside the textarea.
 - The latest script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
 
 ### Next Recommended Step
