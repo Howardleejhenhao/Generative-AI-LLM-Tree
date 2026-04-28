@@ -11,6 +11,62 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-28 19:27
+
+### Session Goal
+- Fix the visual alignment of the node chat transcript so inline tool call and tool result entries sit inside the same centered conversation column as normal chat messages.
+
+### Planned Tasks
+- inspect the current node chat transcript DOM structure, CSS width rules, and tool-message rendering path
+- update transcript rendering to emit explicit row classes for tool call and tool result entries
+- restyle the transcript column and tool cards so they align with assistant messages on desktop and mobile
+- run focused frontend and Django validation checks and record the result
+
+### Work Completed
+- Session started; current git state, active branch, relevant node-chat files, and latest progress log were reviewed.
+- Created a dedicated branch for transcript alignment polish on top of the integrated node-chat/Gemini bugfix baseline.
+- Reworked transcript rendering so every chat item now renders inside a shared `.message-row` container, with explicit row classes for user, assistant, tool call, and tool result entries.
+- Replaced the previous full-width `details`-based inline tool transcript blocks with compact transcript cards using:
+  `.message-row.tool-call`
+  `.message-row.tool-result`
+  `.tool-message-card`
+  `.tool-message-title`
+  `.tool-message-body`
+- Updated transcript CSS so the node chat uses a single centered max-width conversation column, while user messages remain right-aligned and assistant/tool entries remain left-aligned.
+- Styled inline tool call and tool result entries as compact cards with bounded width, rounded corners, colored left borders, and mobile-safe wrapping instead of full-width bars.
+- Bumped the shared CSS and node-chat module cache-busting versions so browsers load the new transcript layout immediately.
+- Verified the change with:
+  `node --check tree_ui/static/tree_ui/js/node-panel.js`
+  `node --check tree_ui/static/tree_ui/js/node-chat.js`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests tree_ui.tests.ToolTraceInspectorTests`
+  `python3 manage.py check`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
+- `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/static/tree_ui/js/node-panel.js`
+- `tree_ui/templates/tree_ui/base.html`
+- `tree_ui/templates/tree_ui/node_chat.html`
+
+### Git Workflow
+- Current branch at session start: `fix/memory-context-minimize`
+- New branch created/switched: `fix/node-chat-tool-message-alignment`
+- Commits made:
+  - none in this session yet
+- Push status:
+  - not pushed in this session
+
+### Current Status
+- The transcript layout now constrains all inline chat items to a centered chat column instead of letting tool entries stretch across the full shell width.
+- Tool call and tool result entries now render as compact left-aligned cards that visually align with assistant-side transcript content.
+
+### Next Recommended Step
+- Verify the updated node chat visually in the browser with both a normal text-only reply and a tool-calling reply, since this session only completed code-level validation and not a live browser walkthrough.
+
+### Known Issues / Blockers / Tech Debt
+- There is still no browser automation for transcript layout, so visual verification remains manual.
+
 ## Session 2026-04-28 18:41
 
 ### Session Goal

@@ -1,4 +1,4 @@
-import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260428-empty-transcript-cleanup";
+import { renderChatTranscript, renderMessageEditors } from "./node-panel.js?v=20260428-tool-message-alignment";
 import { streamJSON } from "./streaming.js?v=20260413-image-upload";
 
 const payload = JSON.parse(document.getElementById("node-chat-node-payload").textContent);

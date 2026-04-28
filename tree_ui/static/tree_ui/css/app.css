@@ -41,6 +41,7 @@
   --gemini: #935f10;
   --shadow: 0 12px 32px rgba(59, 44, 26, 0.08), 0 2px 6px rgba(59, 44, 26, 0.04);
   --chat-shell-width: min(920px, calc(100vw - 48px));
+  --chat-transcript-width: min(1000px, calc(100vw - 48px));
 }
 
 .sr-only {
@@ -1267,21 +1268,34 @@ body:has(.chat-page-immersive) .page-shell {
   height: 100%;
   min-height: 0;
   max-height: none;
-  padding: 72px 0 198px;
+  padding: 72px 16px 198px;
   overflow: auto;
   overscroll-behavior: contain;
 }
 
-.chat-transcript-minimal > * {
-  width: var(--chat-shell-width);
-  max-width: 100%;
+.message-row {
+  display: flex;
+  width: min(100%, var(--chat-transcript-width));
   margin-inline: auto;
+}
+
+.message-row.user {
+  justify-content: flex-end;
+}
+
+.message-row.assistant,
+.message-row.system,
+.message-row.tool-call,
+.message-row.tool-result {
+  justify-content: flex-start;
 }
 
 .chat-message {
   display: grid;
   gap: 8px;
   align-items: start;
+  width: fit-content;
+  max-width: min(760px, 78%);
 }
 
 .chat-message-actions {
@@ -1316,7 +1330,7 @@ body:has(.chat-page-immersive) .page-shell {
 }
 
 .chat-message-body {
-  max-width: min(92ch, 100%);
+  max-width: 100%;
   padding: 14px 16px;
   border-radius: 22px;
   line-height: 1.62;
@@ -1510,11 +1524,86 @@ body:has(.chat-page-immersive) .page-shell {
 .chat-message[data-role="user"] .chat-message-body {
   background: rgba(246, 225, 185, 0.7);
   border-top-right-radius: 10px;
-  max-width: min(52ch, 100%);
+}
+
+.message-row.user .chat-message {
+  max-width: min(760px, 74%);
 }
 
 .chat-message[data-role="system"] .chat-message-body {
   background: rgba(54, 57, 75, 0.08);
+}
+
+.tool-message-card {
+  display: grid;
+  gap: 10px;
+  width: fit-content;
+  max-width: min(760px, 78%);
+  padding: 12px 16px;
+  border: 1px solid rgba(74, 58, 40, 0.12);
+  border-left: 4px solid transparent;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 28px rgba(49, 37, 22, 0.08);
+  color: var(--text);
+}
+
+.message-row.tool-call .tool-message-card {
+  border-left-color: #d59a2a;
+  background: rgba(255, 248, 235, 0.96);
+}
+
+.message-row.tool-result .tool-message-card {
+  border-left-color: #1f8f5f;
+  background: rgba(236, 248, 240, 0.96);
+}
+
+.tool-message-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-strong);
+}
+
+.tool-message-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(31, 26, 23, 0.06);
+  flex: 0 0 auto;
+}
+
+.tool-message-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.tool-message-name {
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.tool-message-body pre {
+  margin: 0;
+  max-width: 100%;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(31, 26, 23, 0.06);
+  font-family: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .chat-content-column,
@@ -2115,25 +2204,6 @@ body.lightbox-open {
 
 .chat-tool-block summary::-webkit-details-marker {
   display: none;
-}
-
-.chat-tool-block pre {
-  margin: 10px 0 0;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.05);
-  font-family: monospace;
-  font-size: 0.8rem;
-  overflow-x: auto;
-  white-space: pre-wrap;
-}
-
-.chat-tool-call {
-  border-left: 4px solid #f6d38d;
-}
-
-.chat-tool-result {
-  border-left: 4px solid #1d6b56;
 }
 
 /* Tool Inspector Panel */
@@ -3964,7 +4034,7 @@ kbd {
 }
 
 .chat-transcript-minimal {
-  padding: 78px 0 198px;
+  padding: 78px 16px 198px;
 }
 
 .workspace-list-compact {
@@ -4169,7 +4239,7 @@ kbd {
     height: 100%;
     min-height: 0;
     overflow: auto;
-    padding: 64px 0 170px;
+    padding: 64px 12px 170px;
   }
 
   .chat-composer-wrap {
@@ -4206,6 +4276,16 @@ kbd {
   .chat-message-body,
   .chat-message[data-role="user"] .chat-message-body {
     max-width: 100%;
+  }
+
+  .message-row {
+    width: 100%;
+  }
+
+  .chat-message,
+  .tool-message-card,
+  .message-row.user .chat-message {
+    max-width: min(100%, 92%);
   }
 
   .graph-stage {
