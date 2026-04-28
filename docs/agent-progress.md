@@ -31,13 +31,18 @@
 - Made the two inspector panels mutually exclusive, so opening one closes the other instead of leaving overlapping sidebar state behind.
 - Added explicit accessibility wiring for the inspector toggle buttons and close buttons, and bumped the node-chat script version to avoid stale browser cache after deployment.
 - Added `Escape` handling to close any open inspector panel.
+- After human verification showed the `×` button still left the panel visible, added an explicit `.chat-inspector-panel[hidden] { display: none !important; }` rule so the inspector is forcibly removed from layout when closed.
+- Hardened inspector close behavior by syncing both the DOM `hidden` attribute and `aria-hidden`, and added delegated close handling on the chat page container.
+- Bumped the shared app stylesheet version in `base.html` so browsers load the corrected inspector CSS instead of keeping an older cached copy.
 - Verified the change with:
   `python3 manage.py check`
   `node --check tree_ui/static/tree_ui/js/node-chat.js`
 
 ### Files Changed
 - `docs/agent-progress.md`
+- `tree_ui/static/tree_ui/css/app.css`
 - `tree_ui/static/tree_ui/js/node-chat.js`
+- `tree_ui/templates/tree_ui/base.html`
 - `tree_ui/templates/tree_ui/node_chat.html`
 
 ### Git Workflow
@@ -50,7 +55,7 @@
 
 ### Current Status
 - The node-chat memory inspector should now close reliably via the same toggle button, the panel close button, or the `Escape` key.
-- The script version bump should force browsers to load the fixed `node-chat.js` instead of keeping the older cached module.
+- The script and stylesheet version bumps should force browsers to load the corrected JS/CSS instead of keeping older cached assets.
 
 ### Next Recommended Step
 - Have the human verify the fixed node-chat behavior in the browser and confirm whether the next UI polish should add outside-click dismissal or a collapsed peek state.

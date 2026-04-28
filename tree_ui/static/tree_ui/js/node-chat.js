@@ -841,6 +841,12 @@ function syncInspectorState(targetPanel, isOpen) {
   }
 
   entry.panel.hidden = !isOpen;
+  if (isOpen) {
+    entry.panel.removeAttribute("hidden");
+  } else {
+    entry.panel.setAttribute("hidden", "");
+  }
+  entry.panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
   entry.toggleButton.classList.toggle("chat-shell-action-active", isOpen);
   entry.toggleButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
 
@@ -877,6 +883,16 @@ toolInspectorToggleButton.addEventListener("click", () => toggleInspector(toolIn
 toolInspectorCloseButton.addEventListener("click", () => syncInspectorState(toolInspector, false));
 memoryInspectorToggleButton.addEventListener("click", () => toggleInspector(memoryInspector));
 memoryInspectorCloseButton.addEventListener("click", () => syncInspectorState(memoryInspector, false));
+
+chatPage.addEventListener("click", (event) => {
+  if (event.target.closest("#chat-tool-inspector-close-button")) {
+    syncInspectorState(toolInspector, false);
+    return;
+  }
+  if (event.target.closest("#chat-memory-inspector-close-button")) {
+    syncInspectorState(memoryInspector, false);
+  }
+});
 
 promptInput.addEventListener("input", resizePromptInput);
 promptInput.addEventListener("input", updateComposerState);

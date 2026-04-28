@@ -2141,6 +2141,10 @@ body.lightbox-open {
   backdrop-filter: blur(20px);
 }
 
+.chat-inspector-panel[hidden] {
+  display: none !important;
+}
+
 .chat-inspector-header {
   display: flex;
   justify-content: space-between;
