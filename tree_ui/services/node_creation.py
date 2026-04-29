@@ -148,6 +148,7 @@ def generate_assistant_reply(
         parent=parent,
         prompt=prompt,
         prompt_attachments=prompt_attachments,
+        render_pdf_attachments=provider != ConversationNode.Provider.OPENAI,
     )
     memory_text = ""
     if parent is not None:
@@ -352,6 +353,7 @@ def stream_assistant_reply(
         parent=parent,
         prompt=prompt,
         prompt_attachments=prompt_attachments,
+        render_pdf_attachments=provider != ConversationNode.Provider.OPENAI,
     )
     memory_text = ""
     if parent is not None:

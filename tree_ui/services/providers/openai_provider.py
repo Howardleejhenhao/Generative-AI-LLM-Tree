@@ -108,16 +108,25 @@ def _build_content_parts(message: ContextMessage) -> list[dict]:
     if message.content:
         parts.append({"type": "input_text", "text": message.content})
     for attachment in message.attachments:
+        data_url = attachment.data_url or encode_attachment_as_data_url(
+            file_path=attachment.file_path,
+            content_type=attachment.content_type,
+        )
+        if attachment.kind == "pdf" or attachment.content_type == "application/pdf":
+            parts.append(
+                {
+                    "type": "input_file",
+                    "filename": attachment.name or "attachment.pdf",
+                    "file_data": data_url,
+                }
+            )
+            continue
+
         parts.append(
             {
                 "type": "input_image",
-                "image_url": (
-                    attachment.data_url
-                    or encode_attachment_as_data_url(
-                        file_path=attachment.file_path,
-                        content_type=attachment.content_type,
-                    )
-                ),
+                "image_url": data_url,
+                "detail": "auto",
             }
         )
     return parts

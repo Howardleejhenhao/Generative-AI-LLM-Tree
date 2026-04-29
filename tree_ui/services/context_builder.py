@@ -94,11 +94,12 @@ def build_generation_messages(
     parent: ConversationNode | None,
     prompt: str,
     prompt_attachments: list[NodeAttachment] | None = None,
+    render_pdf_attachments: bool = True,
 ) -> list[ContextMessage]:
     def build_context_attachments(items) -> tuple[ContextAttachment, ...]:
         attachments: list[ContextAttachment] = []
         for item in items:
-            if item.kind == NodeAttachment.Kind.PDF:
+            if item.kind == NodeAttachment.Kind.PDF and render_pdf_attachments:
                 for index, data_url in enumerate(
                     render_pdf_attachment_as_data_urls(
                         file_path=item.file.path,

@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from tree_ui.models import ConversationMemory, ConversationNode, NodeAttachment, NodeMessage, ToolInvocation, Workspace, MCPSource, MCPSourceCheck
-from tree_ui.services.context_builder import build_generation_messages
+from tree_ui.services.context_builder import ContextAttachment, ContextMessage, build_generation_messages
 from tree_ui.services.memory_drafting import (
     WORKSPACE_MEMORY_FALLBACK_CONTENT,
     ensure_workspace_memory,
@@ -294,7 +294,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "Edit and branch")
         self.assertContains(response, 'id="chat-image-lightbox"')
         self.assertContains(response, 'accept="image/*,application/pdf"')
-        self.assertContains(response, "Enter sends. Shift + Enter adds a new line.")
+        self.assertContains(response, 'id="chat-feedback"')
+        self.assertContains(response, "sr-only")
         self.assertNotContains(response, "Open memory")
         self.assertNotContains(response, "The model prepares a first version. You edit it before saving.")
 
@@ -427,10 +428,8 @@ class WorkspaceGraphViewTests(TestCase):
         self.assertContains(response, "History node")
         self.assertContains(response, "Continue in new child")
         self.assertContains(response, "Edit as variant")
-        self.assertContains(
-            response,
-            "This node already has child branches. Your message will be written into a newly created child branch, not this historical node.",
-        )
+        self.assertContains(response, "Start the next child branch")
+        self.assertContains(response, "chat-composer-branching")
 
     def test_can_create_workspace_via_api(self):
         response = self.client.post(
@@ -1005,10 +1004,11 @@ class WorkspaceGraphViewTests(TestCase):
                 self.assertIn('"attachment_count": 1', streamed)
                 attachment = NodeAttachment.objects.get(node=node)
                 self.assertEqual(attachment.kind, NodeAttachment.Kind.PDF)
+                mock_render_pdf_attachment_as_data_urls.assert_not_called()
                 context_attachments = mock_stream_text.call_args.kwargs["messages"][-1].attachments
-                self.assertEqual(len(context_attachments), 2)
-                self.assertTrue(all(item.kind == NodeAttachment.Kind.IMAGE for item in context_attachments))
-                self.assertTrue(all(item.content_type == "image/png" for item in context_attachments))
+                self.assertEqual(len(context_attachments), 1)
+                self.assertEqual(context_attachments[0].kind, NodeAttachment.Kind.PDF)
+                self.assertEqual(context_attachments[0].content_type, "application/pdf")
 
     @override_settings(LLM_STREAM_CHUNK_DELAY_SECONDS=0)
     @patch("tree_ui.services.node_creation.stream_text")
@@ -1935,6 +1935,60 @@ class ToolUseTests(TestCase):
         self.assertEqual(len(tool_calls), 1)
         self.assertEqual(tool_calls[0].name, "compare_branches")
         self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)
+
+    def test_openai_payload_maps_image_and_pdf_attachments(self):
+        from tree_ui.services.providers.openai_provider import _build_payload
+
+        payload = _build_payload(
+            model_name="gpt-4.1",
+            messages=[
+                ContextMessage(
+                    role="user",
+                    content="Analyze the attached files.",
+                    attachments=(
+                        ContextAttachment(
+                            kind=NodeAttachment.Kind.IMAGE,
+                            name="diagram.png",
+                            content_type="image/png",
+                            file_path="",
+                            data_url="data:image/png;base64,aW1hZ2U=",
+                        ),
+                        ContextAttachment(
+                            kind=NodeAttachment.Kind.PDF,
+                            name="brief.pdf",
+                            content_type="application/pdf",
+                            file_path="",
+                            data_url="data:application/pdf;base64,cGRm",
+                        ),
+                    ),
+                )
+            ],
+            system_instruction="Follow branch-local context only.",
+            stream=False,
+            tools=None,
+            temperature=None,
+            top_p=None,
+            max_output_tokens=None,
+        )
+
+        content = payload["input"][0]["content"]
+        self.assertEqual(content[0], {"type": "input_text", "text": "Analyze the attached files."})
+        self.assertEqual(
+            content[1],
+            {
+                "type": "input_image",
+                "image_url": "data:image/png;base64,aW1hZ2U=",
+                "detail": "auto",
+            },
+        )
+        self.assertEqual(
+            content[2],
+            {
+                "type": "input_file",
+                "filename": "brief.pdf",
+                "file_data": "data:application/pdf;base64,cGRm",
+            },
+        )
 
     def test_gemini_tool_call_parsing(self):
         from tree_ui.services.providers.gemini_provider import _extract_tool_calls
