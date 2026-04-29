@@ -11,6 +11,60 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-29 11:27
+
+### Session Goal
+- Diagnose and fix why OpenAI model generation cannot use image or PDF attachments.
+
+### Planned Tasks
+- inspect current OpenAI provider payload construction and attachment handling
+- compare OpenAI multimodal payload needs against the current implementation
+- patch the provider or attachment flow so image/PDF attachments are usable where supported
+- add focused regression coverage for OpenAI image/PDF payload handling
+- run targeted Django checks/tests and record the outcome
+
+### Work Completed
+- Session started; current branch, git status, AGENTS instructions, and latest progress log were reviewed.
+- Created a dedicated branch for the OpenAI multimodal attachment fix.
+- Verified the OpenAI Responses API payload expectations against official OpenAI docs:
+  images use `input_image`, while PDFs can be passed as `input_file` with base64 `file_data`.
+- Updated OpenAI generation context handling so PDF attachments remain PDF files for OpenAI instead of being converted into rendered page images.
+- Updated the OpenAI provider payload builder so:
+  images are sent as `input_image` with `detail: auto`,
+  PDFs are sent as `input_file` with filename and data URL backed `file_data`.
+- Preserved the existing PDF-to-image rendering path for non-OpenAI providers such as Gemini.
+- Added regression coverage for OpenAI image/PDF payload mapping and the OpenAI PDF streaming path.
+- Updated two stale node-chat template assertions that still expected previously removed visible helper text.
+- Verified the branch with:
+  `python3 manage.py test tree_ui.tests.ToolUseTests.test_openai_payload_maps_image_and_pdf_attachments tree_ui.tests.WorkspaceGraphViewTests.test_can_stream_node_message_with_pdf_attachment_via_api tree_ui.tests.WorkspaceGraphViewTests.test_can_stream_node_message_with_image_attachment_via_api tree_ui.tests.WorkspaceGraphViewTests.test_build_generation_messages_keeps_attachments_on_original_user_message`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.RoutingTests`
+  `python3 manage.py check`
+  `python3 manage.py test`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/context_builder.py`
+- `tree_ui/services/node_creation.py`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `main`
+- New branch created/switched: `fix/openai-multimodal-attachments`
+- Commits made:
+  - `125d458` - `fix: support OpenAI image and PDF attachments`
+- Push status:
+  - pending push after progress log commit
+
+### Current Status
+- OpenAI image and PDF attachment payload handling has been fixed and the full Django test suite passes locally.
+
+### Next Recommended Step
+- Push `fix/openai-multimodal-attachments` and verify the behavior manually with a real OpenAI API key using one image and one PDF upload.
+
+### Known Issues / Blockers / Tech Debt
+- No live OpenAI API request was run in this session, so provider behavior is verified by payload-level tests and official API docs rather than a real model call.
+
 ## Session 2026-04-28 20:07
 
 ### Session Goal
