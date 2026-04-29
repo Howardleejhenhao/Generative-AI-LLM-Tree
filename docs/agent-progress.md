@@ -11,6 +11,63 @@
 - Branch / commit / push discipline must be strict and documented every session
 - A pyenv environment may be used with `pyenv activate LLM-Tree`, but Docker Compose remains the default runtime path
 
+## Session 2026-04-29 11:36
+
+### Session Goal
+- Fix the broader OpenAI Responses API payload failures shown during live image/PDF testing.
+
+### Planned Tasks
+- inspect the live error payloads and current OpenAI provider message/tool mapping
+- verify Responses API tool schema and assistant-history content expectations against official OpenAI docs
+- patch OpenAI provider tool schema mapping, assistant history mapping, tool call parsing, and streaming tool delta parsing
+- add regression coverage for the screenshot error cases
+- run targeted and full Django verification, then commit and push the fix branch
+
+### Work Completed
+- Session started after live testing showed OpenAI 400 errors for `tools[0].name` and assistant `input_text` history content.
+- Confirmed the active branch is `fix/openai-multimodal-attachments` and clean against its upstream.
+- Verified the live errors map to OpenAI Responses API incompatibilities:
+  provider tools were still passed as nested Chat Completions-style `function` objects,
+  and assistant history messages were still serialized with `input_text`.
+- Added OpenAI-specific tool schema mapping so internal/MCP tool schemas are flattened to Responses API `type/name/description/parameters`.
+- Updated OpenAI message mapping so assistant transcript history uses `output_text` while user turns continue to use `input_text`.
+- Updated OpenAI tool-call history mapping so tool calls become `function_call` input items and tool results become `function_call_output` input items.
+- Updated OpenAI non-streaming tool-call parsing to read Responses API `function_call` output items.
+- Updated OpenAI streaming parser to support Responses API `response.output_item.added` and `response.function_call_arguments.delta` events for streamed function calls.
+- Added regression tests for:
+  the screenshot `tools[0].name` failure,
+  the screenshot assistant `input_text` history failure,
+  OpenAI tool-call history payloads,
+  OpenAI function-call stream events,
+  and Responses API function-call parsing.
+- Verified the branch with:
+  `python3 manage.py test tree_ui.tests.ToolUseTests.test_openai_tool_call_parsing tree_ui.tests.ToolUseTests.test_openai_payload_uses_responses_api_tool_schema tree_ui.tests.ToolUseTests.test_openai_payload_uses_output_text_for_assistant_history tree_ui.tests.ToolUseTests.test_openai_payload_maps_tool_history_as_response_items tree_ui.tests.ToolUseTests.test_openai_stream_delta_parses_responses_api_function_call_events tree_ui.tests.ToolUseTests.test_openai_payload_maps_image_and_pdf_attachments`
+  `python3 manage.py test tree_ui.tests.ToolUseTests tree_ui.tests.MultiStepToolUseTests tree_ui.tests.ToolTraceInspectorTests tree_ui.tests.MCPAdapterTests`
+  `python3 manage.py check`
+  `python3 manage.py test`
+
+### Files Changed
+- `docs/agent-progress.md`
+- `tree_ui/services/providers/openai_provider.py`
+- `tree_ui/tests.py`
+
+### Git Workflow
+- Current branch at session start: `fix/openai-multimodal-attachments`
+- New branch created/switched: reused existing OpenAI fix branch
+- Commits made:
+  - `a0f3f37` - `fix: align OpenAI responses tool payloads`
+- Push status:
+  - pending push after progress log commit
+
+### Current Status
+- The OpenAI provider now maps attachments, transcript history, tool schemas, and tool-call state to Responses API-compatible payloads; full Django test suite passes locally.
+
+### Next Recommended Step
+- Push the updated fix branch, then retry the same image/PDF OpenAI chat flow in the browser with a real OpenAI API key.
+
+### Known Issues / Blockers / Tech Debt
+- No live OpenAI API request was run from the terminal; validation is covered by payload-level tests, local Django tests, and the browser error messages that identified the mismatches.
+
 ## Session 2026-04-29 11:27
 
 ### Session Goal
