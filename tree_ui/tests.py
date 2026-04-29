@@ -1918,23 +1918,175 @@ class ToolUseTests(TestCase):
         response_data = {
             "output": [
                 {
-                    "type": "tool_calls",
-                    "tool_calls": [
-                        {
-                            "id": "call_abc",
-                            "function": {
-                                "name": "compare_branches",
-                                "arguments": '{"node_id_a": 123, "node_id_b": 456}'
-                            }
-                        }
-                    ]
+                    "type": "function_call",
+                    "id": "fc_abc",
+                    "call_id": "call_abc",
+                    "name": "compare_branches",
+                    "arguments": '{"node_id_a": 123, "node_id_b": 456}',
                 }
             ]
         }
         tool_calls = _extract_tool_calls(response_data)
         self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(tool_calls[0].call_id, "call_abc")
         self.assertEqual(tool_calls[0].name, "compare_branches")
         self.assertEqual(tool_calls[0].arguments["node_id_a"], 123)
+
+    def test_openai_payload_uses_responses_api_tool_schema(self):
+        from tree_ui.services.providers.openai_provider import _build_payload
+
+        payload = _build_payload(
+            model_name="gpt-4.1-mini",
+            messages=[ContextMessage(role="user", content="Compare branches")],
+            system_instruction="Follow branch-local context only.",
+            stream=False,
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "compare_branches",
+                        "description": "Compare two branches",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "node_id_a": {"type": "integer"},
+                                "node_id_b": {"type": "integer"},
+                            },
+                            "required": ["node_id_a", "node_id_b"],
+                        },
+                    },
+                }
+            ],
+            temperature=None,
+            top_p=None,
+            max_output_tokens=None,
+        )
+
+        self.assertEqual(
+            payload["tools"][0],
+            {
+                "type": "function",
+                "name": "compare_branches",
+                "description": "Compare two branches",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "node_id_a": {"type": "integer"},
+                        "node_id_b": {"type": "integer"},
+                    },
+                    "required": ["node_id_a", "node_id_b"],
+                },
+            },
+        )
+        self.assertNotIn("function", payload["tools"][0])
+
+    def test_openai_payload_uses_output_text_for_assistant_history(self):
+        from tree_ui.services.providers.openai_provider import _build_payload
+
+        payload = _build_payload(
+            model_name="gpt-4.1-mini",
+            messages=[
+                ContextMessage(role="user", content="請說明"),
+                ContextMessage(role="assistant", content="這是上一輪回答。"),
+                ContextMessage(role="user", content="繼續"),
+            ],
+            system_instruction="Follow branch-local context only.",
+            stream=False,
+            tools=None,
+            temperature=None,
+            top_p=None,
+            max_output_tokens=None,
+        )
+
+        self.assertEqual(payload["input"][0]["content"][0]["type"], "input_text")
+        self.assertEqual(payload["input"][1]["role"], "assistant")
+        self.assertEqual(
+            payload["input"][1]["content"][0],
+            {"type": "output_text", "text": "這是上一輪回答。"},
+        )
+        self.assertEqual(payload["input"][2]["content"][0]["type"], "input_text")
+
+    def test_openai_payload_maps_tool_history_as_response_items(self):
+        from tree_ui.services.providers.base import ToolCall
+        from tree_ui.services.providers.openai_provider import _build_payload
+
+        payload = _build_payload(
+            model_name="gpt-4.1-mini",
+            messages=[
+                ContextMessage(
+                    role="assistant",
+                    content="",
+                    tool_calls=(
+                        ToolCall(
+                            call_id="call_abc",
+                            name="compare_branches",
+                            arguments={"node_id_a": 123, "node_id_b": 456},
+                        ),
+                    ),
+                ),
+                ContextMessage(
+                    role="tool",
+                    content='[{"type": "text", "text": "Branches match"}]',
+                    tool_call_id="call_abc",
+                    tool_name="compare_branches",
+                ),
+            ],
+            system_instruction="Follow branch-local context only.",
+            stream=False,
+            tools=None,
+            temperature=None,
+            top_p=None,
+            max_output_tokens=None,
+        )
+
+        self.assertEqual(
+            payload["input"],
+            [
+                {
+                    "type": "function_call",
+                    "call_id": "call_abc",
+                    "name": "compare_branches",
+                    "arguments": '{"node_id_a": 123, "node_id_b": 456}',
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_abc",
+                    "output": '[{"type": "text", "text": "Branches match"}]',
+                },
+            ],
+        )
+
+    def test_openai_stream_delta_parses_responses_api_function_call_events(self):
+        from tree_ui.services.providers.openai_provider import _extract_stream_delta
+
+        tool_call_map = {}
+        added = _extract_stream_delta(
+            {
+                "type": "response.output_item.added",
+                "item": {
+                    "id": "fc_abc",
+                    "type": "function_call",
+                    "call_id": "call_abc",
+                    "name": "compare_branches",
+                    "arguments": "",
+                },
+            },
+            tool_call_map,
+        )
+        arguments = _extract_stream_delta(
+            {
+                "type": "response.function_call_arguments.delta",
+                "item_id": "fc_abc",
+                "delta": '{"node_id_a":',
+            },
+            tool_call_map,
+        )
+
+        self.assertEqual(added.tool_call.call_id, "call_abc")
+        self.assertEqual(added.tool_call.name, "compare_branches")
+        self.assertEqual(arguments.tool_call.call_id, "call_abc")
+        self.assertEqual(arguments.tool_call.name, "compare_branches")
+        self.assertEqual(arguments.tool_call.arguments, '{"node_id_a":')
 
     def test_openai_payload_maps_image_and_pdf_attachments(self):
         from tree_ui.services.providers.openai_provider import _build_payload

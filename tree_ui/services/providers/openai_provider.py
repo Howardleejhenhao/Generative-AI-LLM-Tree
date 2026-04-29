@@ -37,18 +37,64 @@ def _extract_text(response_data: dict) -> str:
 
 def _extract_tool_calls(response_data: dict) -> list[ToolCall]:
     tool_calls: list[ToolCall] = []
-    # This is speculative based on standard OpenAI patterns
     for item in response_data.get("output", []):
+        if item.get("type") == "function_call":
+            tool_calls.append(
+                ToolCall(
+                    call_id=item.get("call_id", item.get("id", "")),
+                    name=item.get("name", ""),
+                    arguments=_safe_parse_arguments(item.get("arguments", "{}")),
+                )
+            )
+            continue
+
+        # Backward-compatible parser for older mocked Chat Completions-style fixtures.
         if item.get("type") == "tool_calls":
             for tc in item.get("tool_calls", []):
                 tool_calls.append(
                     ToolCall(
                         call_id=tc.get("id", ""),
                         name=tc.get("function", {}).get("name", ""),
-                        arguments=json.loads(tc.get("function", {}).get("arguments", "{}")),
+                        arguments=_safe_parse_arguments(tc.get("function", {}).get("arguments", "{}")),
                     )
                 )
     return tool_calls
+
+
+def _safe_parse_arguments(raw_arguments: str | dict) -> dict:
+    if isinstance(raw_arguments, dict):
+        return raw_arguments
+    if not raw_arguments:
+        return {}
+    try:
+        parsed = json.loads(raw_arguments)
+    except json.JSONDecodeError:
+        return {"raw": raw_arguments}
+    return parsed if isinstance(parsed, dict) else {"value": parsed}
+
+
+def _map_tools_to_openai(tools: list[dict] | None) -> list[dict]:
+    mapped_tools: list[dict] = []
+    for tool in tools or []:
+        if tool.get("type") != "function":
+            mapped_tools.append(tool)
+            continue
+
+        function_schema = tool.get("function")
+        if isinstance(function_schema, dict):
+            mapped_tool = {
+                "type": "function",
+                "name": function_schema.get("name", ""),
+                "description": function_schema.get("description", ""),
+                "parameters": function_schema.get("parameters", {}),
+            }
+            if "strict" in function_schema:
+                mapped_tool["strict"] = function_schema["strict"]
+            mapped_tools.append(mapped_tool)
+            continue
+
+        mapped_tools.append(tool)
+    return mapped_tools
 
 
 def _build_payload(
@@ -64,26 +110,7 @@ def _build_payload(
 ) -> dict:
     payload_messages = []
     for message in messages:
-        msg_dict = {
-            "role": message.role,
-            "content": _build_content_parts(message),
-        }
-        if message.tool_calls:
-            msg_dict["tool_calls"] = [
-                {
-                    "id": tc.call_id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.name,
-                        "arguments": json.dumps(tc.arguments),
-                    },
-                }
-                for tc in message.tool_calls
-            ]
-        if message.tool_call_id:
-            msg_dict["tool_call_id"] = message.tool_call_id
-        
-        payload_messages.append(msg_dict)
+        payload_messages.extend(_build_input_items(message))
 
     payload = {
         "model": model_name,
@@ -93,7 +120,7 @@ def _build_payload(
     if stream:
         payload["stream"] = True
     if tools:
-        payload["tools"] = tools
+        payload["tools"] = _map_tools_to_openai(tools)
     if temperature is not None:
         payload["temperature"] = temperature
     if top_p is not None:
@@ -103,10 +130,46 @@ def _build_payload(
     return payload
 
 
+def _build_input_items(message: ContextMessage) -> list[dict]:
+    if message.role == "tool":
+        return [
+            {
+                "type": "function_call_output",
+                "call_id": message.tool_call_id or message.tool_name or "tool_call",
+                "output": message.content,
+            }
+        ]
+
+    items: list[dict] = []
+    content_parts = _build_content_parts(message)
+    if content_parts:
+        items.append(
+            {
+                "role": message.role,
+                "content": content_parts,
+            }
+        )
+
+    for tool_call in message.tool_calls:
+        items.append(
+            {
+                "type": "function_call",
+                "call_id": tool_call.call_id or tool_call.name,
+                "name": tool_call.name,
+                "arguments": json.dumps(tool_call.arguments),
+            }
+        )
+
+    return items
+
+
 def _build_content_parts(message: ContextMessage) -> list[dict]:
     parts: list[dict] = []
     if message.content:
-        parts.append({"type": "input_text", "text": message.content})
+        if message.role == "assistant":
+            parts.append({"type": "output_text", "text": message.content})
+        else:
+            parts.append({"type": "input_text", "text": message.content})
     for attachment in message.attachments:
         data_url = attachment.data_url or encode_attachment_as_data_url(
             file_path=attachment.file_path,
@@ -132,11 +195,42 @@ def _build_content_parts(message: ContextMessage) -> list[dict]:
     return parts
 
 
-def _extract_stream_delta(event_data: dict) -> ProviderDelta | None:
+def _extract_stream_delta(
+    event_data: dict,
+    tool_call_map: dict[str, dict[str, str]] | None = None,
+) -> ProviderDelta | None:
     event_type = event_data.get("type", "")
 
     if event_type == "response.output_text.delta":
         return ProviderDelta(text=event_data.get("delta", ""))
+
+    if event_type == "response.output_item.added":
+        item = event_data.get("item", {})
+        if item.get("type") != "function_call":
+            return None
+        item_id = item.get("id", "")
+        call_id = item.get("call_id", item_id)
+        name = item.get("name", "")
+        if tool_call_map is not None and item_id:
+            tool_call_map[item_id] = {"call_id": call_id, "name": name}
+        return ProviderDelta(
+            tool_call=ToolCallDelta(
+                call_id=call_id,
+                name=name,
+                arguments=item.get("arguments", ""),
+            )
+        )
+
+    if event_type == "response.function_call_arguments.delta":
+        item_id = event_data.get("item_id", "")
+        tool_call_state = (tool_call_map or {}).get(item_id, {})
+        return ProviderDelta(
+            tool_call=ToolCallDelta(
+                call_id=event_data.get("call_id") or tool_call_state.get("call_id") or item_id,
+                name=event_data.get("name") or tool_call_state.get("name", ""),
+                arguments=event_data.get("delta", ""),
+            )
+        )
 
     if event_type == "response.tool_call.delta":
         delta = event_data.get("delta", {})
@@ -259,8 +353,9 @@ class OpenAIProvider(BaseProvider):
         emitted_any = False
         try:
             with request.urlopen(http_request, timeout=self.timeout_seconds) as response:
+                tool_call_map: dict[str, dict[str, str]] = {}
                 for event in iter_sse_events(response):
-                    delta = _extract_stream_delta(event["data"])
+                    delta = _extract_stream_delta(event["data"], tool_call_map)
                     if delta is None:
                         continue
                     emitted_any = True
