@@ -56,8 +56,9 @@
 - New branch created/switched: reused existing OpenAI fix branch
 - Commits made:
   - `a0f3f37` - `fix: align OpenAI responses tool payloads`
+  - `67aae89` - `docs: record OpenAI responses payload fix`
 - Push status:
-  - pending push after progress log commit
+  - pushed to `origin/fix/openai-multimodal-attachments`
 
 ### Current Status
 - The OpenAI provider now maps attachments, transcript history, tool schemas, and tool-call state to Responses API-compatible payloads; full Django test suite passes locally.
